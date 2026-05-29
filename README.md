@@ -305,6 +305,39 @@ A person completes a contribution task
 
 ---
 
+## Community
+
+| Document | Purpose |
+|----------|---------|
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | How to contribute to [PoCP-Labs/pocp-ai-commons](https://github.com/PoCP-Labs/pocp-ai-commons) |
+| [ROADMAP.md](./ROADMAP.md) | Product and protocol roadmap |
+| [GOOD_FIRST_ISSUES.md](./GOOD_FIRST_ISSUES.md) | Starter tasks for new contributors |
+| [GOVERNANCE.md](./GOVERNANCE.md) | Human review, AI advisory role, and community decisions |
+| [GENESIS-CONTRIBUTORS.md](./GENESIS-CONTRIBUTORS.md) | Early contributors and genesis memory |
+| [FIRST-CALL-FOR-CONTRIBUTORS.md](./FIRST-CALL-FOR-CONTRIBUTORS.md) | Invitation to join the first contributor wave |
+| [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) | Community standards |
+| [docs/COMMUNITY-LAUNCH-PLAN.md](./docs/COMMUNITY-LAUNCH-PLAN.md) | Launch plan for GitHub Discussions and issues |
+
+---
+
+## Code Contribution Commons
+
+Broad participation in building PoCP — not only programmers. Requirements, issues, prompts, tests, reviews, documentation, skills, agents, and human judgment are all part of the chain.
+
+| Document | Purpose |
+|----------|---------|
+| [CODE-CONTRIBUTION-COMMONS.md](./CODE-CONTRIBUTION-COMMONS.md) | Framework: Code Contribution Commons and the multi-role contribution chain |
+| [GENESIS-CODE-CONTRIBUTORS.md](./GENESIS-CODE-CONTRIBUTORS.md) | Genesis Code Contributors and early code-commons memory |
+| [DEV-TASKS.md](./DEV-TASKS.md) | Dev task taxonomy and how work enters the network |
+| [ISSUE-WRITING-GUIDE.md](./ISSUE-WRITING-GUIDE.md) | Writing issues and specs others can execute |
+| [AI-ASSISTED-CODING-GUIDE.md](./AI-ASSISTED-CODING-GUIDE.md) | Human + Agent + Skill workflows; AI advisory, human responsible |
+| [REVIEW-GUIDE.md](./REVIEW-GUIDE.md) | Review rubrics for code, docs, and verification |
+| [docs/CODE-COMMONS-LAUNCH.md](./docs/CODE-COMMONS-LAUNCH.md) | Launch plan for the code contribution wave |
+
+Use GitHub issue templates under `.github/ISSUE_TEMPLATE/` (`code_contribution_task`, `issue_spec_task`, `test_task`, `skill_task`, `review_task`).
+
+---
+
 ## Quick Start (Developers)
 
 ```bash
