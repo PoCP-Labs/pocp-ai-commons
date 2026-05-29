@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { authPost } from "./auth";
 
 const ROLES = [
   { value: "creator", label: "Creator", weight: 0.4 },
@@ -8,7 +9,7 @@ const ROLES = [
   { value: "sponsor", label: "Sponsor (Org)", weight: 0.05 },
 ];
 
-export default function SubmitFlow({ api, entities, tasks, onComplete }) {
+export default function SubmitFlow({ entities, tasks, onComplete, user }) {
   const humans = entities.filter((e) => e.entity_type === "human");
   const agents = entities.filter((e) => e.entity_type === "agent");
   const skills = entities.filter((e) => e.entity_type === "skill");
@@ -31,24 +32,11 @@ export default function SubmitFlow({ api, entities, tasks, onComplete }) {
 
   const [contributionId, setContributionId] = useState(null);
 
-  async function post(path, body) {
-    const res = await fetch(`${api}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || `HTTP ${res.status}`);
-    }
-    return res.json();
-  }
-
   async function handleInvoke() {
     setLoading(true);
     setMessage(null);
     try {
-      await post("/api/v1/invocations", {
+      await authPost("/api/v1/invocations", {
         initiator_id: form.creatorId,
         skill_entity_id: form.skillId,
         agent_entity_id: form.agentId,
@@ -78,7 +66,7 @@ export default function SubmitFlow({ api, entities, tasks, onComplete }) {
         participants.push({ entity_id: form.sponsorId, role: "sponsor", weight: 0.05 });
       }
 
-      const contrib = await post("/api/v1/contributions", {
+      const contrib = await authPost("/api/v1/contributions", {
         task_id: form.taskId,
         primary_entity_id: form.creatorId,
         contribution_type: "knowledge",
@@ -87,7 +75,7 @@ export default function SubmitFlow({ api, entities, tasks, onComplete }) {
         participants,
       });
 
-      await post("/api/v1/invocations", {
+      await authPost("/api/v1/invocations", {
         initiator_id: form.creatorId,
         skill_entity_id: form.skillId,
         agent_entity_id: form.agentId,
@@ -110,7 +98,7 @@ export default function SubmitFlow({ api, entities, tasks, onComplete }) {
     setLoading(true);
     setMessage(null);
     try {
-      await post(`/api/v1/contributions/${contributionId}/verify`, {
+      await authPost(`/api/v1/contributions/${contributionId}/verify`, {
         model_provider: "deepseek",
         score: 0.86,
         feedback: "AI pre-review passed.",
@@ -128,7 +116,7 @@ export default function SubmitFlow({ api, entities, tasks, onComplete }) {
     setLoading(true);
     setMessage(null);
     try {
-      await post(`/api/v1/contributions/${contributionId}/approve`, {
+      await authPost(`/api/v1/contributions/${contributionId}/approve`, {
         reviewer_id: form.reviewerId,
         feedback: "Approved by human reviewer.",
       });
@@ -160,6 +148,12 @@ export default function SubmitFlow({ api, entities, tasks, onComplete }) {
 
   return (
     <div style={{ background: "#f8fafc", padding: 20, borderRadius: 8 }}>
+      {user && (
+        <p style={{ fontSize: 13, color: "#475569", marginBottom: 12 }}>
+          Submitting as: <strong>{user.name}</strong> ({user.email})
+        </p>
+      )}
+
       <div style={{ display: "flex", gap: 8, marginBottom: 16, fontSize: 13 }}>
         {["invoke", "submit", "verify", "approve", "done"].map((s, i) => (
           <span
