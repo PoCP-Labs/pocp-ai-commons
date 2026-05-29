@@ -1,6 +1,6 @@
 # Backend
 
-API service for PoCP Contributor Network MVP.
+API service for PoCP AI Commons.
 
 ## Development
 

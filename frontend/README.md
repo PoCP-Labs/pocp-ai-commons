@@ -1,6 +1,6 @@
 # Frontend
 
-Web client for PoCP Contributor Network MVP.
+Web client for PoCP AI Commons.
 
 ## Development
 

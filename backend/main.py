@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="PoCP Contributor Network API", version="0.1.0")
+app = FastAPI(title="PoCP AI Commons API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,4 +14,4 @@ app.add_middleware(
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "pocp-contributor-network"}
+    return {"status": "ok", "service": "pocp-ai-commons"}

@@ -1,8 +1,8 @@
-# PoCP Contributor Network
+# PoCP AI Commons
 
-The first MVP product of the **Proof of Contribution Protocol (PoCP)** contributor network.
+Shared AI infrastructure for the **Proof of Contribution Protocol (PoCP)** — where contributors share code and collaboration into the network and receive equitable access to AI capabilities in return.
 
-This repository contains a full-stack reference implementation for discovering contributors, recording contributions, and coordinating community work.
+This repository contains the full-stack reference implementation for recording contributions, verifying work with AI assistance, and distributing community AI resources fairly.
 
 ## Stack
 
