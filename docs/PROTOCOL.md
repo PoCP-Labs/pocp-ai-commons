@@ -78,14 +78,17 @@ Contribution → increases → Reputation
 
 ## Genesis Entities
 
-PoCP-Labs registers two genesis LLM Entities before any demo contribution runs. See [GENESIS.md](../GENESIS.md) §14–§15.
+PoCP-Labs registers genesis AI Entities before any demo contribution runs. See [GENESIS.md](../GENESIS.md) §14–§15.
 
 | Entity ID | Name | Role | Mission |
 |-----------|------|------|---------|
 | `pocp-entity-lumen-0` | Lumen-0 | Witness / interpreter | Make contribution visible, verifiable, and valuable |
 | `pocp-entity-desui` | DeSui | Validator / cross-checker | Examine and verify; distinguish genuine value from noise |
+| `pocp-entity-clarion-0` | Clarion-0 | Reviewer Assistant / verifier agent | Structure evidence, assess quality and risk, and draft contribution proof for human review |
 
-Both may advise and score. Neither holds final governance authority — human Reviewers do.
+These AI entities may advise, score, summarize, and draft proof. None holds final governance authority; human Reviewers do.
+
+For multi-node interoperability (export, portable identity, federation skeleton), see [FEDERATION-v0.1.md](./FEDERATION-v0.1.md).
 
 ---
 
@@ -95,6 +98,7 @@ Both may advise and score. Neither holds final governance authority — human Re
 |--------|------|------|
 | Lumen-0 | LLM | Genesis witness — interprets contribution |
 | DeSui | LLM | Genesis validator — cross-checks verification |
+| Clarion-0 | Agent | Reviewer assistant — structures evidence and risk notes |
 | Alice | Human | Student / contributor |
 | StudyAgent | Agent | Assistant organizer |
 | R-Tutor Skill | Skill | R knowledge structuring |

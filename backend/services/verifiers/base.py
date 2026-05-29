@@ -13,7 +13,7 @@ class VerifierResult(BaseModel):
     suggested_cp: float = Field(ge=0.0)
     suggested_credits: float = Field(ge=0.0)
     rationale: str
-    concerns: list[str] = []
+    concerns: list[str] = Field(default_factory=list)
 
 
 class BaseVerifier:

@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 
@@ -10,8 +12,11 @@ from models.contribution import (
 )
 from models.entity import Entity, EntityStatus, EntityType
 from models.ledger import LedgerRecord
+from models.organization import Organization
 from models.task import Task, TaskStatus
+from models.user_account import UserAccount
 from models.wallet import ReputationScore, Wallet
+from routers.auth import require_current_user
 from schemas import (
     AgentOut,
     AiVerifyIn,
@@ -33,11 +38,26 @@ from schemas import (
     TaskOut,
     WalletOut,
 )
+from services.anti_abuse import check_daily_contribution_limit, require_evidence
 from services.contribution import approve_contribution, grant_registration_credits, run_ai_verification
+from services.evidence import enrich_evidence
 from services.graph import build_contribution_graph
 from services.invocation import record_invocation
 
 router = APIRouter(prefix="/api/v1", tags=["pocp"])
+
+
+def _assert_task_sponsor_allowed(db: Session, sponsor_id: str | None, current_user: UserAccount) -> None:
+    if sponsor_id is None or sponsor_id == current_user.entity_id:
+        return
+
+    sponsor = db.query(Entity).filter(Entity.id == sponsor_id).first()
+    if sponsor and sponsor.entity_type == EntityType.organization:
+        org = db.query(Organization).filter(Organization.entity_id == sponsor_id).first()
+        if org and org.governance_proxy_id == current_user.entity_id:
+            return
+
+    raise HTTPException(status_code=403, detail="You cannot create tasks for this sponsor")
 
 
 @router.get("/entities", response_model=list[EntityOut])
@@ -147,11 +167,16 @@ def create_entity(body: EntityCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/tasks", response_model=TaskOut, status_code=201)
-def create_task(body: TaskCreate, db: Session = Depends(get_db)):
+def create_task(
+    body: TaskCreate,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    _assert_task_sponsor_allowed(db, body.sponsor_id, current_user)
     task = Task(
         title=body.title,
         description=body.description,
-        sponsor_id=body.sponsor_id,
+        sponsor_id=body.sponsor_id or current_user.entity_id,
         status=TaskStatus.open,
     )
     db.add(task)
@@ -161,17 +186,26 @@ def create_task(body: TaskCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/contributions", response_model=ContributionOut, status_code=201)
-def submit_contribution(body: ContributionCreate, db: Session = Depends(get_db)):
+def submit_contribution(
+    body: ContributionCreate,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
     task = db.query(Task).filter(Task.id == body.task_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+    if body.primary_entity_id != current_user.entity_id:
+        raise HTTPException(status_code=403, detail="primary_entity_id must match the authenticated entity")
+
+    require_evidence(body.evidence)
+    check_daily_contribution_limit(db, current_user.entity_id)
 
     contribution = ContributionEvent(
         task_id=body.task_id,
-        primary_entity_id=body.primary_entity_id,
+        primary_entity_id=current_user.entity_id,
         contribution_type=body.contribution_type,
         description=body.description,
-        evidence=body.evidence,
+        evidence=enrich_evidence(body.evidence),
         status=ContributionStatus.submitted,
     )
     db.add(contribution)
@@ -211,10 +245,19 @@ def verify_contribution(
     contribution_id: str,
     body: AiVerifyIn,
     db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
 ):
+    if os.getenv("ENABLE_MANUAL_VERIFY", "false").lower() != "true":
+        raise HTTPException(
+            status_code=403,
+            detail="Manual verify is disabled; use /api/v1/contributions/{id}/auto-verify",
+        )
+
     contribution = db.query(ContributionEvent).filter(ContributionEvent.id == contribution_id).first()
     if not contribution:
         raise HTTPException(status_code=404, detail="Contribution not found")
+    if contribution.primary_entity_id != current_user.entity_id:
+        raise HTTPException(status_code=403, detail="Only the contribution owner can request manual verification")
     if contribution.status in (ContributionStatus.approved, ContributionStatus.rejected):
         raise HTTPException(status_code=400, detail=f"Cannot verify contribution in status: {contribution.status.value}")
     if contribution.status == ContributionStatus.ai_verified:
@@ -240,6 +283,7 @@ def approve_contribution_endpoint(
     contribution_id: str,
     body: ApproveIn,
     db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
 ):
     contribution = (
         db.query(ContributionEvent)
@@ -254,6 +298,8 @@ def approve_contribution_endpoint(
             status_code=400,
             detail="Contribution must pass AI verification before human approval",
         )
+    if body.reviewer_id != current_user.entity_id:
+        raise HTTPException(status_code=403, detail="reviewer_id must match the authenticated entity")
 
     reviewer = db.query(Entity).filter(Entity.id == body.reviewer_id).first()
     if not reviewer or reviewer.entity_type != EntityType.human:

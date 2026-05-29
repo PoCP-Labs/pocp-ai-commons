@@ -1,0 +1,11 @@
+spec_version: "0.1"
+registration:
+  ai_credits: 100
+contribution_defaults:
+  human:
+    cp_base: 20
+    ai_credits_base: 80
+  skill:
+    reputation_base: 5
+  agent:
+    reputation_base: 3

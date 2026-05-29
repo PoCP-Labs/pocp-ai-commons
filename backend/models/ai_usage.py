@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, String, Text
+from sqlalchemy import DateTime, Float, ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -11,6 +11,10 @@ class AIUsageLog(Base):
     """Records AI tool usage and AI Credits burned by a Human Entity."""
 
     __tablename__ = "ai_usage_logs"
+    __table_args__ = (
+        Index("ix_ai_usage_logs_entity_id", "entity_id"),
+        Index("ix_ai_usage_logs_created_at", "created_at"),
+    )
 
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())

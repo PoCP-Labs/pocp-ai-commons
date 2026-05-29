@@ -2,10 +2,11 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, Enum, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
+from db_types import pocp_enum
 
 
 class InvocationStatus(str, enum.Enum):
@@ -18,6 +19,7 @@ class InvocationTrace(Base):
     """Records Human → Agent → Skill → LLM call chains."""
 
     __tablename__ = "invocation_traces"
+    __table_args__ = (Index("ix_invocation_traces_initiator_id", "initiator_id"),)
 
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
@@ -29,7 +31,7 @@ class InvocationTrace(Base):
     )
     model_provider: Mapped[str | None] = mapped_column(String(64))
     status: Mapped[InvocationStatus] = mapped_column(
-        Enum(InvocationStatus), default=InvocationStatus.completed
+        pocp_enum(InvocationStatus), default=InvocationStatus.completed
     )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -40,6 +42,7 @@ class InvocationTrace(Base):
 
 class InvocationStep(Base):
     __tablename__ = "invocation_steps"
+    __table_args__ = (Index("ix_invocation_steps_trace_id", "trace_id"),)
 
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())

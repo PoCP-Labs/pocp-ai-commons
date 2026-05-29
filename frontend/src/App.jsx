@@ -302,7 +302,7 @@ export default function App() {
           <p style={{ color: "#64748b", marginBottom: 16 }}>
             Invoke → Submit → AI Verify → Human Approve → Credits + Reputation
           </p>
-          <SubmitFlow api={API} entities={entities} tasks={tasks} onComplete={load} />
+          <SubmitFlow api={API} entities={entities} tasks={tasks} currentEntityId={profile?.entity?.id || null} onComplete={load} />
         </section>
       )}
 

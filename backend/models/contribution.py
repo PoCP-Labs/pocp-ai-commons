@@ -2,10 +2,11 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, Enum, Float, ForeignKey, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
+from db_types import JsonDocument, pocp_enum
 
 
 class ContributionStatus(str, enum.Enum):
@@ -31,6 +32,11 @@ class ParticipantRole(str, enum.Enum):
 
 class ContributionEvent(Base):
     __tablename__ = "contribution_events"
+    __table_args__ = (
+        Index("ix_contribution_events_task_id", "task_id"),
+        Index("ix_contribution_events_status", "status"),
+        Index("ix_contribution_events_created_at", "created_at"),
+    )
 
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
@@ -39,9 +45,9 @@ class ContributionEvent(Base):
     primary_entity_id: Mapped[str] = mapped_column(String(36), ForeignKey("entities.id"))
     contribution_type: Mapped[str] = mapped_column(String(64), default="knowledge")
     description: Mapped[str | None] = mapped_column(Text)
-    evidence: Mapped[dict | None] = mapped_column(JSON, default=dict)
+    evidence: Mapped[dict | None] = mapped_column(JsonDocument, default=dict)
     status: Mapped[ContributionStatus] = mapped_column(
-        Enum(ContributionStatus), default=ContributionStatus.draft
+        pocp_enum(ContributionStatus), default=ContributionStatus.draft
     )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -59,6 +65,7 @@ class ContributionEvent(Base):
 
 class ContributionParticipant(Base):
     __tablename__ = "contribution_participants"
+    __table_args__ = (Index("ix_contribution_participants_contribution_id", "contribution_id"),)
 
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
@@ -67,9 +74,9 @@ class ContributionParticipant(Base):
         String(36), ForeignKey("contribution_events.id")
     )
     entity_id: Mapped[str] = mapped_column(String(36), ForeignKey("entities.id"))
-    role: Mapped[ParticipantRole] = mapped_column(Enum(ParticipantRole), nullable=False)
+    role: Mapped[ParticipantRole] = mapped_column(pocp_enum(ParticipantRole, length=64), nullable=False)
     weight: Mapped[float] = mapped_column(Float, default=0.0)
-    evidence: Mapped[dict | None] = mapped_column(JSON, default=dict)
+    evidence: Mapped[dict | None] = mapped_column(JsonDocument, default=dict)
 
     contribution: Mapped["ContributionEvent"] = relationship(
         "ContributionEvent", back_populates="participants"

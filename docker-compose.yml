@@ -1,12 +1,35 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: pocp
+      POSTGRES_PASSWORD: pocp
+      POSTGRES_DB: pocp
+    ports:
+      - "5432:5432"
+    volumes:
+      - pocp_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pocp -d pocp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   backend:
     build: ./backend
     ports:
       - "8000:8000"
     environment:
-      - PORT=8000
+      PORT: "8000"
+      DATABASE_URL: postgresql+psycopg://pocp:pocp@postgres:5432/pocp
+      POCP_WAIT_FOR_DB: "true"
+      POCP_WAIT_FOR_DB_SECONDS: "60"
     volumes:
       - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
@@ -21,3 +44,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+volumes:
+  pocp_pg_data:

@@ -1,5 +1,7 @@
 # PoCP V0.1 Data Schema
 
+**Persistence:** PostgreSQL is the production target (`JSONB`, connection pooling, Alembic migrations). SQLite is supported for local-only development with the same schema. See [DATABASE.md](./DATABASE.md).
+
 ## Core Tables
 
 ### `entities`

@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+const TOKEN_KEY = "pocp_token";
+
 const ROLES = [
   { value: "creator", label: "Creator", weight: 0.4 },
   { value: "executor", label: "Executor (Agent)", weight: 0.25 },
@@ -8,7 +10,7 @@ const ROLES = [
   { value: "sponsor", label: "Sponsor (Org)", weight: 0.05 },
 ];
 
-export default function SubmitFlow({ api, entities, tasks, onComplete }) {
+export default function SubmitFlow({ api, entities, tasks, currentEntityId, onComplete }) {
   const humans = entities.filter((e) => e.entity_type === "human");
   const agents = entities.filter((e) => e.entity_type === "agent");
   const skills = entities.filter((e) => e.entity_type === "skill");
@@ -32,9 +34,13 @@ export default function SubmitFlow({ api, entities, tasks, onComplete }) {
   const [contributionId, setContributionId] = useState(null);
 
   async function post(path, body) {
+    const token = localStorage.getItem(TOKEN_KEY);
     const res = await fetch(`${api}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify(body),
     });
     if (!res.ok) {
@@ -110,20 +116,9 @@ export default function SubmitFlow({ api, entities, tasks, onComplete }) {
     setLoading(true);
     setMessage(null);
     try {
-      await post(`/api/v1/contributions/${contributionId}/verify`, {
-        model_provider: "Lumen-0",
-        score: 0.86,
-        feedback: "Contribution illuminated: evidence structured and task-aligned.",
-        required_passing_count: 2,
-      });
-      await post(`/api/v1/contributions/${contributionId}/verify`, {
-        model_provider: "DeSui",
-        score: 0.84,
-        feedback: "Adversarial review passed; minor gaps acceptable for human review.",
-        required_passing_count: 2,
-      });
+      await post(`/api/v1/contributions/${contributionId}/auto-verify`, {});
       setStep("approve");
-      setMessage("Dual AI verification passed (Lumen-0 → DeSui).");
+      setMessage("Server-side AI verification completed.");
     } catch (err) {
       setMessage(`Error: ${err.message}`);
     } finally {
@@ -132,6 +127,11 @@ export default function SubmitFlow({ api, entities, tasks, onComplete }) {
   }
 
   async function handleApprove() {
+    if (!currentEntityId || currentEntityId === form.creatorId) {
+      setMessage("Error: Human approval must be completed from a different reviewer account.");
+      return;
+    }
+
     setLoading(true);
     setMessage(null);
     try {
@@ -254,7 +254,7 @@ export default function SubmitFlow({ api, entities, tasks, onComplete }) {
           </button>
         )}
         {step === "approve" && (
-          <button type="button" style={btnStyle(true)} onClick={handleApprove} disabled={loading}>
+          <button type="button" style={btnStyle(true)} onClick={handleApprove} disabled={loading || !currentEntityId || currentEntityId === form.creatorId}>
             4. Human Approve
           </button>
         )}
@@ -267,6 +267,11 @@ export default function SubmitFlow({ api, entities, tasks, onComplete }) {
 
       {message && (
         <p style={{ marginTop: 12, color: message.startsWith("Error") ? "#dc2626" : "#059669" }}>{message}</p>
+      )}
+      {step === "approve" && (!currentEntityId || currentEntityId === form.creatorId) && (
+        <p style={{ marginTop: 12, color: "#64748b" }}>
+          Approval now requires a separate authenticated human reviewer session.
+        </p>
       )}
     </div>
   );

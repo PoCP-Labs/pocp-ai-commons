@@ -19,12 +19,36 @@ from services.contribution import (
     run_ai_verification,
 )
 from genesis import DESUI_ID, LUMEN_0_ID, ensure_genesis_entities
+from services.auth import bind_user_account_to_entity
 from services.invocation import record_invocation
+
+
+def ensure_demo_accounts(db: Session, alice: Entity, bob: Entity) -> None:
+    bind_user_account_to_entity(
+        db,
+        entity=alice,
+        provider="dev",
+        provider_user_id="alice@pocp.local",
+        username="alice",
+        email="alice@pocp.local",
+    )
+    bind_user_account_to_entity(
+        db,
+        entity=bob,
+        provider="dev",
+        provider_user_id="bob@pocp.local",
+        username="bob",
+        email="bob@pocp.local",
+    )
 
 
 def seed_demo(db: Session) -> None:
     ensure_genesis_entities(db)
-    if db.query(Entity).filter(Entity.name == "Alice").first():
+    existing_alice = db.query(Entity).filter(Entity.name == "Alice").first()
+    existing_bob = db.query(Entity).filter(Entity.name == "Bob").first()
+    if existing_alice and existing_bob:
+        ensure_demo_accounts(db, existing_alice, existing_bob)
+        db.commit()
         return
 
     lumen_0 = db.get(Entity, LUMEN_0_ID)
@@ -71,6 +95,7 @@ def seed_demo(db: Session) -> None:
 
     grant_registration_credits(db, alice)
     grant_registration_credits(db, bob)
+    ensure_demo_accounts(db, alice, bob)
 
     study_agent_entity.owner_id = alice.id
     study_agent_entity.creator_id = alice.id

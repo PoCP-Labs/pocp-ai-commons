@@ -30,6 +30,7 @@ class MultiVerifierService:
                 "type": contribution.contribution_type,
                 "description": contribution.description,
                 "evidence": contribution.evidence,
+                "content_hash": (contribution.evidence or {}).get("_pocp", {}).get("content_hash"),
                 "primary_entity_id": contribution.primary_entity_id,
             },
             "participants": [

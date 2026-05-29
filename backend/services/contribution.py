@@ -10,8 +10,9 @@ from models.contribution import (
     ParticipantRole,
 )
 from models.entity import Entity, EntityType
-from models.ledger import LedgerRecord
 from models.wallet import CreditTransaction, CreditType, ReputationScore, Wallet
+from services.ledger_chain import append_ledger_record
+from services.protocol_config import get_rewards_config
 
 
 def _get_or_create_wallet(db: Session, entity_id: str) -> Wallet:
@@ -85,7 +86,7 @@ def grant_registration_credits(db: Session, entity: Entity) -> Wallet | None:
     if wallet.ai_credits > 0 or wallet.cp_balance > 0:
         return wallet
 
-    starter_credits = 100.0
+    starter_credits = float(get_rewards_config()["registration"]["ai_credits"])
     wallet.ai_credits = starter_credits
     db.add(
         CreditTransaction(
@@ -95,15 +96,14 @@ def grant_registration_credits(db: Session, entity: Entity) -> Wallet | None:
             reason="Registration grant",
         )
     )
-    db.add(
-        LedgerRecord(
-            contribution_id=None,
-            event_type="registration_grant",
-            payload={
-                "entity_id": entity.id,
-                "ai_credits": starter_credits,
-            },
-        )
+    append_ledger_record(
+        db,
+        contribution_id=None,
+        event_type="registration_grant",
+        payload={
+            "entity_id": entity.id,
+            "ai_credits": starter_credits,
+        },
     )
     db.flush()
     return wallet
@@ -129,6 +129,11 @@ def approve_contribution(
     contribution.status = ContributionStatus.approved
 
     rewards: dict = {"credits": [], "reputation": []}
+    defaults = get_rewards_config()["contribution_defaults"]
+    human_cp_base = float(defaults["human"]["cp_base"])
+    human_ai_base = float(defaults["human"]["ai_credits_base"])
+    skill_rep_base = float(defaults["skill"]["reputation_base"])
+    agent_rep_base = float(defaults["agent"]["reputation_base"])
 
     for participant in contribution.participants:
         entity = db.query(Entity).filter(Entity.id == participant.entity_id).first()
@@ -140,8 +145,8 @@ def approve_contribution(
             ParticipantRole.executor,
         ):
             wallet = _get_or_create_wallet(db, entity.id)
-            cp_amount = round(20 * participant.weight / 0.4, 2) if participant.weight else 20
-            ai_amount = round(80 * participant.weight / 0.4, 2) if participant.weight else 80
+            cp_amount = round(human_cp_base * participant.weight / 0.4, 2) if participant.weight else human_cp_base
+            ai_amount = round(human_ai_base * participant.weight / 0.4, 2) if participant.weight else human_ai_base
 
             wallet.cp_balance += cp_amount
             wallet.ai_credits += ai_amount
@@ -169,14 +174,14 @@ def approve_contribution(
             )
 
         elif entity.entity_type == EntityType.skill:
-            rep_amount = round(5 * participant.weight / 0.15, 2) if participant.weight else 5
+            rep_amount = round(skill_rep_base * participant.weight / 0.15, 2) if participant.weight else skill_rep_base
             _add_reputation(db, entity.id, rep_amount, "skill")
             rewards["reputation"].append(
                 {"entity_id": entity.id, "name": entity.name, "category": "skill", "amount": rep_amount}
             )
 
         elif entity.entity_type == EntityType.agent:
-            rep_amount = round(3 * participant.weight / 0.25, 2) if participant.weight else 3
+            rep_amount = round(agent_rep_base * participant.weight / 0.25, 2) if participant.weight else agent_rep_base
             _add_reputation(db, entity.id, rep_amount, "agent")
             rewards["reputation"].append(
                 {"entity_id": entity.id, "name": entity.name, "category": "agent", "amount": rep_amount}
@@ -195,12 +200,11 @@ def approve_contribution(
             for p in contribution.participants
         ],
     }
-    db.add(
-        LedgerRecord(
-            contribution_id=contribution.id,
-            event_type="contribution_approved",
-            payload=ledger_payload,
-        )
+    append_ledger_record(
+        db,
+        contribution_id=contribution.id,
+        event_type="contribution_approved",
+        payload=ledger_payload,
     )
     db.flush()
     return rewards

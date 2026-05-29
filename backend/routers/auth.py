@@ -66,6 +66,13 @@ def current_user_from_header(authorization: str | None, db: Session) -> UserAcco
     return user
 
 
+def require_current_user(
+    authorization: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+) -> UserAccount:
+    return current_user_from_header(authorization, db)
+
+
 @router.get("/auth/github/login")
 def github_login():
     client_id = os.getenv("GITHUB_CLIENT_ID")

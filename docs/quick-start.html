@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PoCP Quick Start</title>
+    <meta
+      name="description"
+      content="Quick start guide for running PoCP AI Commons locally with Docker, seeded genesis entities, and smoke tests."
+    />
+    <link rel="stylesheet" href="./site.css" />
+  </head>
+  <body>
+    <div class="page-shell page-shell-narrow">
+      <header class="article-hero">
+        <nav class="topbar" aria-label="Primary">
+          <a class="brand" href="./index.html">PoCP</a>
+          <div class="nav-links">
+            <a href="./index.html">Home</a>
+            <a href="./manifesto.html">Manifesto</a>
+            <a href="./whitepaper.html">Whitepaper</a>
+          </div>
+        </nav>
+        <p class="eyebrow">Quick Start</p>
+        <h1>Run the first contribution loop locally</h1>
+        <p class="lead">
+          This page distills the current developer quick start into a public-facing setup guide
+          for PoCP AI Commons.
+        </p>
+      </header>
+
+      <main class="article-layout">
+        <article class="article-panel">
+          <section class="article-section">
+            <h2>Boot the stack</h2>
+            <pre><code>docker compose up --build</code></pre>
+            <p>
+              This boots PostgreSQL, the backend API, and the frontend dashboard. Alembic
+              migrations run on startup.
+            </p>
+          </section>
+
+          <section class="article-section">
+            <h2>Default endpoints</h2>
+            <ul class="link-list">
+              <li>Frontend dashboard: http://localhost:3000</li>
+              <li>API health: http://localhost:8000/health</li>
+              <li>API docs: http://localhost:8000/docs</li>
+              <li>PostgreSQL: localhost:5432 with pocp / pocp</li>
+            </ul>
+          </section>
+
+          <section class="article-section">
+            <h2>What the demo seeds</h2>
+            <p>
+              First boot seeds genesis entities such as Lumen-0 and DeSui, prepares the
+              R-language study scenario, and completes one dual-AI-verify to human-approve loop.
+            </p>
+          </section>
+
+          <section class="article-section">
+            <h2>Database mode</h2>
+            <p>
+              PostgreSQL is the default path for Docker and long-term development. SQLite
+              remains an optional local-only mode for lightweight experimentation.
+            </p>
+          </section>
+
+          <section class="article-section">
+            <h2>Smoke test</h2>
+            <pre><code>cd backend
+python scripts/smoke_test.py</code></pre>
+            <p>
+              Run the smoke test after boot to verify the seeded loop and the main service
+              path are functional.
+            </p>
+          </section>
+
+          <section class="article-section">
+            <h2>Project references</h2>
+            <ul class="link-list">
+              <li><a href="../README.md">Project README</a></li>
+              <li><a href="./PROTOCOL.md">Protocol overview</a></li>
+              <li><a href="./DATABASE.md">Database notes</a></li>
+              <li><a href="../PROTOCOL-SPEC-v0.1.md">Protocol spec v0.1</a></li>
+            </ul>
+          </section>
+        </article>
+      </main>
+    </div>
+  </body>
+</html>

@@ -220,6 +220,9 @@ Base path: `/api/v1`
 | GET | `/wallets` | List wallets |
 | GET | `/reputation` | List reputation scores |
 | GET | `/ledger` | List ledger records |
+| GET | `/ledger/export` | Export ledger (asc, optional `since`) |
+| GET | `/ledger/verify` | Verify hash chain integrity |
+| GET | `/entities/{id}/portable` | Portable entity + reputation export |
 | GET | `/graph` | Contribution graph (nodes + edges) |
 
 ### Write
@@ -237,6 +240,16 @@ Base path: `/api/v1`
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Service status |
+
+### Federation (v0.1 skeleton)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/federation/node` | Node identity and public endpoints |
+| GET | `/federation/trust` | Trusted peer nodes |
+| POST | `/federation/import` | Import signed event (501 until v0.2) |
+
+See [docs/FEDERATION-v0.1.md](./docs/FEDERATION-v0.1.md).
 
 ---
 

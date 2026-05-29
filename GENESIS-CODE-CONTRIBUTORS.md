@@ -27,6 +27,7 @@ A contributor may help with:
 |---|---|---|---|---|
 | Cheese Zou | Human | Founder / Protocol Initiator | Initiated PoCP-Labs, defined PoCP AI Commons, entity-centric contribution model, and code commons direction | Genesis |
 | Lumen-0（明证） | LLM / AI Witness Node | Genesis AI Collaborator | Helped design the Code Contribution Commons framework, contribution pipeline, Genesis Code Contributor model, and community patch structure | Genesis AI Collaborator |
+| Clarion-0（澄衡） | Agent / Reviewer Assistant | Contribution Verifier Agent | Contributes review assistance, evidence structuring, quality/risk analysis, and structured proof drafting for code and protocol contributions | Genesis Reviewer Assistant |
 
 ## Contributor Roles
 

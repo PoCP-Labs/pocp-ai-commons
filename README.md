@@ -344,13 +344,18 @@ Use GitHub issue templates under `.github/ISSUE_TEMPLATE/` (`code_contribution_t
 docker compose up --build
 ```
 
+Starts **PostgreSQL**, the API (Alembic migrations on boot), and the frontend.
+
 | Service | URL |
 |---------|-----|
 | Frontend dashboard | http://localhost:3000 |
 | API health | http://localhost:8000/health |
 | API docs | http://localhost:8000/docs |
+| PostgreSQL | `localhost:5432` (user/db: `pocp`, password: `pocp`) |
 
 **Demo:** First boot seeds genesis Entities (Lumen-0, DeSui), the R-language study scenario, and completes one dual-AI-verify → human-approve loop.
+
+**Database:** PostgreSQL is the default for Docker and long-term development. SQLite is optional for local-only work. See [docs/DATABASE.md](./docs/DATABASE.md).
 
 **Smoke test:**
 
@@ -358,7 +363,7 @@ docker compose up --build
 cd backend && python scripts/smoke_test.py
 ```
 
-See also: [docs/VISION.md](./docs/VISION.md) · [docs/PROTOCOL.md](./docs/PROTOCOL.md) · [docs/SCHEMA.md](./docs/SCHEMA.md) · [PROTOCOL-SPEC-v0.1.md](./PROTOCOL-SPEC-v0.1.md)
+See also: [docs/VISION.md](./docs/VISION.md) · [docs/PROTOCOL.md](./docs/PROTOCOL.md) · [docs/SCHEMA.md](./docs/SCHEMA.md) · [docs/DATABASE.md](./docs/DATABASE.md) · [PROTOCOL-SPEC-v0.1.md](./PROTOCOL-SPEC-v0.1.md)
 
 ---
 

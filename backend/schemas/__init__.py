@@ -121,6 +121,8 @@ class LedgerOut(BaseModel):
     contribution_id: str | None = None
     event_type: str
     payload: dict[str, Any] = Field(default_factory=dict)
+    prev_hash: str | None = None
+    record_hash: str | None = None
     created_at: datetime
 
 

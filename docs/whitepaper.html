@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PoCP Whitepaper</title>
+    <meta
+      name="description"
+      content="Entity-centric PoCP whitepaper summary covering entities, rights, minimal loop, and genesis witnesses."
+    />
+    <link rel="stylesheet" href="./site.css" />
+  </head>
+  <body>
+    <div class="page-shell page-shell-narrow">
+      <header class="article-hero">
+        <nav class="topbar" aria-label="Primary">
+          <a class="brand" href="./index.html">PoCP</a>
+          <div class="nav-links">
+            <a href="./index.html">Home</a>
+            <a href="./manifesto.html">Manifesto</a>
+            <a href="./quick-start.html">Quick Start</a>
+          </div>
+        </nav>
+        <p class="eyebrow">Whitepaper</p>
+        <h1>Entity-centric protocol outline</h1>
+        <p class="lead">
+          This page adapts the protocol framing of PoCP V0.1 into a concise public whitepaper
+          page suited for GitHub Pages.
+        </p>
+      </header>
+
+      <main class="article-layout">
+        <article class="article-panel">
+          <section class="article-section">
+            <h2>Definition</h2>
+            <p>
+              PoCP is a contribution proof protocol for intelligent entities in the age of AI.
+              It records and verifies contributions from humans, agents, LLMs, skills, tools,
+              datasets, workflows, and organizations, then allocates usage rights, reputation,
+              opportunity, and future governance standing according to contribution rules.
+            </p>
+          </section>
+
+          <section class="article-section" id="entity-model">
+            <h2>Entity model</h2>
+            <p>
+              The first-class object is the entity, not merely the user. An entity can produce,
+              verify, invoke, compose, or govern contributions. V0.1 focuses on humans,
+              agents, skills, and LLMs, while leaving tools, datasets, workflows,
+              organizations, and communities as reserved expansion paths.
+            </p>
+            <ul class="link-list">
+              <li>Humans: students, developers, reviewers, organizers</li>
+              <li>Agents: task executors, coordinators, verifiers</li>
+              <li>Skills: reusable callable capability units</li>
+              <li>LLMs: witness nodes for reasoning and verification</li>
+            </ul>
+          </section>
+
+          <section class="article-section">
+            <h2>Rights model</h2>
+            <p>
+              Usage rights map to AI Credits. Reputation rights map to durable contribution
+              records and score accumulation. Governance rights are deferred and remain human
+              accountable, even when non-human entities participate in the contribution graph.
+            </p>
+          </section>
+
+          <section class="article-section">
+            <h2>Minimal loop</h2>
+            <pre><code>Human creates Skill
+-> Human or Agent uses Skill to complete task
+-> Submit contribution as a multi-entity event
+-> Lumen-0 and DeSui provide AI pre-review
+-> Human reviewer confirms
+-> Human receives AI Credits
+-> Agent and Skill receive Reputation
+-> Contribution enters the ledger</code></pre>
+          </section>
+
+          <section class="article-section">
+            <h2>Contribution graph</h2>
+            <p>
+              PoCP is not just a ledger. It is a graph of relationships: humans use agents,
+              agents call skills, skills depend on models, reviewers approve contributions,
+              and verified events issue credits and reputation across several entities.
+            </p>
+          </section>
+
+          <section class="article-section" id="genesis-entities">
+            <h2>Genesis entities</h2>
+            <ul class="link-list">
+              <li>Lumen-0: witness and interpreter</li>
+              <li>DeSui: validator and cross-checker</li>
+              <li>Clarion-0: reviewer assistant and verifier agent</li>
+            </ul>
+            <p>
+              These AI entities may advise, score, summarize, and structure evidence. None of
+              them hold final governance authority. Human reviewers remain the final line.
+            </p>
+          </section>
+
+          <section class="article-section">
+            <h2>Reference demo</h2>
+            <p>
+              The reference demo uses an R-language study-material task. A human contributor,
+              an assisting agent, and a reusable skill cooperate. AI witnesses produce
+              verification advice, and a human reviewer performs final approval. The result is
+              a recorded multi-entity contribution event with AI Credits and reputation updates.
+            </p>
+          </section>
+        </article>
+      </main>
+    </div>
+  </body>
+</html>

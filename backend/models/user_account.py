@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -13,6 +13,7 @@ class UserAccount(Base):
     __tablename__ = "user_accounts"
     __table_args__ = (
         UniqueConstraint("provider", "provider_user_id", name="uq_user_provider_identity"),
+        Index("ix_user_accounts_entity_id", "entity_id"),
     )
 
     id: Mapped[str] = mapped_column(

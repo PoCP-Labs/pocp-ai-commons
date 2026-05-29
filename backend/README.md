@@ -2,20 +2,33 @@
 
 FastAPI service implementing **PoCP Protocol Spec V0.1** (entity-centric model).
 
+**Database:** PostgreSQL (production / Docker). SQLite optional for local dev. See [docs/DATABASE.md](../docs/DATABASE.md).
+
+## Run with Docker (recommended)
+
+From repository root:
+
+```bash
+docker compose up --build
+```
+
+Starts PostgreSQL, applies Alembic migrations, seeds genesis entities and the demo scenario.
+
 ## Run locally
 
 ```bash
 cd backend
 pip install -r requirements.txt
+cp .env.example .env   # set DATABASE_URL (PostgreSQL or SQLite)
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 On first start, the API:
 
-1. Creates SQLite DB at `backend/data/pocp.db`
-2. Upserts genesis LLM entities **Lumen-0** (witness) and **DeSui** (validator) on every startup
-3. Seeds the **R Language Study Materials** demo (Alice, Bob, StudyAgent, R-Tutor Skill, PoCP AI Commons org)
-4. Runs one full loop: submit → dual AI verify (Lumen-0 + DeSui) → human approve → ledger
+1. Waits for the database (PostgreSQL)
+2. Runs Alembic migrations to `head`
+3. Upserts genesis LLM entities **Lumen-0** and **DeSui**
+4. Seeds the **R Language Study Materials** demo if empty
 
 Reset demo data:
 
@@ -24,19 +37,16 @@ python scripts/reset_db.py
 # then restart uvicorn or docker compose
 ```
 
-Existing databases gain DeSui on restart; full demo re-seed requires reset.
-
-## Docker
-
-From repository root:
+## Migrations
 
 ```bash
-docker compose up backend
+alembic revision --autogenerate -m "your change"
+alembic upgrade head
 ```
 
 ## API
 
-- Health: `GET /health`
+- Health: `GET /health` (includes `database.dialect` and status)
 - Spec: [PROTOCOL-SPEC-v0.1.md](../PROTOCOL-SPEC-v0.1.md)
 - Schema: [docs/SCHEMA.md](../docs/SCHEMA.md)
 

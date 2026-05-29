@@ -2,10 +2,11 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, String
+from sqlalchemy import DateTime, Float, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
+from db_types import pocp_enum
 
 
 class CreditType(str, enum.Enum):
@@ -31,6 +32,7 @@ class Wallet(Base):
 
 class CreditTransaction(Base):
     __tablename__ = "credit_transactions"
+    __table_args__ = (Index("ix_credit_transactions_wallet_id", "wallet_id"),)
 
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
@@ -40,7 +42,7 @@ class CreditTransaction(Base):
         String(36), ForeignKey("contribution_events.id")
     )
     amount: Mapped[float] = mapped_column(Float, nullable=False)
-    credit_type: Mapped[CreditType] = mapped_column(Enum(CreditType), nullable=False)
+    credit_type: Mapped[CreditType] = mapped_column(pocp_enum(CreditType), nullable=False)
     reason: Mapped[str | None] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -49,6 +51,7 @@ class CreditTransaction(Base):
 
 class ReputationScore(Base):
     __tablename__ = "reputation_scores"
+    __table_args__ = (Index("ix_reputation_scores_entity_id", "entity_id"),)
 
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())

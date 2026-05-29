@@ -1,10 +1,11 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, String
+from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
+from db_types import JsonDocument
 
 
 class Organization(Base):
@@ -18,7 +19,7 @@ class Organization(Base):
     governance_proxy_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("entities.id")
     )
-    config: Mapped[dict | None] = mapped_column(JSON, default=dict)
+    config: Mapped[dict | None] = mapped_column(JsonDocument, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     entity: Mapped["Entity"] = relationship(
