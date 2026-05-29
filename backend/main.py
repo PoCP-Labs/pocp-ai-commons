@@ -5,7 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import SessionLocal, init_db
 from routers.api import router
+from routers.auth import router as auth_router
+from routers.protected import router as protected_router
 from seed import seed_demo
+from seed_auth import seed_auth_accounts
 
 
 @asynccontextmanager
@@ -14,6 +17,8 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         seed_demo(db)
+        seed_auth_accounts(db)
+        db.commit()
     finally:
         db.close()
     yield
@@ -38,6 +43,8 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(auth_router)
+app.include_router(protected_router)
 
 
 @app.get("/health")

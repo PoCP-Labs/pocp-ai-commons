@@ -1,14 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import ContributionGraphView from "./ContributionGraph";
 import SubmitFlow from "./SubmitFlow";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
-
-async function fetchJson(path) {
-  const res = await fetch(`${API}${path}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
+import UserMenu from "./auth/UserMenu";
+import { useAuth, publicGet } from "./auth";
 
 const ENTITY_COLORS = {
   human: "#2563eb",
@@ -37,6 +31,7 @@ function EntityBadge({ type }) {
 }
 
 export default function App() {
+  const { user } = useAuth();
   const [entities, setEntities] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [contributions, setContributions] = useState([]);
@@ -51,14 +46,14 @@ export default function App() {
   const load = useCallback(() => {
     setError(null);
     return Promise.all([
-      fetchJson("/api/v1/entities"),
-      fetchJson("/api/v1/tasks"),
-      fetchJson("/api/v1/contributions"),
-      fetchJson("/api/v1/invocations"),
-      fetchJson("/api/v1/wallets"),
-      fetchJson("/api/v1/reputation"),
-      fetchJson("/api/v1/ledger"),
-      fetchJson("/api/v1/graph"),
+      publicGet("/api/v1/entities"),
+      publicGet("/api/v1/tasks"),
+      publicGet("/api/v1/contributions"),
+      publicGet("/api/v1/invocations"),
+      publicGet("/api/v1/wallets"),
+      publicGet("/api/v1/reputation"),
+      publicGet("/api/v1/ledger"),
+      publicGet("/api/v1/graph"),
     ])
       .then(([e, t, c, inv, w, r, l, g]) => {
         setEntities(e);
@@ -92,11 +87,14 @@ export default function App() {
 
   return (
     <main style={{ fontFamily: "system-ui, sans-serif", maxWidth: 1000, margin: "0 auto", padding: "2rem" }}>
-      <header style={{ marginBottom: "1.5rem" }}>
-        <h1 style={{ margin: 0 }}>PoCP AI Commons</h1>
-        <p style={{ color: "#475569", marginTop: 8 }}>
-          Entity-Centric Proof of Contribution Protocol — V0.2
-        </p>
+      <header style={{ marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
+        <div>
+          <h1 style={{ margin: 0 }}>PoCP AI Commons</h1>
+          <p style={{ color: "#475569", marginTop: 8 }}>
+            Entity-Centric Proof of Contribution Protocol — V0.2
+          </p>
+        </div>
+        <UserMenu />
       </header>
 
       <nav style={{ display: "flex", gap: 4, marginBottom: "1.5rem", borderBottom: "1px solid #e2e8f0" }}>
@@ -117,7 +115,7 @@ export default function App() {
           <p style={{ color: "#64748b", marginBottom: 16 }}>
             Invoke → Submit → AI Verify → Human Approve → Credits + Reputation
           </p>
-          <SubmitFlow api={API} entities={entities} tasks={tasks} onComplete={load} />
+          <SubmitFlow entities={entities} tasks={tasks} onComplete={load} user={user} />
         </section>
       )}
 

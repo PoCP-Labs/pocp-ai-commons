@@ -32,3 +32,6 @@ data/
 
 # Docker
 .docker/
+backend/test_pocp.db
+frontend/node_modules/
+frontend/dist/
