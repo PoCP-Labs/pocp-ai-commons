@@ -5,6 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import SessionLocal, init_db
 from routers.api import router
+from routers.auth import router as auth_router
+from routers.ai_chat import router as ai_chat_router
+from routers.verification import router as verification_router
+from genesis import ensure_genesis_entities
 from seed import seed_demo
 
 
@@ -13,6 +17,8 @@ async def lifespan(app: FastAPI):
     init_db()
     db = SessionLocal()
     try:
+        ensure_genesis_entities(db)
+        db.commit()
         seed_demo(db)
     finally:
         db.close()
@@ -38,6 +44,9 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(auth_router)
+app.include_router(ai_chat_router)
+app.include_router(verification_router)
 
 
 @app.get("/health")

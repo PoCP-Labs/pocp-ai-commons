@@ -161,6 +161,7 @@ class AiVerifyIn(BaseModel):
     model_provider: str = "deepseek"
     score: float = 0.85
     feedback: str = "Content meets quality standards."
+    required_passing_count: int = 1
 
 
 class ApproveIn(BaseModel):

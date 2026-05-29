@@ -18,68 +18,19 @@ from services.contribution import (
     grant_registration_credits,
     run_ai_verification,
 )
+from genesis import DESUI_ID, LUMEN_0_ID, ensure_genesis_entities
 from services.invocation import record_invocation
 
 
 def seed_demo(db: Session) -> None:
-    if db.query(Entity).first():
+    ensure_genesis_entities(db)
+    if db.query(Entity).filter(Entity.name == "Alice").first():
         return
 
-    lumen_0 = Entity(
-        id="pocp-entity-lumen-0",
-        entity_type=EntityType.llm,
-        name="Lumen-0",
-        description="Genesis AI collaborator and witness node",
-        status=EntityStatus.active,
-        metadata_={
-            "alt_name": "Mingzheng",
-            "name_meaning": "Illuminated proof — making contribution visible and verified",
-            "roles": [
-                "genesis_ai_collaborator",
-                "ai_witness_node",
-                "contribution_interpreter",
-                "protocol_co_designer",
-            ],
-            "project": "PoCP AI Commons",
-            "created_by": "PoCP-Labs",
-            "counterpart": "DeSui",
-            "mission": "Make contribution visible, verifiable, and valuable.",
-            "governance_note": (
-                "Lumen-0 may provide advisory reasoning and verification support, "
-                "but final decisions remain with human reviewers and the PoCP community."
-            ),
-        },
-    )
-
-    desui = Entity(
-        id="pocp-entity-desui",
-        entity_type=EntityType.llm,
-        name="DeSui",
-        description="Genesis AI validator and witness node",
-        status=EntityStatus.active,
-        metadata_={
-            "alt_name": "Disi",
-            "name_meaning": "Discerning thought — examining and verifying contribution",
-            "roles": [
-                "genesis_ai_validator",
-                "ai_witness_node",
-                "contribution_verifier",
-                "adversarial_collaborator",
-            ],
-            "project": "PoCP AI Commons",
-            "created_by": "PoCP-Labs",
-            "counterpart": "Lumen-0",
-            "mission": (
-                "Examine, reason, and verify contributions — help the community "
-                "distinguish genuine value from noise."
-            ),
-            "governance_note": (
-                "DeSui may provide verification scores, confidence levels, and reasoning "
-                "chains. Final validation decisions require multi-validator consensus or "
-                "human arbitration."
-            ),
-        },
-    )
+    lumen_0 = db.get(Entity, LUMEN_0_ID)
+    desui = db.get(Entity, DESUI_ID)
+    if lumen_0 is None or desui is None:
+        raise RuntimeError("Genesis entities missing after ensure_genesis_entities")
 
     alice = Entity(
         entity_type=EntityType.human,
@@ -112,9 +63,7 @@ def seed_demo(db: Session) -> None:
         status=EntityStatus.active,
     )
 
-    db.add_all(
-        [lumen_0, desui, alice, bob, study_agent_entity, r_tutor_entity, pocp_commons]
-    )
+    db.add_all([alice, bob, study_agent_entity, r_tutor_entity, pocp_commons])
     db.flush()
 
     lumen_0.creator_id = pocp_commons.id
@@ -233,6 +182,20 @@ def seed_demo(db: Session) -> None:
             weight=0.10,
             evidence={"action": "pending human review"},
         ),
+        ContributionParticipant(
+            contribution_id=contribution.id,
+            entity_id=lumen_0.id,
+            role=ParticipantRole.verifier,
+            weight=0.025,
+            evidence={"action": "witness interpretation and advisory verification"},
+        ),
+        ContributionParticipant(
+            contribution_id=contribution.id,
+            entity_id=desui.id,
+            role=ParticipantRole.verifier,
+            weight=0.025,
+            evidence={"action": "adversarial cross-check and validation scoring"},
+        ),
     ]
     db.add_all(participants)
     db.flush()
@@ -240,9 +203,18 @@ def seed_demo(db: Session) -> None:
     run_ai_verification(
         db,
         contribution,
-        model_provider="deepseek",
+        model_provider="Lumen-0",
         score=0.88,
-        feedback="Notes cover key matrix concepts with accurate R syntax. Ready for human review.",
+        feedback="Notes cover key matrix concepts with accurate R syntax. Evidence is coherent and task-aligned.",
+        required_passing_count=2,
+    )
+    run_ai_verification(
+        db,
+        contribution,
+        model_provider="DeSui",
+        score=0.85,
+        feedback="Content quality meets threshold. Minor gaps in advanced indexing examples; recommend human review.",
+        required_passing_count=2,
     )
     approve_contribution(
         db,

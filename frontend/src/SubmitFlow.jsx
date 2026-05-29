@@ -111,12 +111,19 @@ export default function SubmitFlow({ api, entities, tasks, onComplete }) {
     setMessage(null);
     try {
       await post(`/api/v1/contributions/${contributionId}/verify`, {
-        model_provider: "deepseek",
+        model_provider: "Lumen-0",
         score: 0.86,
-        feedback: "AI pre-review passed.",
+        feedback: "Contribution illuminated: evidence structured and task-aligned.",
+        required_passing_count: 2,
+      });
+      await post(`/api/v1/contributions/${contributionId}/verify`, {
+        model_provider: "DeSui",
+        score: 0.84,
+        feedback: "Adversarial review passed; minor gaps acceptable for human review.",
+        required_passing_count: 2,
       });
       setStep("approve");
-      setMessage("AI verification passed.");
+      setMessage("Dual AI verification passed (Lumen-0 → DeSui).");
     } catch (err) {
       setMessage(`Error: ${err.message}`);
     } finally {

@@ -43,6 +43,7 @@ def run_ai_verification(
     model_provider: str = "deepseek",
     score: float = 0.85,
     feedback: str = "Content is well-structured and accurate.",
+    required_passing_count: int = 1,
 ) -> AiVerifierResult:
     passed = score >= 0.7
     result = AiVerifierResult(
@@ -53,9 +54,24 @@ def run_ai_verification(
         passed=passed,
     )
     db.add(result)
-    contribution.status = (
-        ContributionStatus.ai_verified if passed else ContributionStatus.rejected
+    db.flush()
+
+    results = (
+        db.query(AiVerifierResult)
+        .filter(AiVerifierResult.contribution_id == contribution.id)
+        .all()
     )
+    passing = [r for r in results if r.passed and r.score >= 0.7]
+
+    if not passing and any(not r.passed or r.score < 0.7 for r in results):
+        contribution.status = ContributionStatus.rejected
+    elif len(passing) >= required_passing_count:
+        contribution.status = ContributionStatus.ai_verified
+    elif passing:
+        contribution.status = ContributionStatus.submitted
+    else:
+        contribution.status = ContributionStatus.rejected
+
     db.flush()
     return result
 

@@ -299,7 +299,7 @@ A person completes a contribution task
 
 | Document | Purpose |
 |----------|---------|
-| [GENESIS.md](./GENESIS.md) | Why PoCP is a new species for the AI age; genesis Entities: **Lumen-0** (witness) and **DeSui** (validator) |
+| [GENESIS.md](./GENESIS.md) | Why PoCP is a new species for the AI age; genesis Entities: **Lumen-0** (witness) and **DeSui** (validator). **Translations:** [中文](docs/genesis/zh-CN.md) · [Français](docs/genesis/fr.md) · [Deutsch](docs/genesis/de.md) · [العربية](docs/genesis/ar.md) · [Русский](docs/genesis/ru.md) — see [docs/genesis/README.md](docs/genesis/README.md) |
 | [AI-COMMONS.md](./AI-COMMONS.md) | First application: the AI commons network |
 | [PROTOCOL-SPEC-v0.1.md](./PROTOCOL-SPEC-v0.1.md) | Minimal protocol spec for implementation |
 
@@ -350,7 +350,7 @@ docker compose up --build
 | API health | http://localhost:8000/health |
 | API docs | http://localhost:8000/docs |
 
-**Demo:** First boot seeds the R-language study scenario and completes one full verify → approve loop.
+**Demo:** First boot seeds genesis Entities (Lumen-0, DeSui), the R-language study scenario, and completes one dual-AI-verify → human-approve loop.
 
 **Smoke test:**
 

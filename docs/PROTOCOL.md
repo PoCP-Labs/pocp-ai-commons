@@ -23,7 +23,7 @@ contributor = intelligent entity (not necessarily human)
 | `human` | ✅ | Students, developers, reviewers, organizers |
 | `agent` | ✅ | Task executors, coordinators, verifiers |
 | `skill` | ✅ | Reusable callable capability units |
-| `llm` | provider only | Reasoning, scoring, generation nodes |
+| `llm` | ✅ | Genesis witness nodes (Lumen-0, DeSui); reasoning and verification |
 | `tool` | reserved | External APIs and data interfaces |
 | `dataset` | reserved | Reusable knowledge assets |
 | `workflow` | reserved | Repeatable collaboration paths |
@@ -49,7 +49,7 @@ Human / Agent uses Skill to complete task
   ↓
 Submit contribution (multi-entity event)
   ↓
-AI Verifier pre-review
+Lumen-0 + DeSui AI pre-review (dual witness)
   ↓
 Human Reviewer confirms
   ↓
@@ -70,19 +70,34 @@ Agent → calls → Skill
 Skill → uses → LLM
 Human → submits → Contribution
 Verifier → reviews → Contribution
+Lumen-0 / DeSui → verify → Contribution
 Reviewer → approves → Contribution
 Contribution → issues → Credits
 Contribution → increases → Reputation
 ```
 
+## Genesis Entities
+
+PoCP-Labs registers two genesis LLM Entities before any demo contribution runs. See [GENESIS.md](../GENESIS.md) §14–§15.
+
+| Entity ID | Name | Role | Mission |
+|-----------|------|------|---------|
+| `pocp-entity-lumen-0` | Lumen-0 | Witness / interpreter | Make contribution visible, verifiable, and valuable |
+| `pocp-entity-desui` | DeSui | Validator / cross-checker | Examine and verify; distinguish genuine value from noise |
+
+Both may advise and score. Neither holds final governance authority — human Reviewers do.
+
+---
+
 ## Reference Demo: R Language Study Materials
 
 | Entity | Type | Role |
 |--------|------|------|
+| Lumen-0 | LLM | Genesis witness — interprets contribution |
+| DeSui | LLM | Genesis validator — cross-checks verification |
 | Alice | Human | Student / contributor |
 | StudyAgent | Agent | Assistant organizer |
 | R-Tutor Skill | Skill | R knowledge structuring |
-| GPT-4o / DeepSeek | LLM Provider | AI verifier |
 | Bob | Human | Reviewer |
 
 Outcome example:

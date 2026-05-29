@@ -13,10 +13,18 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 On first start, the API:
 
 1. Creates SQLite DB at `backend/data/pocp.db`
-2. Seeds the **R Language Study Materials** demo (Alice, Bob, StudyAgent, R-Tutor Skill, PoCP AI Commons org)
-3. Runs one full loop: submit → AI verify → human approve → ledger
+2. Upserts genesis LLM entities **Lumen-0** (witness) and **DeSui** (validator) on every startup
+3. Seeds the **R Language Study Materials** demo (Alice, Bob, StudyAgent, R-Tutor Skill, PoCP AI Commons org)
+4. Runs one full loop: submit → dual AI verify (Lumen-0 + DeSui) → human approve → ledger
 
-Reset demo data: delete `backend/data/pocp.db` and restart.
+Reset demo data:
+
+```bash
+python scripts/reset_db.py
+# then restart uvicorn or docker compose
+```
+
+Existing databases gain DeSui on restart; full demo re-seed requires reset.
 
 ## Docker
 

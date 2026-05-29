@@ -3,10 +3,29 @@ import ContributionGraphView from "./ContributionGraph";
 import SubmitFlow from "./SubmitFlow";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const TOKEN_KEY = "pocp_token";
 
-async function fetchJson(path) {
-  const res = await fetch(`${API}${path}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+function setToken(token) {
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  else localStorage.removeItem(TOKEN_KEY);
+}
+
+async function fetchJson(path, options = {}) {
+  const token = getToken();
+  const headers = {
+    ...(options.body ? { "Content-Type": "application/json" } : {}),
+    ...(options.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  const res = await fetch(`${API}${path}`, { ...options, headers });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(detail || `HTTP ${res.status}`);
+  }
   return res.json();
 }
 
@@ -17,6 +36,8 @@ const ENTITY_COLORS = {
   organization: "#d97706",
   llm: "#64748b",
 };
+
+const GENESIS_IDS = new Set(["pocp-entity-lumen-0", "pocp-entity-desui"]);
 
 function EntityBadge({ type }) {
   return (
@@ -45,8 +66,27 @@ export default function App() {
   const [reputation, setReputation] = useState([]);
   const [ledger, setLedger] = useState([]);
   const [graph, setGraph] = useState({ nodes: [], edges: [] });
+  const [profile, setProfile] = useState(null);
+  const [chatMessage, setChatMessage] = useState("");
+  const [chatReply, setChatReply] = useState(null);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tab, setTab] = useState("dashboard");
+
+  const loadProfile = useCallback(async () => {
+    if (!getToken()) {
+      setProfile(null);
+      return;
+    }
+    try {
+      const me = await fetchJson("/api/v1/me");
+      setProfile(me);
+    } catch {
+      setToken(null);
+      setProfile(null);
+    }
+  }, []);
 
   const load = useCallback(() => {
     setError(null);
@@ -74,8 +114,67 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get("token");
+    if (urlToken) {
+      setToken(urlToken);
+      params.delete("token");
+      const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
+      window.history.replaceState({}, "", next);
+    }
     load();
-  }, [load]);
+    loadProfile();
+  }, [load, loadProfile]);
+
+  const devLogin = async () => {
+    setAuthLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API}/api/v1/auth/dev-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: `dev-${Date.now().toString(36)}`,
+          email: `dev-${Date.now()}@example.com`,
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      setToken(data.access_token);
+      setProfile(data);
+      await load();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const logout = () => {
+    setToken(null);
+    setProfile(null);
+    setChatReply(null);
+  };
+
+  const sendChat = async () => {
+    if (!chatMessage.trim() || !getToken()) return;
+    setChatLoading(true);
+    setError(null);
+    try {
+      const result = await fetchJson("/api/v1/ai/chat", {
+        method: "POST",
+        body: JSON.stringify({ message: chatMessage, provider: "mock" }),
+      });
+      setChatReply(result);
+      setChatMessage("");
+      await loadProfile();
+      await load();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
   const entityMap = Object.fromEntries(entities.map((e) => [e.id, e]));
   const contribution = contributions[0];
@@ -93,22 +192,108 @@ export default function App() {
   return (
     <main style={{ fontFamily: "system-ui, sans-serif", maxWidth: 1000, margin: "0 auto", padding: "2rem" }}>
       <header style={{ marginBottom: "1.5rem" }}>
-        <h1 style={{ margin: 0 }}>PoCP AI Commons</h1>
-        <p style={{ color: "#475569", marginTop: 8 }}>
-          Entity-Centric Proof of Contribution Protocol — V0.2
-        </p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+          <div>
+            <h1 style={{ margin: 0 }}>PoCP AI Commons</h1>
+            <p style={{ color: "#475569", marginTop: 8 }}>
+              Entity-Centric Proof of Contribution Protocol — Sprint Alpha
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            {profile ? (
+              <>
+                <span style={{ fontSize: 14, color: "#334155" }}>
+                  {profile.user.username} · {profile.wallet.ai_credits} AI Credits
+                </span>
+                <button type="button" onClick={logout} style={{ padding: "6px 12px", cursor: "pointer" }}>
+                  Logout
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={devLogin}
+                disabled={authLoading}
+                style={{ padding: "8px 16px", background: "#2563eb", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}
+              >
+                {authLoading ? "Logging in…" : "Dev Login"}
+              </button>
+            )}
+          </div>
+        </div>
       </header>
 
-      <nav style={{ display: "flex", gap: 4, marginBottom: "1.5rem", borderBottom: "1px solid #e2e8f0" }}>
+      <nav style={{ display: "flex", gap: 4, marginBottom: "1.5rem", borderBottom: "1px solid #e2e8f0", flexWrap: "wrap" }}>
         <button type="button" style={tabStyle("dashboard")} onClick={() => setTab("dashboard")}>Dashboard</button>
+        <button type="button" style={tabStyle("account")} onClick={() => setTab("account")}>Account</button>
+        <button type="button" style={tabStyle("chat")} onClick={() => setTab("chat")}>AI Chat</button>
         <button type="button" style={tabStyle("workflow")} onClick={() => setTab("workflow")}>Submit Workflow</button>
         <button type="button" style={tabStyle("graph")} onClick={() => setTab("graph")}>Contribution Graph</button>
       </nav>
 
       {error && (
         <p style={{ color: "#dc2626", marginBottom: 16 }}>
-          API unavailable ({error}). Start backend: <code>docker compose up backend</code>
+          {error.includes("fetch") ? `API unavailable (${error}). Start backend: docker compose up backend` : error}
         </p>
+      )}
+
+      {tab === "account" && (
+        <section>
+          <h2>Profile & Wallet</h2>
+          {!profile ? (
+            <p style={{ color: "#64748b" }}>Dev Login to create a Human Entity, Wallet, and 100 starter AI Credits.</p>
+          ) : (
+            <div style={{ display: "grid", gap: 12 }}>
+              <div style={{ padding: 16, background: "#f8fafc", borderRadius: 8 }}>
+                <strong>{profile.entity.name}</strong>
+                <div style={{ color: "#64748b", fontSize: 14, marginTop: 4 }}>{profile.user.email}</div>
+                <div style={{ marginTop: 8 }}><EntityBadge type={profile.entity.entity_type} /></div>
+              </div>
+              <div style={{ padding: 16, background: "#f0fdf4", borderRadius: 8 }}>
+                <div><strong>{profile.wallet.cp_balance}</strong> CP</div>
+                <div><strong>{profile.wallet.ai_credits}</strong> AI Credits remaining</div>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {tab === "chat" && (
+        <section>
+          <h2>AI Chat</h2>
+          <p style={{ color: "#64748b", marginBottom: 16 }}>
+            Each message burns 5 AI Credits (mock provider when no API key is configured).
+          </p>
+          {!profile ? (
+            <p style={{ color: "#64748b" }}>Dev Login first to use AI Chat.</p>
+          ) : (
+            <>
+              <textarea
+                value={chatMessage}
+                onChange={(e) => setChatMessage(e.target.value)}
+                rows={4}
+                placeholder="Ask PoCP AI Commons…"
+                style={{ width: "100%", padding: 12, borderRadius: 8, border: "1px solid #e2e8f0", marginBottom: 8 }}
+              />
+              <button
+                type="button"
+                onClick={sendChat}
+                disabled={chatLoading || !chatMessage.trim()}
+                style={{ padding: "8px 16px", background: "#059669", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}
+              >
+                {chatLoading ? "Sending…" : "Send (5 credits)"}
+              </button>
+              {chatReply && (
+                <div style={{ marginTop: 16, padding: 16, background: "#f1f5f9", borderRadius: 8 }}>
+                  <div style={{ fontSize: 13, color: "#64748b", marginBottom: 8 }}>
+                    {chatReply.provider}/{chatReply.model} · spent {chatReply.credits_spent} · remaining {chatReply.remaining_credits}
+                  </div>
+                  <div>{chatReply.reply}</div>
+                </div>
+              )}
+            </>
+          )}
+        </section>
       )}
 
       {tab === "workflow" && (
@@ -137,10 +322,18 @@ export default function App() {
             <h2>Entities</h2>
             <div style={{ display: "grid", gap: 12 }}>
               {entities.map((e) => (
-                <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, background: "#f8fafc", borderRadius: 8 }}>
+                <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, background: "#f8fafc", borderRadius: 8, flexWrap: "wrap" }}>
                   <EntityBadge type={e.entity_type} />
                   <strong>{e.name}</strong>
+                  {GENESIS_IDS.has(e.id) && (
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#7c3aed", background: "#ede9fe", padding: "2px 8px", borderRadius: 4 }}>
+                      GENESIS
+                    </span>
+                  )}
                   <span style={{ color: "#64748b", fontSize: 14 }}>{e.description}</span>
+                  {e.metadata?.mission && (
+                    <span style={{ color: "#94a3b8", fontSize: 12, width: "100%" }}>{e.metadata.mission}</span>
+                  )}
                 </div>
               ))}
             </div>
@@ -173,6 +366,17 @@ export default function App() {
               <h2>Latest Contribution</h2>
               <p style={{ color: "#64748b" }}>{contribution.description}</p>
               <p>Status: <strong>{contribution.status}</strong></p>
+              {contribution.ai_verifications?.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <h3 style={{ fontSize: 14, margin: "0 0 8px" }}>AI verifications</h3>
+                  {contribution.ai_verifications.map((v) => (
+                    <div key={v.id} style={{ padding: 10, background: "#f1f5f9", borderRadius: 6, marginBottom: 6, fontSize: 13 }}>
+                      <strong>{v.model_provider}</strong> — score {v.score} ({v.passed ? "pass" : "fail"})
+                      <div style={{ color: "#64748b", marginTop: 4 }}>{v.feedback}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ textAlign: "left", borderBottom: "2px solid #e2e8f0" }}>

@@ -215,8 +215,13 @@ def verify_contribution(
     contribution = db.query(ContributionEvent).filter(ContributionEvent.id == contribution_id).first()
     if not contribution:
         raise HTTPException(status_code=404, detail="Contribution not found")
-    if contribution.status not in (ContributionStatus.submitted, ContributionStatus.draft):
+    if contribution.status in (ContributionStatus.approved, ContributionStatus.rejected):
         raise HTTPException(status_code=400, detail=f"Cannot verify contribution in status: {contribution.status.value}")
+    if contribution.status == ContributionStatus.ai_verified:
+        raise HTTPException(
+            status_code=400,
+            detail="Contribution already passed AI verification; proceed to human approval",
+        )
 
     run_ai_verification(
         db,
@@ -224,6 +229,7 @@ def verify_contribution(
         model_provider=body.model_provider,
         score=body.score,
         feedback=body.feedback,
+        required_passing_count=body.required_passing_count,
     )
     db.commit()
     return get_contribution(contribution_id, db)

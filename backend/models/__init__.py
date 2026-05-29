@@ -1,4 +1,5 @@
 from models.agent import Agent
+from models.ai_usage import AIUsageLog
 from models.contribution import (
     AiVerifierResult,
     ContributionEvent,
@@ -11,6 +12,7 @@ from models.ledger import LedgerRecord
 from models.organization import Organization
 from models.skill import Skill
 from models.task import Task
+from models.user_account import UserAccount
 from models.wallet import CreditTransaction, ReputationScore, Wallet
 
 __all__ = [
@@ -29,4 +31,6 @@ __all__ = [
     "CreditTransaction",
     "ReputationScore",
     "LedgerRecord",
+    "UserAccount",
+    "AIUsageLog",
 ]
