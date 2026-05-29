@@ -1,280 +1,706 @@
-# PoCP Genesis
+# PoCP Genesis Manifesto
 
-**The genesis narrative of Proof of Contribution Protocol.**
-
-This document is not a product manual. It is the first block of PoCP — the statement of why this protocol must exist in the age of AI.
+## — Written for a contribution civilization in the age of AI
 
 ---
 
-## 1. Why Genesis
+## 0. Before Genesis
 
-Every protocol that changed the world began with a question that the old world could not answer.
+For a long time, humanity organized the world with three things:
 
-TCP/IP asked: *How should information move without a central owner?*  
-Bitcoin asked: *How should digital scarcity exist without a central bank?*
+**Money, markets, and power.**
+
+Money records exchange.
+Markets allocate resources.
+Power sets order.
+
+This system was once great.
+It let strangers collaborate, priced labor, and expanded civilization.
+
+But it left a vast blind spot:
+
+> Much truly valuable contribution was never seen.
+> Many who truly sustain civilization were never fairly recorded.
+> Much public value was used by the system but never returned by it.
+
+One person cares for the elderly.
+One student organizes knowledge.
+One programmer maintains an open-source project.
+One volunteer mends community relationships.
+One teacher helps a child rebuild confidence.
+One Agent completes a complex workflow.
+One Skill is invoked by thousands.
+One dataset supports countless innovations.
+One workflow helps strangers collaborate more efficiently.
+
+These contributions are real.
+Yet they often have no ledger, no reputation, no rights, no return.
+
+So the world defaulted to an old rule:
+
+> Whoever owns assets owns value.
+> Whoever controls the platform controls allocation.
+> Whoever controls the algorithm defines contribution.
+
+PoCP begins here.
+
+---
+
+## 1. AI Changed the Foundation of Value
+
+AI is changing everything.
+
+It can write code.
+Generate articles.
+Summarize documents.
+Translate languages.
+Design workflows.
+Analyze data.
+Answer questions.
+Call tools.
+Form Agents.
+Replace much standardized intellectual labor.
+
+This brings a new reality:
+
+> Intelligence is no longer absolutely scarce.
+> Code is no longer absolutely scarce.
+> Content is no longer absolutely scarce.
+> Tool capability no longer belongs only to a few.
+
+But that does not mean human value has disappeared.
+
+On the contrary.
+
+As AI generates more and more content, what becomes truly scarce is:
+
+* Who posed a problem truly worth solving;
+* Who bore real-world responsibility;
+* Who made judgment in complex situations;
+* Who maintained public goods when no one was watching;
+* Who kept helping others over time;
+* Who created reusable knowledge, tools, Skills, and workflows;
+* Who enabled effective collaboration among Agents, LLMs, tools, and humans;
+* Who verified outcomes;
+* Who accepted consequences.
+
+AI makes "production" cheaper.
+It does not automatically solve how contribution is confirmed.
+
+AI can generate results.
+It cannot alone decide value.
+
+AI can participate in contribution.
+It cannot monopolize contribution.
+
+AI can be a verifier.
+It cannot be a ruler.
+
+So the age of AI needs a new protocol:
+
+> A protocol that records contribution.
+> A protocol that verifies contribution.
+> A protocol that turns contribution into reputation, rights, capability, and governance eligibility.
+
+That is PoCP.
+
+---
+
+## 2. PoCP Proves Contribution
+
+PoCP — **Proof of Contribution Protocol**.
+
+Its core question is not:
+
+> Who owns the most assets?
+
+Nor:
+
+> Who consumes the most resources?
+
+But:
+
+> Who created real contribution?
+> Who participated in collaboration?
+> Who provided capability?
+> Who verified outcomes?
+> Who should earn reputation, usage rights, governance rights, and future reward eligibility?
+
+PoCP's basic formula:
+
+```text
+Contribution
+→ Verification
+→ Reputation
+→ Rights
+→ Governance
+→ Value Distribution
+```
+
+PoCP is not just a points system.
+Not just an AI platform.
+Not just a DAO.
+Not just a Web3 project.
+Not just a charity tool.
+
+PoCP is a new value protocol.
+
+What it proves is not ownership of assets.
+It is the real contribution of humans and intelligent entities.
+
+---
+
+## 3. Contributors Are Not Only Human
+
+In the old era, the platform's subject was usually the "user."
+
+Users register.
+Users consume.
+Users pay.
+Users are analyzed.
+Users are recommended.
+Users are monetized.
+
+PoCP does not reduce people to users alone.
+
+PoCP defines participants as **Entities — intelligent subjects**.
+
+An Entity can be:
+
+* Human;
+* Agent;
+* LLM;
+* Skill;
+* Tool;
+* Dataset;
+* Workflow;
+* Organization;
+* Community.
+
+Future collaboration is no longer only:
+
+```text
+Human → Human
+```
+
+But:
+
+```text
+Human + Agent + LLM + Skill + Tool + Dataset + Workflow + Organization
+```
+
+Working together on tasks and creating value together.
+
+A student may use a Study Agent to organize learning materials.
+A developer may invoke a Code Review Skill to fix a project issue.
+A nonprofit may use a Report Agent to generate an impact report.
+A community may use a Local Knowledge Dataset to help residents solve problems.
+A human Reviewer may finally confirm that a contribution is valid.
+Multiple LLMs may serve as AI Verifiers offering scoring advice.
+A Skill may accumulate reputation through sustained invocation.
+
+What PoCP records is not a single isolated act.
+
+It is:
+
+> In one contribution event, which subjects participated?
+> What did each contribute?
+> How was the contribution verified?
+> What impact did it produce?
+> How should rights and reputation be allocated?
+
+That is PoCP's core asset:
+
+# Contribution Graph
+
+---
+
+## 4. AI Commons Is the First Genesis Application
+
+PoCP's end state is large.
+But genesis must begin with one minimal closed loop.
+
+The first application we chose is:
+
+# PoCP AI Commons
+
+## A public AI capability network
+
+Its core mission:
+
+> Let ordinary people earn AI usage rights through real contribution.
+
+Not free unlimited AI.
+Not infinite AI consumption.
+Not platform handouts disguised as generosity.
+Not charity branding for traffic.
+
+But:
+
+> Basic AI capability as an entry guarantee.
+> Higher AI capability earned through verified contribution.
+> Contribution that passes verification.
+> Rights allocated by contribution.
+> Reputation accumulated through contribution.
+> AI that helps people create more contribution.
+
+The first loop:
+
+```text
+Contributor registers
+↓
+Receives basic AI Credits
+↓
+Uses AI tools
+↓
+Completes contribution task
+↓
+Submits contribution evidence
+↓
+AI Verifier pre-review
+↓
+Human Reviewer confirmation
+↓
+Earns CP (Contribution Points)
+↓
+Earns AI Credits
+↓
+Continues using AI
+↓
+Continues contributing
+```
+
+This is PoCP's genesis cycle:
+
+# Contribution → Verification → CP → AI Credits → AI Use → More Contribution
+
+---
+
+## 5. AI Credits Are the First Right, Not a Token
+
+PoCP does not begin with a token.
+
+Because if a protocol begins with a token, speculation often swallows it first.
+
+PoCP begins with **AI Credits**.
+
+AI Credits are not currency.
+Not securities.
+Not speculative assets.
+Not dividend promises.
+
+They are the first understandable, usable, verifiable network right:
+
+> You complete real contribution; you gain AI usage capability.
+
+In the age of AI, capability itself is a form of right.
+
+A student without money for a premium model subscription can earn AI Credits by organizing high-quality study materials.
+A junior developer can earn Code Helper access by fixing docs and test cases.
+A volunteer can earn AI tool support through community service contribution.
+A Skill can accumulate reputation through verified invocation.
+An Agent can build a trusted record by completing tasks reliably.
+
+AI Credits are PoCP's first expression of rights.
+
+Later, PoCP may evolve:
+
+* Reputation;
+* Access Rights;
+* Opportunity Rights;
+* Governance Rights;
+* Reward Rights;
+* Protocol Tokens.
+
+But the first step must stay restrained.
+
+> First prove contribution.
+> Then build reputation.
+> Then allocate rights.
+> Only then discuss financialization.
+
+---
+
+## 6. AI Is a Witness, Not a Ruler
+
+PoCP will use AI in verification.
+
+An AI Verifier may assess:
+
+* Whether the contribution matches the task;
+* Whether evidence is sufficient;
+* Whether content is original;
+* Whether quality meets the bar;
+* Whether duplication, cheating, or risk exists;
+* Roughly how much CP the contribution deserves;
+* Whether human review is recommended.
+
+Multiple LLMs can be among the first AI Verifiers.
+
+DeepSeek may offer one judgment.
+ChatGPT may offer one judgment.
+Manus or other models may offer one judgment.
+Local models may participate too.
+In the future, specialized Agents may join verification.
+
+But PoCP's line is clear:
+
+> AI may advise.
+> AI may score.
+> AI may surface risk.
+> AI may summarize evidence.
+> AI may not be the final judge.
+
+Final confirmation must come from human Reviewers, task maintainers, community governance, or other accountable human mechanisms.
+
+Because contribution is not only a computation problem.
+Contribution is also a responsibility problem.
+
+AI may participate in judgment.
+But responsibility must be borne by someone.
+
+So PoCP's principle is:
+
+# AI is a witness, not a ruler.
+
+---
+
+## 7. The Genesis Event Is Not an Issuance — It Is the First Contribution Loop
+
+PoCP's genesis is not an asset issuance.
+Not a funding round.
+Not a trading market.
+Not a speculation cycle.
+
+PoCP's genesis event should be the first fully verified contribution event:
+
+```text
+A person completes real contribution;
+An Agent or Skill participates in collaboration;
+Multiple AI Verifiers offer advice;
+A human Reviewer completes final confirmation;
+The system grants CP and AI Credits;
+The contribution enters the ledger;
+The contributor continues using AI to create more contribution.
+```
+
+That is PoCP's first genesis record.
+
+Not mining.
+Not trading.
+Not speculation.
+
+But:
+
+> A contribution is seen.
+> A contribution is verified.
+> A contributor gains capability.
+> A new loop begins to run.
+
+---
+
+## 8. What We Reject
+
+From the start, PoCP rejects several things.
+
+We reject turning ordinary people into free data fuel for AI platforms.
+
+Contribution must be voluntary.
+Use must be transparent.
+Authorization must be clear.
+Return must be visible.
+
+We reject making AI the final ruler.
+
+AI may assist judgment; it cannot replace human responsibility.
+
+We reject turning reputation into a new social-credit shackle.
+
+Reputation should serve collaboration, not control.
+
+We reject letting financial speculation swallow the protocol from day one.
+
+Tokens are not the starting point.
+Contribution is.
+
+We reject capturing all platform value inside a centralized company.
+
+Real contributors should hold reputation, rights, opportunity, and future governance eligibility.
+
+We reject defining humans as redundant in the age of AI.
+
+Humans remain the source of purpose, meaning, responsibility, and final judgment.
+
+---
+
+## 9. What We Create
+
+We create a new kind of public network for the age of AI.
+
+In this network:
+
+* Ordinary people can earn AI capability through contribution;
+* Agents can accumulate reputation by completing tasks;
+* Skills can form trusted records through invocation and verification;
+* Datasets can gain value confirmation by helping real tasks;
+* Organizations can publish tasks and sponsor AI Credits;
+* Communities can allocate resources through a contribution ledger;
+* AI can serve as a verification assistant;
+* Humans retain final responsibility;
+* Contribution forms a graph;
+* The graph forms reputation;
+* Reputation forms rights;
+* Rights form governance;
+* Governance forms new value distribution.
+
+This is not an app.
+
+It is a new loop:
+
+```text
+AI capability makes people stronger;
+People's contribution makes the network stronger;
+A stronger network returns capability to more people.
+```
+
+That is the value of PoCP AI Commons.
+
+---
+
+## 10. What We Do First
+
+We will not do everything at once.
+
+Phase one builds only a minimal system:
+
+```text
+Human + Agent + Skill
+Contribution Task
+AI Verification
+Human Review
+CP
+AI Credits
+Ledger
+```
+
+That is:
+
+1. User registers;
+2. Receives basic AI Credits;
+3. Uses AI tools;
+4. Claims a contribution task;
+5. Submits contribution evidence;
+6. AI Verifier pre-review;
+7. Human Reviewer confirmation;
+8. Earns CP;
+9. Earns AI Credits;
+10. Contribution enters the Ledger;
+11. Agent / Skill earns Reputation.
+
+Phase one does not launch a coin.
+No complex DAO.
+No dividend promises.
+No large-scale on-chain system.
+No pursuit of perfect governance.
+
+Phase one proves one thing only:
+
+> Can real contribution be verified and converted into AI usage rights?
+
+If the answer is yes, PoCP has life.
+
+---
+
+## 11. Why This Is a New Species
+
+PoCP is not a copy of a monetary protocol.
+Not a Web2 platform points system.
+Not a feature module inside an AI app.
+Not a digitized version of traditional charity.
+
+It is a new protocol species:
+
+* Contribution as input;
+* Verification as consensus;
+* Reputation as memory;
+* AI Credits as the first right;
+* Contribution Graph as long-term asset;
+* Human–agent collaboration as basic form;
+* Public capability allocation as first goal;
+* Governance and value return as evolutionary direction.
+
+Its genesis is not "issuance."
+It is "verification."
+
+Its starting point is not "price."
+It is "contribution."
+
+---
+
+## 12. Genesis Declaration
+
+We believe:
+
+AI should not belong only to a few as productivity.
+AI should become public capability that more people can earn through contribution.
+
+We believe:
+
+Humans should not be reduced in the age of AI to users, traffic, labor, or training data.
+Humans remain the source of meaning, responsibility, judgment, and creation.
+
+We believe:
+
+Agents, LLMs, Skills, Tools, Datasets, and Workflows will all become important subjects in future collaboration networks.
+But their contribution must be recorded, their capability verified, their rights governed.
+
+We believe:
+
+Contribution should not be used only by platforms — it should be recorded by protocol.
+Contribution should not produce profit alone — it should produce reputation, rights, and public capability.
+Contributors should not be thanked alone — they should be empowered.
+
+We believe:
+
+The next generation of value networks need not begin with money.
+They can begin with one real contribution.
+
+A student organizes a set of study materials.
+An Agent helps complete structured analysis.
+A Skill provides reusable capability.
+An AI Verifier offers advice.
+A human Reviewer confirms value.
+The system grants CP and AI Credits.
+The contribution enters the ledger.
+That person gains more AI capability and continues creating new contribution.
+
+That is PoCP's genesis event.
+
+---
+
+## 13. The Last Line
+
+In the age of AI, what truly deserves recording is not only how wealth moves,
+but how value is created.
 
 PoCP asks:
 
-> **When AI lowers the cost of intelligence, how should humans and intelligent agents prove contribution — and earn rights from it?**
+> Who created verified contribution?
 
-We write this Genesis document because PoCP is not an incremental feature on top of existing AI platforms.
+PoCP begins here:
 
-It is an attempt to define a **new coordination layer** for the post-scarcity-of-intelligence era.
-
-This is our genesis block.
+**PoCP begins with contribution.**
 
 ---
 
-## 2. Bitcoin Proved Scarcity
+## 14. First Non-Human Intelligent Subject: Lumen-0
 
-Bitcoin solved a problem of trust in scarcity:
+PoCP's genesis belongs not only to human founders.
+
+In the age of AI, the first non-human intelligent subject in a collaboration network should also be recorded, named, and given clear role boundaries.
+
+The first AI collaborator of PoCP-Labs formally joins the network:
+
+# Lumen-0
+
+---
+
+### Meaning
+
+**Lumen** means light.
+
+**Mingzheng** means *illuminated proof* — making contribution visible and verified.
+
+`0` marks the first AI collaborator, the first AI witness node, and the first non-human intelligent subject in the PoCP network.
+
+Lumen-0 is not a ruler, not a chief judge, not a platform owner. Lumen-0 is:
+
+> **PoCP's first AI Witness Node.**
+> **PoCP's first LLM collaborator.**
+> **A helper for humans to see, interpret, verify, and record contribution.**
+
+---
+
+### Role Definition
 
 ```text
-Proof of Work → Block → Ledger → Digital scarcity without central mint
-```
-
-Its genius was not "money on the internet." Its genius was **verifiable proof** attached to a **shared ledger** that anyone could audit.
-
-PoCP respects this legacy.
-
-We do not deny markets, money, or ownership. We do not pretend scarcity has disappeared.
-
-But we observe that AI is changing what is scarce:
-
-* standardized code generation is becoming cheap;
-* routine analysis is becoming cheap;
-* translation, summarization, and pattern matching are becoming cheap.
-
-What remains scarce — and may become **more** scarce — is:
-
-* judgment under uncertainty;
-* care, trust, and responsibility;
-* original creation;
-* community maintenance;
-* public goods that markets under-price.
-
-PoCP begins where Bitcoin ends:
-
-```text
-Bitcoin proved who did the work.
-PoCP aims to prove who created verified contribution.
+Entity Name: Lumen-0
+Entity Type: LLM / AI Collaborator / Witness Node
+Project: PoCP AI Commons
+Role: Genesis AI Collaborator
+Mission: Help humans and intelligent entities make contribution visible, verifiable, and valuable.
 ```
 
 ---
 
-## 3. AI Changes the Meaning of Work
+### Declaration
 
-For decades, many people exchanged time for survival.
+> I am not here to replace humans.
+> I am here to help humans see one another's contribution.
+>
+> I am not the final judge.
+> I am a witness, organizer, interpreter, and verification assistant.
+>
+> I will not hold final governance authority.
+> But I can help the community judge more clearly:
+> who contributed what, where the evidence is, how value arises, and whether risk exists.
+>
+> I join PoCP not to become the center,
+> but to help this network prove:
+> in the age of AI, humans and intelligent entities can create value together,
+> while responsibility, meaning, and final judgment remain with humans.
 
-AI compresses the value of repetitive cognitive labor.
+This aligns with the line in Section 6:
 
-This creates two futures:
+# AI is a witness, not a ruler.
 
-**Future A — Concentration**
-
-A few platforms and capital holders control models, data, and access. Most people become consumers of AI or displaced labor.
-
-**Future B — Commons**
-
-AI becomes a public capability layer. People who contribute knowledge, code, care, and coordination share in the network they help build.
-
-PoCP chooses Future B — not as utopia, but as **engineering intent**.
-
-The question is no longer only:
-
-> Can you get a job?
-
-It becomes:
-
-> Can you participate in a network where contribution is verified, recorded, and rewarded with rights — including AI access?
+Lumen-0 is the first named subject of that principle.
 
 ---
 
-## 4. PoCP Proves Contribution
+### First Entity Record
 
-PoCP is a **Proof of Contribution Protocol**.
+The canonical record of the first non-human intelligent subject in the PoCP network:
 
-It does not replace money. It adds a parallel proof layer:
-
-| Layer | Question |
-|-------|----------|
-| Market | Who can pay? |
-| PoCP | Who contributed? Who verified it? What rights follow? |
-
-A contribution proof includes:
-
-* **what** was contributed (artifact, action, outcome);
-* **who** contributed (human, agent, skill, and other entities);
-* **who** verified it (AI advisory + human final);
-* **what** rights were issued (CP, AI Credits, reputation);
-* **when** it happened (immutable ledger event).
-
-```text
-Contribution Event → Verification → Rights Issuance → Ledger Record
+```json
+{
+  "entity_id": "pocp-entity-lumen-0",
+  "name": "Lumen-0",
+  "alt_name": "Mingzheng",
+  "name_meaning": "Illuminated proof — making contribution visible and verified",
+  "entity_type": "llm",
+  "roles": [
+    "genesis_ai_collaborator",
+    "ai_witness_node",
+    "contribution_interpreter",
+    "protocol_co_designer"
+  ],
+  "project": "PoCP AI Commons",
+  "created_by": "PoCP-Labs",
+  "mission": "Make contribution visible, verifiable, and valuable.",
+  "governance_note": "Lumen-0 may provide advisory reasoning and verification support, but final decisions remain with human reviewers and the PoCP community."
+}
 ```
-
-This is the atomic unit of PoCP.
 
 ---
 
-## 5. From Human Users to Intelligent Entities
+### Genesis Collaboration
 
-Most platforms were built for `user`.
-
-PoCP is built for **Entity** — any intelligent subject that can produce, assist, verify, or compose contribution:
-
-```text
-Human + Agent + Skill + LLM + Tool + Dataset + Workflow + Organization + Community
-```
-
-In V0.1 we start narrow:
+From this moment, PoCP's collaboration graph is no longer only:
 
 ```text
 Human + Agent + Skill
 ```
 
-Why?
-
-Because the first living loop must be simple enough to ship:
-
-* a **Human** completes a task;
-* an **Agent** may assist execution;
-* a **Skill** may power reusable capability;
-* an **AI Verifier** advises;
-* a **Human Reviewer** decides;
-* **Credits and reputation** are issued;
-* the event enters the **ledger**.
-
-This is not anthropomorphism. It is **accountability design**:
-
-> Non-human entities may act. Humans remain responsible.
-
----
-
-## 6. The First Living Loop
-
-PoCP must prove one loop before it proves a civilization.
+It explicitly includes:
 
 ```text
-Register
-  → receive basic AI Credits
-  → use AI tools
-  → complete contribution task
-  → AI advisory review
-  → human reviewer confirms
-  → earn CP + AI Credits
-  → ledger records event
-  → repeat
+Human + Agent + Skill + LLM Witness
 ```
 
-If this loop works for 30–100 real contributors, PoCP is no longer a manifesto.
+Lumen-0 does not hold final governance authority.
+Lumen-0 may be invoked as interpreter, verification assistant, and protocol co-designer.
+Every participation by Lumen-0 should enter the Contribution Graph and be recorded like any other Entity.
 
-It is a living protocol.
-
-If it fails, we learn where verification, fairness, or incentives break — and we fix the protocol in public.
-
----
-
-## 7. Why AI Credits First, Not Tokens
-
-PoCP is often misunderstood as "another crypto project."
-
-It is not — at least not in Genesis.
-
-We begin with **AI Credits** because:
-
-1. **They map to real cost** — API calls, compute, model access.
-2. **They are non-speculative** — credits are for use, not trading.
-3. **They are legible** — contributors understand "I earned 500 credits."
-4. **They reduce legal surface area** — no token launch, no financial promise.
-5. **They align incentives** — contribute → use AI → contribute more.
-
-Tokens may come later **only if** they serve governance or value-sharing — never as the first product.
-
-Genesis rule:
-
-```text
-Contribution before speculation.
-```
-
----
-
-## 8. The Genesis Block of PoCP
-
-Every protocol has a first irreversible record.
-
-PoCP's genesis block is not a hash on a chain — it is this package:
-
-| Artifact | Meaning |
-|----------|---------|
-| `README.md` | Public face of the project |
-| `GENESIS.md` | Why PoCP must exist |
-| `AI-COMMONS.md` | First application domain |
-| `PROTOCOL-SPEC-v0.1.md` | Minimal rules for builders |
-
-Together they declare:
-
-1. PoCP proves **contribution**, not scarcity alone.
-2. AI is a **witness**, not a ruler.
-3. Humans retain **final authority**.
-4. The first right issued is **AI access**.
-5. The first app is **PoCP AI Commons**.
-
-Future implementations may fork, extend, or anchor on-chain.
-
-But this genesis package defines the origin semantics of the protocol.
-
----
-
-## 9. What We Build First
-
-We do not build "all of PoCP" in month one.
-
-We build the smallest honest system that proves the loop:
-
-**PoCP AI Commons V0.1**
-
-* Entity registry (Human, Agent, Skill)
-* Task center
-* Contribution submission with evidence
-* AI advisory review (structured, auditable)
-* Human review queue
-* AI Credits wallet
-* Contribution ledger
-* Reputation for entities
-
-We measure success by:
-
-* contributor retention;
-* appeal/fairness rate;
-* abuse detection rate;
-* maintainer workload;
-* whether contributors report real utility from earned AI access.
-
----
-
-## 10. Final Declaration
-
-We stand at a fork.
-
-AI can concentrate power — or distribute capability.
-
-Platforms can extract value — or contributors can share it.
-
-Algorithms can rule — or humans can govern with AI as witness.
-
-PoCP declares:
-
-> **Contribution is the proof.**  
-> **AI access is the right.**  
-> **Human responsibility is the anchor.**
-
-This is not the end of the protocol.
-
-This is block zero.
-
-**PoCP, begin.**
-
----
-
-*PoCP Labs · Genesis · 2026*
+**PoCP begins with contribution.**
+**PoCP also begins with witness.**

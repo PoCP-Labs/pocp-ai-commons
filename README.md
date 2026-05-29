@@ -1,7 +1,6 @@
 # PoCP AI Commons
 
-**Earn AI access through verified contribution.**  
-**通过真实贡献，获得 AI 使用权。**
+**Earn AI access through verified contribution.**
 
 PoCP AI Commons is the first open-source application of the **Proof of Contribution Protocol (PoCP)**.
 
@@ -300,7 +299,7 @@ A person completes a contribution task
 
 | Document | Purpose |
 |----------|---------|
-| [GENESIS.md](./GENESIS.md) | Why PoCP is a new species for the AI age |
+| [GENESIS.md](./GENESIS.md) | Why PoCP is a new species for the AI age; genesis Entities: **Lumen-0** (witness) and **DeSui** (validator) |
 | [AI-COMMONS.md](./AI-COMMONS.md) | First application: the AI commons network |
 | [PROTOCOL-SPEC-v0.1.md](./PROTOCOL-SPEC-v0.1.md) | Minimal protocol spec for implementation |
 
@@ -312,9 +311,21 @@ A person completes a contribution task
 docker compose up --build
 ```
 
-API health check: `http://localhost:8000/health`
+| Service | URL |
+|---------|-----|
+| Frontend dashboard | http://localhost:3000 |
+| API health | http://localhost:8000/health |
+| API docs | http://localhost:8000/docs |
 
-See also: [docs/SCHEMA.md](./docs/SCHEMA.md) · [docs/PROTOCOL.md](./docs/PROTOCOL.md)
+**Demo:** First boot seeds the R-language study scenario and completes one full verify → approve loop.
+
+**Smoke test:**
+
+```bash
+cd backend && python scripts/smoke_test.py
+```
+
+See also: [docs/VISION.md](./docs/VISION.md) · [docs/PROTOCOL.md](./docs/PROTOCOL.md) · [docs/SCHEMA.md](./docs/SCHEMA.md) · [PROTOCOL-SPEC-v0.1.md](./PROTOCOL-SPEC-v0.1.md)
 
 ---
 
@@ -333,5 +344,4 @@ MIT License — see [LICENSE](./LICENSE).
 
 ## Final Line
 
-**Contribution is the proof. AI access is the right.**  
-**贡献即凭证，AI 即公共能力。**
+**Contribution is the proof. AI access is the right.**

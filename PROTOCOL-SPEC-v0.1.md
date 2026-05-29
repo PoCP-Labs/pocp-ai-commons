@@ -320,22 +320,24 @@ curl -X POST http://localhost:8000/api/v1/contributions/<contrib-id>/approve \
 
 ## 11. MVP Checklist
 
-- [x] Entity registry (Human, Agent, Skill)
+- [x] Entity registry (Human, Agent, Skill, Organization)
 - [x] Task CRUD (create + list)
 - [x] Contribution submission with participants
 - [x] AI verify endpoint (advisory)
 - [x] Human approve endpoint (rewards)
 - [x] Wallet + CP + AI Credits
+- [x] Registration grant (100 AI Credits for new humans)
+- [x] Self-approval blocked
 - [x] Ledger records
 - [x] Reputation scores
 - [x] Contribution graph API
+- [x] Invocation chain (Human → Agent → Skill → LLM)
+- [x] R language study demo seed
+- [x] Frontend dashboard + submit workflow + graph view
 - [ ] User authentication (GitHub OAuth)
 - [ ] Real LLM verifier integration
 - [ ] AI Chat consuming credits
-- [ ] Frontend task + submission UI
-- [ ] Reviewer dashboard
 - [ ] Rate limits + anti-abuse
-- [ ] Seed script for demo entities
 
 ---
 
