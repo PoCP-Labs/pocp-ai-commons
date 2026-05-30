@@ -158,8 +158,8 @@ class ContributionCreate(BaseModel):
 
 
 class AiVerifyIn(BaseModel):
-    model_provider: str = "deepseek"
-    score: float = 0.85
+    model_provider: str = "simulated"  # simulated | deepseek | openai | ollama
+    score: float = 0.0  # 0.0 means "use AI verifier"; non-zero overrides with manual score
     feedback: str = "Content meets quality standards."
 
 
