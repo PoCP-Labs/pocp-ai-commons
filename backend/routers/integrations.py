@@ -1,15 +1,60 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from database import get_db
+from models.contribution import ContributionEvent
 from models.entity import Entity, EntityType
 from models.user_account import UserAccount
 from routers.auth import require_current_user
 from schemas import AgentFeedbackIn, AgentFeedbackOut, AgentReputationSummary
 from services.agent_receipt import build_agent_receipt, load_trace_for_receipt, verify_agent_receipt
 from services.agent_reputation import AgentReputationError, get_agent_reputation_summary, give_agent_feedback, list_agent_clients
+from services.code_attribution_bridge import build_code_attribution_context
+from services.evidence_validate import validate_evidence_urls
+from services.expert_cards import expert_cards_from_contribution
+from services.reward_advisory import build_reward_advisory
 
 router = APIRouter(prefix="/api/v1", tags=["integrations"])
+
+
+def _load_contribution(db: Session, contribution_id: str) -> ContributionEvent:
+    contribution = (
+        db.query(ContributionEvent)
+        .options(joinedload(ContributionEvent.participants))
+        .filter(ContributionEvent.id == contribution_id)
+        .first()
+    )
+    if not contribution:
+        raise HTTPException(status_code=404, detail="Contribution not found")
+    return contribution
+
+
+@router.get("/contributions/{contribution_id}/experts")
+def contribution_expert_cards(contribution_id: str, db: Session = Depends(get_db)):
+    contribution = _load_contribution(db, contribution_id)
+    return {
+        "contribution_id": contribution_id,
+        "compat": "proof-of-contribution-v0",
+        "experts": expert_cards_from_contribution(db, contribution),
+    }
+
+
+@router.get("/contributions/{contribution_id}/reward-advisory")
+def contribution_reward_advisory(contribution_id: str, db: Session = Depends(get_db)):
+    contribution = _load_contribution(db, contribution_id)
+    return build_reward_advisory(db, contribution)
+
+
+@router.get("/contributions/{contribution_id}/evidence-check")
+def contribution_evidence_check(contribution_id: str, db: Session = Depends(get_db)):
+    contribution = _load_contribution(db, contribution_id)
+    return validate_evidence_urls(contribution.evidence)
+
+
+@router.get("/contributions/{contribution_id}/code-attribution-context")
+def contribution_code_attribution_context(contribution_id: str, db: Session = Depends(get_db)):
+    contribution = _load_contribution(db, contribution_id)
+    return build_code_attribution_context(contribution.evidence)
 
 
 @router.get("/invocations/{trace_id}/receipt")

@@ -19,8 +19,10 @@ from models.wallet import ReputationScore, Wallet
 from routers.auth import require_current_user
 from schemas import (
     AgentOut,
+    AgentCreate,
     AiVerifyIn,
     ApproveIn,
+    RejectIn,
     ContributionCreate,
     ContributionGraph,
     ContributionOut,
@@ -40,12 +42,13 @@ from schemas import (
 )
 from services.anti_abuse import check_daily_contribution_limit, require_evidence
 from services.ai_verify_service import ai_verify_service
-from services.contribution import approve_contribution, grant_registration_credits, run_ai_verification
-from services.evidence import enrich_evidence
+from services.contribution import approve_contribution, grant_registration_credits, reject_contribution, run_ai_verification
+from services.evidence import POCP_META_KEY, enrich_evidence
 from services.graph import build_contribution_graph
 from services.invocation import record_invocation
-from services.provenance import attach_provenance_to_evidence
+from services.evidence_validate import validate_evidence_urls
 from services.org_foundation import can_sponsor_as_organization
+from services.provenance import attach_provenance_to_evidence
 
 router = APIRouter(prefix="/api/v1", tags=["pocp"])
 
@@ -89,6 +92,52 @@ def list_agents(db: Session = Depends(get_db)):
     from models.agent import Agent
 
     return db.query(Agent).all()
+
+
+@router.post("/agents", response_model=AgentOut, status_code=201)
+def create_agent(
+    body: AgentCreate,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    from models.agent import Agent
+
+    maintainer = db.query(Entity).filter(Entity.id == body.maintainer_id).first()
+    if not maintainer:
+        raise HTTPException(status_code=404, detail="Maintainer entity not found")
+    if body.maintainer_id != current_user.entity_id:
+        raise HTTPException(status_code=403, detail="maintainer_id must match the authenticated entity")
+
+    metadata = {
+        "registry_compat": "erc-8004-offchain-v0",
+        "service_endpoints": body.service_endpoints,
+        "capabilities": body.capabilities,
+        "registered_by": current_user.entity_id,
+    }
+    entity = Entity(
+        entity_type=EntityType.agent,
+        name=body.name,
+        description=body.description,
+        owner_id=body.maintainer_id,
+        creator_id=body.maintainer_id,
+        status=EntityStatus.active,
+        metadata_=metadata,
+    )
+    db.add(entity)
+    db.flush()
+
+    agent = Agent(
+        entity_id=entity.id,
+        config={
+            "capabilities": body.capabilities,
+            "service_endpoints": body.service_endpoints,
+        },
+        maintainer_id=body.maintainer_id,
+    )
+    db.add(agent)
+    db.commit()
+    db.refresh(agent)
+    return agent
 
 
 @router.get("/tasks", response_model=list[TaskOut])
@@ -215,6 +264,12 @@ def submit_contribution(
             review_depth=body.provenance.review_depth,
             notes=body.provenance.notes,
         )
+
+    if os.getenv("POCP_VALIDATE_EVIDENCE_URLS", "false").lower() == "true":
+        url_report = validate_evidence_urls(evidence)
+        meta = dict(evidence.get(POCP_META_KEY) or {})
+        meta["url_checks"] = url_report
+        evidence[POCP_META_KEY] = meta
 
     contribution = ContributionEvent(
         task_id=body.task_id,
@@ -361,6 +416,41 @@ def approve_contribution_endpoint(
     task = db.query(Task).filter(Task.id == contribution.task_id).first()
     if task:
         task.status = TaskStatus.completed
+    db.commit()
+    return get_contribution(contribution_id, db)
+
+
+@router.post("/contributions/{contribution_id}/reject", response_model=ContributionOut)
+def reject_contribution_endpoint(
+    contribution_id: str,
+    body: RejectIn,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    contribution = (
+        db.query(ContributionEvent)
+        .options(joinedload(ContributionEvent.participants))
+        .filter(ContributionEvent.id == contribution_id)
+        .first()
+    )
+    if not contribution:
+        raise HTTPException(status_code=404, detail="Contribution not found")
+    if contribution.status not in (ContributionStatus.submitted, ContributionStatus.ai_verified):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot reject contribution in status: {contribution.status.value}",
+        )
+    if body.reviewer_id != current_user.entity_id:
+        raise HTTPException(status_code=403, detail="reviewer_id must match the authenticated entity")
+
+    reviewer = db.query(Entity).filter(Entity.id == body.reviewer_id).first()
+    if not reviewer or reviewer.entity_type != EntityType.human:
+        raise HTTPException(status_code=400, detail="Reviewer must be a human entity")
+
+    try:
+        reject_contribution(db, contribution, body.reviewer_id, body.feedback)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     db.commit()
     return get_contribution(contribution_id, db)
 

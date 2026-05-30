@@ -22,6 +22,8 @@ const RELATION_COLORS = {
   skill_provider: "#34d399",
   reviewer: "#fbbf24",
   sponsor: "#f7931a",
+  founded: "#f7931a",
+  sponsors: "#f7931a",
 };
 
 const LAYOUT_COLUMNS = ["human", "agent", "skill", "contribution", "llm", "organization"];

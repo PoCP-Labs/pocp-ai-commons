@@ -22,6 +22,7 @@ from genesis import DESUI_ID, LUMEN_0_ID, RAIN_ID, ensure_genesis_entities
 from services.entity_dedup import merge_rain_duplicates
 from services.auth import bind_user_account_to_entity
 from services.invocation import record_invocation
+from services.org_foundation import ensure_pocp_org_foundation
 
 
 def ensure_demo_accounts(db: Session, rain: Entity, bob: Entity) -> None:
@@ -46,6 +47,7 @@ def ensure_demo_accounts(db: Session, rain: Entity, bob: Entity) -> None:
 def seed_demo(db: Session) -> None:
     ensure_genesis_entities(db)
     merge_rain_duplicates(db)
+    ensure_pocp_org_foundation(db)
     existing_rain = db.get(Entity, RAIN_ID)
     existing_bob = db.query(Entity).filter(Entity.name == "Bob").first()
     has_demo_contribution = db.query(ContributionEvent).count() > 0
@@ -94,7 +96,10 @@ def seed_demo(db: Session) -> None:
     pocp_commons = Entity(
         entity_type=EntityType.organization,
         name="PoCP AI Commons",
-        description="Open contribution network for humans and intelligent entities",
+        description=(
+            "Open contribution network founded and sponsored by Rain; "
+            "governed by the Genesis manifesto (docs/genesis/)."
+        ),
         status=EntityStatus.active,
     )
 
@@ -120,7 +125,20 @@ def seed_demo(db: Session) -> None:
             entity_id=pocp_commons.id,
             org_type="community",
             governance_proxy_id=bob.id,
-            config={"mission": "AI Commons for verifiable contributions"},
+            config={
+                "mission": "AI Commons for verifiable contributions",
+                "founder_id": rain.id,
+                "primary_sponsor_id": rain.id,
+                "genesis_manifesto": [
+                    "docs/genesis/zh-CN.md",
+                    "GENESIS.md",
+                    "docs/genesis/README.md",
+                ],
+                "governance_note": (
+                    "Rain founded the org and drafted the Genesis manifesto; "
+                    "Bob is governance proxy for demo human review."
+                ),
+            },
         )
     )
     db.add(

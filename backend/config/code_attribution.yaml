@@ -82,11 +82,15 @@ builders:
       - founder
       - maintainer
       - protocol_initiator
+      - org_founder
+      - primary_sponsor
+      - genesis_manifesto_author
     status: confirmed
     summary: >
-      Founded PoCP AI Commons and PoCP Labs vision; initiated the repository,
-      governance, protocol direction, and human-final merge authority. Receives
-      residual attribution for project-wide files not assigned to builder agents.
+      Founded and sponsors PoCP AI Commons (organization entity); drafted the
+      Genesis manifesto (docs/genesis/, GENESIS.md). Initiated repository,
+      governance, and protocol direction. Receives residual attribution for
+      project-wide files not assigned to builder agents.
 
 # Files matching no path_rule are attributed to residual_builder (founder/maintainer).
 attribution_policy:
@@ -184,8 +188,6 @@ path_rules:
 
   - builder: lumen-0
     patterns:
-      - GENESIS.md
-      - docs/genesis/
       - docs/VISION.md
       - docs/CONTRIBUTION-INTERNET.md
       - docs/CORE-TECH-STACK.md
@@ -195,6 +197,8 @@ path_rules:
 
   - builder: rain
     patterns:
+      - GENESIS.md
+      - docs/genesis/
       - README.md
       - LICENSE
       - GENESIS-CODE-CONTRIBUTORS.md

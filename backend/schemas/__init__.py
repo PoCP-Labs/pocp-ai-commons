@@ -180,6 +180,19 @@ class ApproveIn(BaseModel):
     feedback: str = "Approved by human reviewer."
 
 
+class RejectIn(BaseModel):
+    reviewer_id: str
+    feedback: str = "Rejected by human reviewer."
+
+
+class AgentCreate(BaseModel):
+    name: str
+    description: str | None = None
+    maintainer_id: str
+    capabilities: list[str] = Field(default_factory=list)
+    service_endpoints: dict[str, str] = Field(default_factory=dict)
+
+
 class GraphNode(BaseModel):
     id: str
     entity_type: str

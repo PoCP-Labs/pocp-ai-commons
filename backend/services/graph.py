@@ -8,7 +8,8 @@ from models.contribution import (
     ContributionStatus,
     ParticipantRole,
 )
-from models.entity import Entity
+from genesis import RAIN_ID
+from models.entity import Entity, EntityType
 from models.invocation import InvocationTrace
 from models.wallet import ReputationScore, Wallet
 
@@ -99,6 +100,31 @@ def build_contribution_graph(db: Session) -> dict:
                     "source": e.creator_id,
                     "target": e.id,
                     "relation": "created",
+                    "contribution_id": None,
+                    "weight": 1.0,
+                },
+            )
+        if (
+            e.entity_type == EntityType.organization
+            and e.owner_id == RAIN_ID
+            and RAIN_ID in entity_map
+        ):
+            _append_edge(
+                edges,
+                {
+                    "source": RAIN_ID,
+                    "target": e.id,
+                    "relation": "founded",
+                    "contribution_id": None,
+                    "weight": 1.0,
+                },
+            )
+            _append_edge(
+                edges,
+                {
+                    "source": RAIN_ID,
+                    "target": e.id,
+                    "relation": "sponsors",
                     "contribution_id": None,
                     "weight": 1.0,
                 },

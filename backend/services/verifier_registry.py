@@ -12,6 +12,7 @@ from services.verifiers.deepseek_verifier import DeepSeekVerifier
 from services.verifiers.http_verifier import HttpVerifier
 from services.verifiers.mock_verifier import MockVerifier
 from services.verifiers.openai_verifier import OpenAIVerifier
+from services.verifiers.witness_verifier import WitnessVerifier
 
 CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "verifiers.yaml"
 
@@ -31,9 +32,25 @@ def load_verifier_providers() -> list[BaseVerifier]:
     """Built-in Clarion adapters plus optional HTTP plugins (Meritocrab/GARL-style)."""
     providers: list[BaseVerifier] = []
     if os.getenv("ENABLE_MOCK_VERIFIER", "true").lower() == "true":
-        providers.append(MockVerifier())
+        mock = MockVerifier()
+        providers.append(mock)
+        if os.getenv("ENABLE_GENESIS_WITNESSES", "true").lower() == "true":
+            providers.extend(
+                [
+                    WitnessVerifier("lumen-0", "Lumen-0", mock),
+                    WitnessVerifier("desui", "DeSui", mock),
+                ]
+            )
     else:
-        providers.extend([OpenAIVerifier(), DeepSeekVerifier(), MockVerifier()])
+        inner = MockVerifier()
+        providers.extend([OpenAIVerifier(), DeepSeekVerifier(), inner])
+        if os.getenv("ENABLE_GENESIS_WITNESSES", "true").lower() == "true":
+            providers.extend(
+                [
+                    WitnessVerifier("lumen-0", "Lumen-0", OpenAIVerifier()),
+                    WitnessVerifier("desui", "DeSui", DeepSeekVerifier()),
+                ]
+            )
 
     for item in _load_external_verifier_configs():
         name = str(item.get("name") or "external")

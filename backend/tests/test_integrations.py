@@ -2,6 +2,7 @@ import unittest
 
 from services.agent_receipt import compute_receipt_hash, verify_agent_receipt
 from services.provenance import attach_provenance_to_evidence, build_provenance_envelope, provenance_from_evidence
+from services.code_attribution_bridge import build_code_attribution_context
 from services.verifier_registry import load_verifier_providers
 
 
@@ -17,6 +18,7 @@ class ProvenanceTests(unittest.TestCase):
         envelope = provenance_from_evidence(evidence)
         self.assertEqual(envelope["creation_mode"], "ai_assisted")
         self.assertEqual(envelope["envelope_version"], "octp-compatible-v0.1")
+        self.assertIn("integrity", envelope)
 
     def test_build_provenance_envelope(self):
         envelope = build_provenance_envelope(
@@ -52,7 +54,21 @@ class AgentReceiptTests(unittest.TestCase):
 class VerifierRegistryTests(unittest.TestCase):
     def test_load_builtin_mock_verifier(self):
         providers = load_verifier_providers()
-        self.assertTrue(any(p.provider_name == "mock" for p in providers))
+        names = {p.provider_name for p in providers}
+        self.assertIn("mock", names)
+
+    def test_genesis_witnesses_loaded_by_default(self):
+        providers = load_verifier_providers()
+        names = {p.provider_name for p in providers}
+        self.assertIn("lumen-0", names)
+        self.assertIn("desui", names)
+
+
+class CodeAttributionBridgeTests(unittest.TestCase):
+    def test_matches_backend_path_hint(self):
+        context = build_code_attribution_context({"artifact": "backend/services/proof.py"})
+        self.assertTrue(context["path_hints"])
+        self.assertTrue(context["builders_involved"] or context["matched_paths"])
 
 
 if __name__ == "__main__":

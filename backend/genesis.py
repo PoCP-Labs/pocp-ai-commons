@@ -154,13 +154,28 @@ GENESIS_ENTITY_SPECS: list[dict] = [
         "id": RAIN_ID,
         "entity_type": EntityType.human,
         "name": "Rain",
-        "description": "Founder and protocol initiator of PoCP AI Commons",
+        "description": (
+            "Founder of PoCP AI Commons; primary sponsor who established the organization "
+            "and drafted the Genesis manifesto."
+        ),
         "metadata_": {
-            "roles": ["founder", "maintainer", "protocol_initiator"],
+            "roles": [
+                "founder",
+                "maintainer",
+                "protocol_initiator",
+                "org_founder",
+                "primary_sponsor",
+                "genesis_manifesto_author",
+            ],
             "project": "PoCP AI Commons",
+            "org_founded": "PoCP AI Commons",
+            "genesis_manifesto_primary": "docs/genesis/zh-CN.md",
             "created_by": "PoCP-Labs",
             "attribution_status": "confirmed",
-            "governance_note": "Human final authority on merges, governance, and contribution approval.",
+            "governance_note": (
+                "Rain founded PoCP AI Commons, sponsors the network, and authored the Genesis "
+                "manifesto; human reviewers (e.g. Bob as governance proxy) hold final approval."
+            ),
         },
     },
 ]
@@ -207,4 +222,11 @@ def ensure_genesis_entities(db: Session) -> None:
                 if org is not None:
                     agent.maintainer_id = org.id
 
+    from services.org_foundation import ensure_pocp_org_foundation
+
+    ensure_pocp_org_foundation(db)
     db.flush()
+
+    from services.org_foundation import ensure_pocp_org_foundation
+
+    ensure_pocp_org_foundation(db)

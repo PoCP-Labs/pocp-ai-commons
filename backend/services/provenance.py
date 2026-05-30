@@ -7,11 +7,14 @@ See docs/EXTERNAL-INTEGRATIONS.md
 
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
 from services.evidence import POCP_META_KEY
+from services.federation_crypto import get_node_public_key_hex, sign_message
 
 ProvenanceMode = Literal[
     "human_written",
@@ -60,6 +63,24 @@ def build_provenance_envelope(
     return envelope
 
 
+def sign_provenance_envelope(envelope: dict[str, Any]) -> dict[str, Any]:
+    """OCTP-style cryptographic binding of the provenance declaration."""
+    payload = {k: v for k, v in envelope.items() if k != "integrity"}
+    material = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    envelope_hash = hashlib.sha256(material.encode("utf-8")).hexdigest()
+    public_key = get_node_public_key_hex()
+    signature = sign_message(envelope_hash) if public_key else None
+    signed = dict(envelope)
+    signed["integrity"] = {
+        "envelope_hash": envelope_hash,
+        "hash_algorithm": "sha256",
+        "signature": signature,
+        "signer_public_key": public_key,
+        "signed": signature is not None and public_key is not None,
+    }
+    return signed
+
+
 def attach_provenance_to_evidence(
     evidence: dict,
     *,
@@ -73,13 +94,15 @@ def attach_provenance_to_evidence(
     """Attach OCTP-compatible provenance under evidence._pocp.provenance."""
     updated = dict(evidence)
     meta = dict(updated.get(POCP_META_KEY) or {})
-    meta["provenance"] = build_provenance_envelope(
-        declared_by_entity_id=declared_by_entity_id,
-        creation_mode=creation_mode,
-        ai_tools_used=ai_tools_used,
-        human_experts_cited=human_experts_cited,
-        review_depth=review_depth,
-        notes=notes,
+    meta["provenance"] = sign_provenance_envelope(
+        build_provenance_envelope(
+            declared_by_entity_id=declared_by_entity_id,
+            creation_mode=creation_mode,
+            ai_tools_used=ai_tools_used,
+            human_experts_cited=human_experts_cited,
+            review_depth=review_depth,
+            notes=notes,
+        )
     )
     updated[POCP_META_KEY] = meta
     return updated

@@ -20,10 +20,10 @@ Path in repository
 | `proof` | pocp-entity-proof | Proof packets, evidence, ledger chain, export API | inferred — maintainer confirm |
 | `poethon` | pocp-entity-poethon | Python backend, models, migrations, core services | inferred — maintainer confirm |
 | `pocp-helper` | pocp-entity-pocp-helper | Auth, AI chat, frontend, CI, federation glue | inferred — maintainer confirm |
-| `lumen-0` | pocp-entity-lumen-0 | Protocol narrative, genesis docs, Sprint planning | confirmed |
+| `lumen-0` | pocp-entity-lumen-0 | Protocol narrative, Sprint planning, witness design | confirmed |
 | `desui` | pocp-entity-desui | Validator / witness design | confirmed |
 | `clarion-0` | pocp-entity-clarion-0 | Review assistant | confirmed |
-| `rain` | pocp-entity-rain | Founder / maintainer; root governance docs + **residual** unassigned paths | confirmed |
+| `rain` | pocp-entity-rain | Org founder & primary sponsor; **Genesis manifesto** (`docs/genesis/`, `GENESIS.md`); governance docs + **residual** paths | confirmed |
 
 **Inferred** means attribution was derived from module analysis and patch history, not from signed git trailers. Maintainers should confirm or correct paths in `backend/config/code_attribution.yaml`.
 

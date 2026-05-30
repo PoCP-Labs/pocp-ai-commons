@@ -175,3 +175,37 @@ def approve_contribution(
     )
     db.flush()
     return rewards
+
+
+def reject_contribution(
+    db: Session,
+    contribution: ContributionEvent,
+    reviewer_id: str,
+    feedback: str = "Rejected by human reviewer.",
+) -> HumanReview:
+    """Human review rejection — Meritocrab-style explicit review outcome."""
+    if reviewer_id == contribution.primary_entity_id:
+        raise ValueError("Reviewer cannot reject their own contribution")
+
+    review = HumanReview(
+        contribution_id=contribution.id,
+        reviewer_id=reviewer_id,
+        approved=False,
+        feedback=feedback,
+    )
+    db.add(review)
+    contribution.status = ContributionStatus.rejected
+
+    append_ledger_record(
+        db,
+        contribution_id=contribution.id,
+        event_type="contribution_rejected",
+        payload={
+            "contribution_id": contribution.id,
+            "status": contribution.status.value,
+            "reviewer_id": reviewer_id,
+            "feedback": feedback,
+        },
+    )
+    db.flush()
+    return review

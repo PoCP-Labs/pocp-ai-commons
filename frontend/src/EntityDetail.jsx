@@ -38,6 +38,31 @@ export default function EntityDetail({ entity, wallet, reputationRows, contribut
           {entity.metadata?.portable_id && (
             <div className="entity-row__mission">Portable: {entity.metadata.portable_id}</div>
           )}
+          {entity.metadata?.roles?.length > 0 && (
+            <div className="entity-row__mission" style={{ marginTop: 8 }}>
+              Roles: {entity.metadata.roles.join(", ")}
+            </div>
+          )}
+          {entity.metadata?.genesis_manifesto_primary && (
+            <div className="entity-row__mission" style={{ marginTop: 8 }}>
+              Genesis manifesto: {entity.metadata.genesis_manifesto_primary}
+            </div>
+          )}
+          {entity.metadata?.genesis_manifesto_paths?.length > 0 && !entity.metadata?.genesis_manifesto_primary && (
+            <div className="entity-row__mission" style={{ marginTop: 8 }}>
+              Genesis manifesto: {entity.metadata.genesis_manifesto_paths[0]}
+            </div>
+          )}
+          {entity.metadata?.org_founded && (
+            <div className="entity-row__mission" style={{ marginTop: 8 }}>
+              Founded org: {entity.metadata.org_founded}
+            </div>
+          )}
+          {entity.metadata?.founded_by_name && (
+            <div className="entity-row__mission" style={{ marginTop: 8 }}>
+              Founded by: {entity.metadata.founded_by_name}
+            </div>
+          )}
         </div>
 
         {wallet && (

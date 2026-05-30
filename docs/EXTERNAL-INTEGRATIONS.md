@@ -91,13 +91,72 @@ Set `ENABLE_MOCK_VERIFIER=false` to use OpenAI + DeepSeek + configured HTTP plug
 
 **Inspired by:** [drdeeks/contributor-attribution](https://github.com/drdeeks/contributor-attribution)
 
-PoCP's code attribution registry (`/api/v1/code-attribution/*`) already tracks path-level builder attribution. Provenance + verifier context now carry **impact signals** (creation mode, cited experts) into AI advisory review rather than auto-pay splits.
+Code path hints in contribution evidence are matched against `code_attribution.yaml` and exported in proof packets.
 
-Future bridge: embed code attribution summaries into proof packets.
+| Method | Path |
+|--------|------|
+| GET | `/api/v1/contributions/{id}/code-attribution-context` |
+
+Proof layer: `code_attribution_context`
 
 ---
 
-## 6. What We Deliberately Did Not Import
+## 6. proof-of-contribution — Expert Cards
+
+**Inspired by:** [dannwaneri/proof-of-contribution](https://github.com/dannwaneri/proof-of-contribution)
+
+Resolve `human_experts_cited` portable IDs into entity cards with reputation totals.
+
+| Method | Path |
+|--------|------|
+| GET | `/api/v1/contributions/{id}/experts` |
+
+Proof layer: `expert_cards`
+
+---
+
+## 7. Meritocrab — Reward Advisory & Human Reject
+
+**Inspired by:** [hydai/meritocrab](https://github.com/hydai/meritocrab)
+
+AI consensus `suggested_cp` / `suggested_credits` surfaced for human reviewers (advisory only). Explicit human reject endpoint with ledger record.
+
+| Method | Path |
+|--------|------|
+| GET | `/api/v1/contributions/{id}/reward-advisory` |
+| POST | `/api/v1/contributions/{id}/reject` |
+
+---
+
+## 8. OCTP Integrity — Signed Provenance & URL Checks
+
+Provenance envelopes are hash-signed when node keys are configured. Optional URL validation on submit (`POCP_VALIDATE_EVIDENCE_URLS=true`).
+
+| Method | Path |
+|--------|------|
+| GET | `/api/v1/contributions/{id}/evidence-check` |
+
+---
+
+## 9. ERC-8004 — Agent Registration
+
+**Inspired by:** [erc-8004/erc-8004-contracts](https://github.com/erc-8004/erc-8004-contracts)
+
+Off-chain agent identity registration with capabilities and service endpoints.
+
+| Method | Path |
+|--------|------|
+| POST | `/api/v1/agents` |
+
+---
+
+## 10. Genesis Witness Verifiers — Lumen-0 & DeSui
+
+Genesis LLM witness nodes run as named verifier adapters in `MultiVerifierService` when `ENABLE_GENESIS_WITNESSES=true` (default).
+
+---
+
+## 11. What We Deliberately Did Not Import
 
 | Project | Reason |
 |---------|--------|
