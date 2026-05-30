@@ -1,4 +1,5 @@
 from models.agent import Agent
+from models.ai_usage import AIUsageRecord
 from models.contribution import (
     AiVerifierResult,
     ContributionEvent,
@@ -18,6 +19,7 @@ __all__ = [
     "Skill",
     "Agent",
     "Organization",
+    "AIUsageRecord",
     "Task",
     "ContributionEvent",
     "ContributionParticipant",
