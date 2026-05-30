@@ -36,6 +36,7 @@ from schemas import (
 from services.contribution import approve_contribution, grant_registration_credits, run_ai_verification
 from services.graph import build_contribution_graph
 from services.invocation import record_invocation
+from services.rejection import reject_contribution
 
 router = APIRouter(prefix="/api/v1", tags=["pocp"])
 
@@ -72,6 +73,14 @@ def list_tasks(db: Session = Depends(get_db)):
     return db.query(Task).order_by(Task.created_at.desc()).all()
 
 
+@router.get("/tasks/{task_id}", response_model=TaskOut)
+def get_task(task_id: str, db: Session = Depends(get_db)):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task
+
+
 @router.get("/contributions", response_model=list[ContributionOut])
 def list_contributions(db: Session = Depends(get_db)):
     return (
@@ -106,6 +115,14 @@ def get_contribution(contribution_id: str, db: Session = Depends(get_db)):
 @router.get("/wallets", response_model=list[WalletOut])
 def list_wallets(db: Session = Depends(get_db)):
     return db.query(Wallet).all()
+
+
+@router.get("/wallets/{entity_id}", response_model=WalletOut)
+def get_wallet(entity_id: str, db: Session = Depends(get_db)):
+    wallet = db.query(Wallet).filter(Wallet.entity_id == entity_id).first()
+    if not wallet:
+        raise HTTPException(status_code=404, detail="Wallet not found for entity")
+    return wallet
 
 
 @router.get("/reputation", response_model=list[ReputationOut])
@@ -260,6 +277,38 @@ def approve_contribution_endpoint(
     task = db.query(Task).filter(Task.id == contribution.task_id).first()
     if task:
         task.status = TaskStatus.completed
+    db.commit()
+    return get_contribution(contribution_id, db)
+
+
+@router.post("/contributions/{contribution_id}/reject", response_model=ContributionOut)
+def reject_contribution_endpoint(
+    contribution_id: str,
+    body: ApproveIn,
+    db: Session = Depends(get_db),
+):
+    contribution = (
+        db.query(ContributionEvent)
+        .options(joinedload(ContributionEvent.participants))
+        .filter(ContributionEvent.id == contribution_id)
+        .first()
+    )
+    if not contribution:
+        raise HTTPException(status_code=404, detail="Contribution not found")
+    if contribution.status not in (
+        ContributionStatus.submitted,
+        ContributionStatus.ai_verified,
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot reject contribution in status: {contribution.status.value}",
+        )
+
+    reviewer = db.query(Entity).filter(Entity.id == body.reviewer_id).first()
+    if not reviewer or reviewer.entity_type != EntityType.human:
+        raise HTTPException(status_code=400, detail="Reviewer must be a human entity")
+
+    reject_contribution(db, contribution, body.reviewer_id, body.feedback)
     db.commit()
     return get_contribution(contribution_id, db)
 
