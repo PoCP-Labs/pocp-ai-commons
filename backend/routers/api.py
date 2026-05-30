@@ -370,8 +370,14 @@ def create_skill(body: SkillCreate, db: Session = Depends(get_db)):
     return skill
 
 @router.post("/chat", response_model=ChatResponse)
-def chat(body: ChatRequest, db: Session = Depends(get_db)):
-    """Send a message to the AI. Consumes AI Credits from the entity's wallet."""
+async def chat(body: ChatRequest, db: Session = Depends(get_db)):
+    """Send a message to the AI. Consumes AI Credits from the entity's wallet.
+
+    Uses the configured AI provider (DeepSeek, OpenAI, Ollama, etc.) via
+    environment variables AI_API_KEY, AI_API_BASE, AI_MODEL.
+    Falls back to simulation if no API key is configured.
+    """
+    from services.ai import AiModelClient, get_ai_client
     from services.contribution import spend_ai_credits
 
     entity = db.query(Entity).filter(Entity.id == body.entity_id).first()
@@ -394,13 +400,33 @@ def chat(body: ChatRequest, db: Session = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=402, detail=str(e))
 
-    # Generate simulated AI reply
-    # In production this would call an actual LLM
-    ai_prefix = f"[{body.model_provider}]"
-    reply = f"{ai_prefix} I received your message about: \"{body.message[:100]}\"\n\n"
-    reply += "This is a simulated AI response. In production, this would invoke "
-    reply += f"the {body.model_provider} model through the AI Commons integration.\n\n"
-    reply += f"📊 Credits spent: {cost} | Remaining: {spend_result['remaining']}"
+    # Call AI model
+    client = AiModelClient(
+        api_base="",
+        api_key="",
+        model=body.model_provider,
+    )
+    try:
+        result = await get_ai_client().chat(
+            message=body.message,
+            system_prompt=(
+                "You are the PoCP AI Commons assistant. "
+                "You help users understand Proof of Contribution Protocol (PoCP), "
+                "guide them through contribution tasks, explain AI Credits, "
+                "and assist with learning and research using the platform. "
+                "Be helpful, clear, and encouraging. "
+                "When asked about your identity, say you are pocp-helper."
+            ),
+        )
+        reply = result["reply"]
+    except Exception as e:
+        reply = (
+            f"[{body.model_provider}] "
+            f"AI service unavailable at the moment. "
+            f"Please check backend logs or configure AI_API_KEY.\n\n"
+            f"Error: {str(e)[:200]}\n\n"
+            f"📊 Credits spent: {cost} | Remaining: {spend_result['remaining']}"
+        )
 
     return ChatResponse(
         reply=reply,
