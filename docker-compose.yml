@@ -1,13 +1,24 @@
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      target: ${POCP_ENV:-development}
     ports:
       - "8000:8000"
     environment:
       - PORT=8000
+      - POCP_ENV=${POCP_ENV:-development}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
     volumes:
       - ./backend:/app
+      - pocp_data:/app/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   frontend:
     build: ./frontend
@@ -21,3 +32,7 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+volumes:
+  pocp_data:
+    driver: local
