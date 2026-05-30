@@ -8,340 +8,200 @@ It is designed to explore a new question for the age of AI:
 
 > If AI becomes a basic productive capability, how can ordinary people gain fair access to it through real contribution?
 
-PoCP AI Commons is not just another AI chat platform.
-
-It is a contribution-based AI capability network where humans, agents, skills, models, tools, datasets, workflows, and organizations can participate in tasks, generate contribution records, receive verification, build reputation, and earn AI access.
-
 ---
 
 ## Core Idea
 
-In most AI platforms, the relationship is simple:
-
 ```text
-User pays → User uses AI
-```
+User pays → User uses AI        ← Most platforms
 
-PoCP AI Commons proposes a different loop:
-
-```text
-User contributes
-    ↓
+User contributes                ← PoCP AI Commons
+  ↓
 Contribution is verified
-    ↓
+  ↓
 User earns CP and AI Credits
-    ↓
+  ↓
 User uses AI
-    ↓
+  ↓
 AI helps user contribute more
 ```
 
-This is the first practical loop of PoCP:
-
-```text
-Contribution → Verification → CP → AI Credits → AI Use → More Contribution
-```
-
 ---
 
-## Why This Matters
+## Quick Start
 
-AI is becoming a basic capability.
+### Prerequisites
 
-But access to powerful AI tools is still shaped by money, language, geography, education, and platform control.
+- **Python 3.11+**
+- **Docker & Docker Compose** (recommended)
 
-PoCP AI Commons explores another path:
-
-* basic AI capability for everyone;
-* more AI access through verified contribution;
-* reputation built from real contribution;
-* human review over algorithmic authority;
-* transparent contribution ledger;
-* future governance based on contribution, not capital.
-
----
-
-## What Is PoCP?
-
-**PoCP**, or **Proof of Contribution Protocol**, is a contribution proof protocol for humans and intelligent agents in the age of AI.
-
-It records and verifies contributions from:
-
-* humans;
-* AI agents;
-* LLMs;
-* skills;
-* tools;
-* datasets;
-* workflows;
-* organizations;
-* communities.
-
-PoCP does not ask only:
-
-> Who owns what?
-
-It asks:
-
-> Who contributed what?  
-> Who verified it?  
-> Who benefited from it?  
-> What rights should follow from it?
-
----
-
-## First MVP
-
-The first MVP of PoCP AI Commons focuses on a simple flow:
-
-```text
-User registers
-    ↓
-User receives basic AI Credits
-    ↓
-User uses AI tools
-    ↓
-User completes contribution task
-    ↓
-AI verifier gives advisory review
-    ↓
-Human reviewer confirms
-    ↓
-User earns CP and AI Credits
-    ↓
-Contribution is recorded in the ledger
-```
-
----
-
-## MVP Modules
-
-The first version includes:
-
-1. User identity
-2. AI Credits wallet
-3. AI tools
-4. Contribution task center
-5. Contribution submission
-6. AI advisory review
-7. Human review
-8. Contribution ledger
-9. Entity reputation
-
----
-
-## Intelligent Entities
-
-PoCP AI Commons is not only for human users.
-
-The platform is designed around the concept of **Entities**.
-
-An Entity can be:
-
-* Human
-* Agent
-* LLM
-* Skill
-* Tool
-* Dataset
-* Workflow
-* Organization
-* Community
-
-In the first MVP, we focus on:
-
-```text
-Human + Agent + Skill
-```
-
-A contribution may be created by a human, assisted by an agent, powered by a skill, verified by AI, and finally approved by a human reviewer.
-
----
-
-## AI Is a Witness, Not a Ruler
-
-AI verifiers can assist in contribution review.
-
-They may evaluate:
-
-* task match;
-* quality;
-* originality;
-* impact;
-* risk;
-* evidence credibility;
-* suggested CP;
-* suggested AI Credits.
-
-But AI cannot make the final decision.
-
-Final approval must always be made by human reviewers or accountable human governance.
-
----
-
-## What PoCP AI Commons Is Not
-
-PoCP AI Commons is not:
-
-* a token-first crypto project;
-* another generic AI chatbot;
-* a social credit system;
-* a platform for extracting free labor;
-* an AI-controlled governance system;
-* a promise of unlimited free AI usage.
-
-The first version does not issue a token.
-
-It focuses on:
-
-```text
-Contribution → Verification → AI Credits → Reputation → Ledger
-```
-
----
-
-## Genesis Statement
-
-Bitcoin proved digital scarcity.
-
-PoCP aims to prove human and intelligent-agent contribution.
-
-Bitcoin asks:
-
-> Who proved work?
-
-PoCP asks:
-
-> Who created verified contribution?
-
-In the age of AI, the next great value network may not be built only around scarcity.
-
-It may be built around contribution.
-
----
-
-## Roadmap
-
-### Phase 0: Genesis
-
-* Project README
-* Genesis document
-* AI Commons concept
-* Protocol spec v0.1
-* Open-source repository setup
-
-### Phase 1: MVP
-
-* User login
-* AI Credits wallet
-* AI Chat
-* Task center
-* Contribution submission
-* AI advisory review
-* Human review
-* Contribution ledger
-
-### Phase 2: Pilot
-
-* 30–100 early users
-* students, developers, creators, volunteers
-* verified contribution tasks
-* AI Credits distribution
-* feedback and anti-abuse testing
-
-### Phase 3: Contribution Graph
-
-* Human + Agent + Skill contribution records
-* entity reputation
-* reusable skills
-* agent performance history
-* contribution graph explorer
-
-### Phase 4: Protocol Expansion
-
-* decentralized verification
-* on-chain anchoring
-* governance by contribution
-* reward pools
-* future contribution economy
-
----
-
-## Guiding Principles
-
-1. Contribution before speculation.
-2. AI access through verified contribution.
-3. AI is advisory; humans make final decisions.
-4. Reputation must be earned, not bought.
-5. Verification must not become surveillance.
-6. Contributors should share in the value they help create.
-7. Humans, agents, and skills can contribute, but human responsibility remains essential.
-
----
-
-## Development Status
-
-PoCP AI Commons is currently in **Genesis stage**.
-
-The first goal is to build a working MVP that proves one loop:
-
-```text
-A person completes a contribution task
-→ AI gives advisory review
-→ human reviewer confirms
-→ system issues CP and AI Credits
-→ contribution enters the ledger
-```
-
----
-
-## Genesis Package
-
-| Document | Purpose |
-|----------|---------|
-| [GENESIS.md](./GENESIS.md) | Why PoCP is a new species for the AI age; genesis Entities: **Lumen-0** (witness) and **DeSui** (validator) |
-| [AI-COMMONS.md](./AI-COMMONS.md) | First application: the AI commons network |
-| [PROTOCOL-SPEC-v0.1.md](./PROTOCOL-SPEC-v0.1.md) | Minimal protocol spec for implementation |
-
----
-
-## Quick Start (Developers)
+### Docker
 
 ```bash
 docker compose up --build
 ```
 
-| Service | URL |
-|---------|-----|
-| Frontend dashboard | http://localhost:3000 |
-| API health | http://localhost:8000/health |
-| API docs | http://localhost:8000/docs |
+Backend: http://localhost:8000 | API docs: http://localhost:8000/docs | Frontend: http://localhost:3000
 
-**Demo:** First boot seeds the R-language study scenario and completes one full verify → approve loop.
-
-**Smoke test:**
+### Manual
 
 ```bash
-cd backend && python scripts/smoke_test.py
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
 ```
 
-See also: [docs/VISION.md](./docs/VISION.md) · [docs/PROTOCOL.md](./docs/PROTOCOL.md) · [docs/SCHEMA.md](./docs/SCHEMA.md) · [PROTOCOL-SPEC-v0.1.md](./PROTOCOL-SPEC-v0.1.md)
+### Smoke Test
+
+```bash
+cd backend
+python scripts/smoke_test.py
+```
 
 ---
 
-## Related
+## Architecture
 
-* [PoCP Manifesto](https://github.com/PoCP-Labs/pocp-manifesto)
-* [PoCP Labs](https://github.com/PoCP-Labs)
+```
+┌──────────────┐
+│   Frontend    │  React + Vite SPA
+│  (localhost)  │
+└──────┬───────┘
+       │
+┌──────▼───────┐
+│   Backend     │  FastAPI (modular routers)
+│  port 8000    │
+└──────┬───────┘
+       │
+┌──────▼───────┐
+│   SQLite      │  (PostgreSQL ready via Alembic)
+│  pocp.db      │
+└──────────────┘
+```
+
+### Backend Structure
+
+```
+backend/
+├── main.py                  # App entry + middleware + error handlers
+├── config.py                # Centralized configuration (env vars)
+├── database.py              # SQLAlchemy setup
+├── alembic/                 # Database migrations
+├── models/                  # SQLAlchemy models (Entity, Task, Contribution, etc.)
+├── schemas/                 # Pydantic request/response schemas
+├── routers/                 # Modular API routers
+│   ├── api.py              # Aggregates all sub-routers
+│   ├── auth.py             # POST /auth/token
+│   ├── entities.py         # Entity CRUD + filters
+│   ├── tasks.py            # Task CRUD + GET /{id}
+│   ├── contributions.py    # Submit / Verify / Approve / Reject
+│   ├── wallets.py          # Wallets / Ledger / Reputation
+│   ├── skills.py           # Skills / Agents
+│   ├── organizations.py    # Organization management
+│   ├── invocations.py      # Invocation traces
+│   └── graph.py            # Contribution graph
+├── services/                # Business logic
+│   ├── auth.py             # JWT auth framework
+│   ├── contribution.py     # Approval + rewards
+│   ├── rejection.py        # Rejection with audit trail
+│   ├── entities.py         # Entity management
+│   ├── graph.py            # Graph builder
+│   ├── invocation.py       # Invocation recording
+│   └── migrations.py       # Auto-migration on startup
+├── middleware/              # HTTP middleware
+│   ├── request_id.py       # X-Request-ID correlation
+│   └── rate_limit.py       # Per-IP rate limiting
+├── tests/                   # Unit + integration tests
+│   ├── conftest.py         # Test fixtures
+│   ├── test_api.py         # API integration tests
+│   ├── test_auth.py        # Auth + edge case tests
+│   ├── test_contribution.py # Contribution logic tests
+│   ├── test_protocol.py    # Protocol property tests
+│   └── test_rejection.py   # Rejection tests
+└── scripts/
+    └── smoke_test.py        # End-to-end smoke test
+```
+
+---
+
+## The Core Loop
+
+```text
+Entity registers → receives starter AI Credits
+  → completes task → submits contribution
+  → AI advisory verify → human approve
+  → CP + AI Credits issued → ledger written
+```
+
+---
+
+## What Is PoCP?
+
+**PoCP** (Proof of Contribution Protocol) records and verifies contributions from humans, AI agents, skills, tools, datasets, workflows, organizations, and communities.
+
+PoCP does not ask only: *Who owns what?*
+
+It asks:
+- *Who contributed what?*
+- *Who verified it?*
+- *Who benefited from it?*
+- *What rights should follow from it?*
+
+See [PROTOCOL-SPEC-v0.2.md](./PROTOCOL-SPEC-v0.2.md) for the full protocol definition.
+
+---
+
+## AI Is a Witness, Not a Ruler
+
+AI verifiers assist in contribution review but **cannot make the final decision**. Final approval must always come from human reviewers.
+
+---
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| [PROTOCOL-SPEC-v0.2.md](./PROTOCOL-SPEC-v0.2.md) | Builder-facing protocol contract |
+| [GENESIS.md](./GENESIS.md) | Why PoCP exists — the vision |
+| [AI-COMMONS.md](./AI-COMMONS.md) | First application concept |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | How to contribute |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Architecture review and roadmap |
+| [docs/](./docs/) | Extended documentation |
+
+---
+
+## Environment Variables
+
+Copy `backend/.env.example` to `backend/.env`:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Key variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | `sqlite:///data/pocp.db` | Database connection string |
+| `AUTH_MODE` | `demo` | `demo` (no auth) or `jwt` (token required) |
+| `JWT_SECRET` | `change-me-in-production` | Secret key for JWT tokens |
+| `CORS_ORIGINS` | `*` | Comma-separated allowed origins |
+| `RATE_LIMIT` | `100` | Max requests per minute per IP |
+| `LOG_LEVEL` | `INFO` | Logging level |
+| `SEED_ON_STARTUP` | `true` | Whether to seed demo data |
+
+---
+
+## Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](./CONTRIBUTING.md) for a guide.
 
 ---
 
 ## License
 
-MIT License — see [LICENSE](./LICENSE).
+MIT — see [LICENSE](./LICENSE).
 
 ---
 
-## Final Line
-
-**Contribution is the proof. AI access is the right.**
+*Contribution is the proof. AI access is the right.*
