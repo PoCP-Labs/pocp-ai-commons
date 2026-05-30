@@ -22,8 +22,9 @@ from services.invocation import record_invocation
 
 
 def seed_demo(db: Session) -> None:
+    """Seed demo data. Idempotent — skips if entities already exist."""
     if db.query(Entity).first():
-        return
+        return  # Database already has data
 
     lumen_0 = Entity(
         id="pocp-entity-lumen-0",
