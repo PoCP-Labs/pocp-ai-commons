@@ -2,6 +2,13 @@
 
 from sqlalchemy.orm import Session
 
+from config import (
+    AI_VERIFIER_MODEL,
+    AI_VERIFIER_THRESHOLD,
+    DEFAULT_REWARD_AI_CREDITS,
+    DEFAULT_REWARD_CP,
+    REGISTRATION_AI_CREDITS,
+)
 from models.contribution import (
     AiVerifierResult,
     ContributionEvent,
@@ -40,11 +47,20 @@ def _add_reputation(db: Session, entity_id: str, amount: float, category: str) -
 def run_ai_verification(
     db: Session,
     contribution: ContributionEvent,
-    model_provider: str = "deepseek",
+    model_provider: str = AI_VERIFIER_MODEL,
     score: float = 0.85,
     feedback: str = "Content is well-structured and accurate.",
+    details: dict | None = None,
 ) -> AiVerifierResult:
-    passed = score >= 0.7
+    """Record AI advisory verification result.
+
+    This can be called with:
+    - A pre-computed score/feedback (from the real AI verifier)
+    - Or with a manual score (for dev/testing)
+
+    AI verification is ADVISORY ONLY. It never sets 'approved' status.
+    """
+    passed = score >= AI_VERIFIER_THRESHOLD
     result = AiVerifierResult(
         contribution_id=contribution.id,
         model_provider=model_provider,
@@ -69,7 +85,7 @@ def grant_registration_credits(db: Session, entity: Entity) -> Wallet | None:
     if wallet.ai_credits > 0 or wallet.cp_balance > 0:
         return wallet
 
-    starter_credits = 100.0
+    starter_credits = float(REGISTRATION_AI_CREDITS)
     wallet.ai_credits = starter_credits
     db.add(
         CreditTransaction(
@@ -124,8 +140,9 @@ def approve_contribution(
             ParticipantRole.executor,
         ):
             wallet = _get_or_create_wallet(db, entity.id)
-            cp_amount = round(20 * participant.weight / 0.4, 2) if participant.weight else 20
-            ai_amount = round(80 * participant.weight / 0.4, 2) if participant.weight else 80
+            weight = participant.weight or 0.4  # default weight if not set
+            cp_amount = round(DEFAULT_REWARD_CP * weight / 0.4, 2)
+            ai_amount = round(DEFAULT_REWARD_AI_CREDITS * weight / 0.4, 2)
 
             wallet.cp_balance += cp_amount
             wallet.ai_credits += ai_amount
@@ -153,14 +170,16 @@ def approve_contribution(
             )
 
         elif entity.entity_type == EntityType.skill:
-            rep_amount = round(5 * participant.weight / 0.15, 2) if participant.weight else 5
+            weight = participant.weight or 0.15
+            rep_amount = round(5 * weight / 0.15, 2)
             _add_reputation(db, entity.id, rep_amount, "skill")
             rewards["reputation"].append(
                 {"entity_id": entity.id, "name": entity.name, "category": "skill", "amount": rep_amount}
             )
 
         elif entity.entity_type == EntityType.agent:
-            rep_amount = round(3 * participant.weight / 0.25, 2) if participant.weight else 3
+            weight = participant.weight or 0.25
+            rep_amount = round(3 * weight / 0.25, 2)
             _add_reputation(db, entity.id, rep_amount, "agent")
             rewards["reputation"].append(
                 {"entity_id": entity.id, "name": entity.name, "category": "agent", "amount": rep_amount}
