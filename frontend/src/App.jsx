@@ -125,9 +125,14 @@ export default function App() {
         <section>
           <h2>Intelligence Contribution Graph</h2>
           <p style={{ color: "#64748b" }}>
-            {graph.nodes.length} nodes · {graph.edges.length} edges (includes invocation chains)
+            {graph.nodes.length} entity nodes · {graph.edges.length} edges · {contributions.length} contributions · {ledger.length} ledger entries
           </p>
-          <ContributionGraphView graph={graph} entityMap={entityMap} />
+          <ContributionGraphView
+            graph={graph}
+            entityMap={entityMap}
+            contributions={contributions}
+            ledger={ledger}
+          />
         </section>
       )}
 
