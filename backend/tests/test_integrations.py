@@ -91,6 +91,31 @@ class EvidenceGitTests(unittest.TestCase):
         self.assertEqual(report["checked_count"], 0)
 
 
+class AttributionMerkleTests(unittest.TestCase):
+    def test_build_and_verify_merkle_proof(self):
+        from services.attribution_merkle import build_attribution_merkle_proof, verify_attribution_merkle_proof
+
+        proof = build_attribution_merkle_proof({"artifact": "backend/services/proof.py"})
+        if proof["leaf_count"] == 0:
+            self.skipTest("no builders matched in this environment")
+        slug = proof["builders"][0]["slug"]
+        self.assertTrue(verify_attribution_merkle_proof(proof, slug))
+
+
+class ReviewQueueTests(unittest.TestCase):
+    def test_review_queue_import(self):
+        from services.review_queue import list_human_review_queue
+
+        self.assertTrue(callable(list_human_review_queue))
+
+
+class CodeAttributionBridgeTests(unittest.TestCase):
+    def test_matches_backend_path_hint(self):
+        context = build_code_attribution_context({"artifact": "backend/services/proof.py"})
+        self.assertTrue(context["path_hints"])
+        self.assertTrue(context["builders_involved"] or context["matched_paths"])
+
+
 class PortableReputationTests(unittest.TestCase):
     def test_validate_evidence_full_shape(self):
         from services.evidence_validate import validate_evidence_full
@@ -100,11 +125,15 @@ class PortableReputationTests(unittest.TestCase):
         self.assertIn("git", report)
 
 
-class CodeAttributionBridgeTests(unittest.TestCase):
-    def test_matches_backend_path_hint(self):
-        context = build_code_attribution_context({"artifact": "backend/services/proof.py"})
-        self.assertTrue(context["path_hints"])
-        self.assertTrue(context["builders_involved"] or context["matched_paths"])
+class ProvenanceClaimsTests(unittest.TestCase):
+    def test_verification_claims_in_envelope(self):
+        evidence = attach_provenance_to_evidence(
+            {"url": "https://example.com"},
+            declared_by_entity_id="entity-1",
+            verification_claims=[{"claim_type": "self_reviewed", "details": "demo"}],
+        )
+        envelope = provenance_from_evidence(evidence)
+        self.assertEqual(len(envelope.get("verification_claims") or []), 1)
 
 
 if __name__ == "__main__":

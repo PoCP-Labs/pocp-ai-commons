@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import ContributionGraphView from "./ContributionGraph";
+import ContributionInsights from "./ContributionInsights";
 import EntityDetail from "./EntityDetail";
 import SubmitFlow from "./SubmitFlow";
 
@@ -193,6 +194,7 @@ export default function App() {
   const [apiVersion, setApiVersion] = useState("—");
   const [aiUsage, setAiUsage] = useState([]);
   const [selectedEntityId, setSelectedEntityId] = useState(null);
+  const [reviewQueue, setReviewQueue] = useState([]);
 
   const loadProfile = useCallback(async () => {
     if (!getToken()) {
@@ -229,6 +231,12 @@ export default function App() {
       setReputation(r);
       setLedger(l);
       setGraph(g);
+      try {
+        const queue = await fetchJson("/api/v1/reviews/queue?limit=5");
+        setReviewQueue(queue.items || []);
+      } catch {
+        setReviewQueue([]);
+      }
     } catch (err) {
       const msg = err?.message || String(err);
       setError(msg);
@@ -331,6 +339,9 @@ export default function App() {
   }, {});
   const selectedEntity = selectedEntityId ? entityMap[selectedEntityId] : null;
   const contribution = contributions[0];
+  const defaultReviewer = entities.find(
+    (e) => e.entity_type === "human" && e.id !== contribution?.primary_entity_id
+  );
   const latestLedger = ledger[0];
 
   const tabs = [
@@ -554,6 +565,7 @@ export default function App() {
               contributions={contributions}
               entityMap={entityMap}
               onBack={() => setSelectedEntityId(null)}
+              fetchJson={fetchJson}
             />
           ) : (
             <section className="panel">
@@ -660,6 +672,23 @@ export default function App() {
             </section>
           )}
 
+          {reviewQueue.length > 0 && (
+            <section className="panel">
+              <h2 className="panel__title">Human Review Queue</h2>
+              <p className="panel__subtitle">Contributions awaiting final approval (Meritocrab-style queue)</p>
+              {reviewQueue.map((item) => (
+                <div key={item.contribution_id} className="mini-card">
+                  <strong>{item.task_title || "Contribution"}</strong> — {item.description?.slice(0, 60)}
+                  {item.description?.length > 60 ? "…" : ""}
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: 4 }}>
+                    By {item.primary_entity?.name || item.primary_entity?.id} · consensus pass:{" "}
+                    {String(item.consensus_passed ?? "—")}
+                  </div>
+                </div>
+              ))}
+            </section>
+          )}
+
           {contribution && (
             <section className="panel">
               <h2 className="panel__title">Latest Contribution Block</h2>
@@ -704,6 +733,15 @@ export default function App() {
                   })}
                 </tbody>
               </table>
+              {contribution.status === "ai_verified" && (
+                <ContributionInsights
+                  contributionId={contribution.id}
+                  fetchJson={fetchJson}
+                  currentEntityId={profile?.entity?.id || null}
+                  reviewerId={defaultReviewer?.id || null}
+                  onAction={load}
+                />
+              )}
             </section>
           )}
 

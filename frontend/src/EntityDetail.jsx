@@ -1,19 +1,57 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 
-function EntityBadge({ type }) {
-  const safe = type || "llm";
-  return <span className={`entity-badge entity-badge--${safe}`}>{safe}</span>;
-}
+export default function EntityDetail({
+  entity,
+  wallet,
+  reputationRows,
+  contributions,
+  entityMap,
+  onBack,
+  fetchJson,
+}) {
+  const [audit, setAudit] = useState([]);
+  const [portable, setPortable] = useState(null);
+  const [agentRep, setAgentRep] = useState(null);
 
-export default function EntityDetail({ entity, wallet, reputationRows, contributions, entityMap, onBack }) {
-  const relatedContributions = useMemo(
-    () =>
-      contributions.filter(
-        (c) =>
-          c.primary_entity_id === entity.id ||
-          c.participants?.some((p) => p.entity_id === entity.id)
-      ),
-    [contributions, entity.id]
+  useEffect(() => {
+    if (!fetchJson || !entity?.id) return;
+    let cancelled = false;
+
+    fetchJson(`/api/v1/entities/${entity.id}/reputation/audit?limit=8`)
+      .then((data) => {
+        if (!cancelled) setAudit(data.entries || []);
+      })
+      .catch(() => {
+        if (!cancelled) setAudit([]);
+      });
+
+    fetchJson(`/api/v1/entities/${entity.id}/reputation/portable`)
+      .then((data) => {
+        if (!cancelled) setPortable(data);
+      })
+      .catch(() => {
+        if (!cancelled) setPortable(null);
+      });
+
+    if (entity.entity_type === "agent") {
+      fetchJson(`/api/v1/agents/${entity.id}/reputation/summary`)
+        .then((data) => {
+          if (!cancelled) setAgentRep(data);
+        })
+        .catch(() => {
+          if (!cancelled) setAgentRep(null);
+        });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [entity?.id, entity?.entity_type, fetchJson]);
+
+  const relatedContributions = contributions.filter(
+    (c) =>
+      c.primary_entity_id === entity.id ||
+      c.participants?.some((p) => p.entity_id === entity.id)
   );
 
   return (
@@ -27,7 +65,9 @@ export default function EntityDetail({ entity, wallet, reputationRows, contribut
       <div className="profile-grid" style={{ marginBottom: 16 }}>
         <div className="profile-card">
           <div style={{ marginBottom: 8 }}>
-            <EntityBadge type={entity.entity_type} />
+            <span className={`entity-badge entity-badge--${entity.entity_type || "llm"}`}>
+              {entity.entity_type}
+            </span>
           </div>
           <div className="entity-row__mission">ID: {entity.id}</div>
           {entity.metadata?.mission && (
@@ -41,26 +81,6 @@ export default function EntityDetail({ entity, wallet, reputationRows, contribut
           {entity.metadata?.roles?.length > 0 && (
             <div className="entity-row__mission" style={{ marginTop: 8 }}>
               Roles: {entity.metadata.roles.join(", ")}
-            </div>
-          )}
-          {entity.metadata?.genesis_manifesto_primary && (
-            <div className="entity-row__mission" style={{ marginTop: 8 }}>
-              Genesis manifesto: {entity.metadata.genesis_manifesto_primary}
-            </div>
-          )}
-          {entity.metadata?.genesis_manifesto_paths?.length > 0 && !entity.metadata?.genesis_manifesto_primary && (
-            <div className="entity-row__mission" style={{ marginTop: 8 }}>
-              Genesis manifesto: {entity.metadata.genesis_manifesto_paths[0]}
-            </div>
-          )}
-          {entity.metadata?.org_founded && (
-            <div className="entity-row__mission" style={{ marginTop: 8 }}>
-              Founded org: {entity.metadata.org_founded}
-            </div>
-          )}
-          {entity.metadata?.founded_by_name && (
-            <div className="entity-row__mission" style={{ marginTop: 8 }}>
-              Founded by: {entity.metadata.founded_by_name}
             </div>
           )}
         </div>
@@ -80,6 +100,25 @@ export default function EntityDetail({ entity, wallet, reputationRows, contribut
         )}
       </div>
 
+      {portable?.federation?.total_score > 0 && (
+        <div className="mini-card mini-card--rep" style={{ marginBottom: 12 }}>
+          Portable reputation total: <strong>{portable.federation.total_score}</strong>
+          {portable.federation.federated_import_count > 0 && (
+            <span> · {portable.federation.federated_import_count} federated import(s)</span>
+          )}
+        </div>
+      )}
+
+      {agentRep && agentRep.feedback_count > 0 && (
+        <>
+          <h3 style={{ fontSize: "0.9rem", marginBottom: 8 }}>Agent Feedback (ERC-8004 off-chain)</h3>
+          <div className="mini-card mini-card--rep">
+            Avg score: <strong>{agentRep.average_score}</strong> · Reviewers:{" "}
+            <strong>{agentRep.unique_reviewers}</strong>
+          </div>
+        </>
+      )}
+
       {reputationRows.length > 0 && (
         <>
           <h3 style={{ fontSize: "0.9rem", marginBottom: 8 }}>Reputation</h3>
@@ -91,10 +130,18 @@ export default function EntityDetail({ entity, wallet, reputationRows, contribut
         </>
       )}
 
-      {entity.entity_type === "skill" && (
-        <div className="alert alert--info" style={{ marginTop: 12 }}>
-          Skill entities power invocation chains. Full Skill Commons registry is a Phase 5 roadmap item.
-        </div>
+      {audit.length > 0 && (
+        <>
+          <h3 style={{ fontSize: "0.9rem", margin: "16px 0 8px" }}>Reputation Audit Trail</h3>
+          {audit.map((entry) => (
+            <div key={entry.id} className="mini-card">
+              <strong>{entry.source}</strong> · {entry.category} · delta {entry.delta} → {entry.balance_after}
+              {entry.reason && (
+                <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: 4 }}>{entry.reason}</div>
+              )}
+            </div>
+          ))}
+        </>
       )}
 
       {relatedContributions.length > 0 && (

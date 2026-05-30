@@ -93,7 +93,18 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
         primary_entity_id: form.creatorId,
         contribution_type: "knowledge",
         description: form.description || "New contribution via PoCP workflow",
-        evidence: { content_preview: form.contentPreview },
+        evidence: {
+          content_preview: form.contentPreview,
+          artifact: "backend/services/proof.py",
+        },
+        provenance: {
+          creation_mode: "ai_assisted",
+          ai_tools_used: ["cursor"],
+          human_experts_cited: [],
+          verification_claims: [
+            { claim_type: "self_reviewed", details: "Submitted via PoCP workflow UI" },
+          ],
+        },
         participants,
       });
 

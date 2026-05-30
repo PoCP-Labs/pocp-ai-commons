@@ -23,6 +23,7 @@ from models.wallet import CreditTransaction, ReputationScore, Wallet
 from services.evidence import POCP_META_KEY, evidence_types, hash_evidence, standardize_evidence_items
 from services.federation_crypto import get_node_public_key_hex, sign_message
 from services.provenance import provenance_from_evidence
+from services.attribution_merkle import build_attribution_merkle_proof
 from services.code_attribution_bridge import build_code_attribution_context
 from services.expert_cards import expert_cards_from_contribution
 
@@ -39,6 +40,7 @@ PROOF_LAYER_COVERAGE = [
     "provenance_envelope",
     "expert_cards",
     "code_attribution_context",
+    "attribution_merkle_proof",
     "human_ai_verification_state",
     "contribution_graph",
     "contribution_to_rights_conversion",
@@ -220,6 +222,7 @@ def build_contribution_proof_packet(db: Session, contribution_id: str) -> dict |
         },
         "expert_cards": expert_cards_from_contribution(db, contribution),
         "code_attribution_context": build_code_attribution_context(evidence),
+        "attribution_merkle_proof": build_attribution_merkle_proof(evidence),
         "verification": {
             "ai_advisory": [
                 {

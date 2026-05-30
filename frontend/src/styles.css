@@ -308,6 +308,17 @@ body::before {
   border-color: var(--border);
 }
 
+.btn--sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+}
+
+.insights-panel {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
 /* ── Panels & cards ── */
 .panel {
   background: var(--bg-panel);
