@@ -188,3 +188,55 @@ def approve_contribution(
     )
     db.flush()
     return rewards
+
+
+def spend_ai_credits(
+    db: Session,
+    entity_id: str,
+    amount: float,
+    reason: str = "AI chat usage",
+) -> dict:
+    """
+    Deduct AI Credits from an entity's wallet for AI tool usage.
+
+    Args:
+        db: Database session
+        entity_id: Entity whose credits to spend
+        amount: Number of AI Credits to spend (must be > 0)
+        reason: Reason for the spend (e.g. "AI chat message", "Code analysis")
+
+    Returns:
+        dict with 'spent', 'remaining', 'transaction_id' on success
+
+    Raises:
+        ValueError: If amount <= 0, wallet not found, or insufficient credits
+    """
+    if amount <= 0:
+        raise ValueError("Amount must be greater than zero")
+
+    wallet = db.query(Wallet).filter(Wallet.entity_id == entity_id).first()
+    if wallet is None:
+        raise ValueError(f"Wallet not found for entity {entity_id}")
+
+    if wallet.ai_credits < amount:
+        raise ValueError(
+            f"Insufficient AI Credits: have {wallet.ai_credits:.2f}, "
+            f"need {amount:.2f}"
+        )
+
+    wallet.ai_credits -= amount
+    transaction = CreditTransaction(
+        wallet_id=wallet.id,
+        amount=-amount,
+        credit_type=CreditType.ai_credits,
+        reason=reason,
+    )
+    db.add(transaction)
+    db.flush()
+
+    return {
+        "spent": amount,
+        "remaining": wallet.ai_credits,
+        "transaction_id": transaction.id,
+        "reason": reason,
+    }

@@ -246,3 +246,16 @@ class InvocationCreate(BaseModel):
     model_provider: str = "deepseek"
     task_id: str | None = None
     contribution_id: str | None = None
+
+
+class ChatRequest(BaseModel):
+    entity_id: str
+    message: str
+    model_provider: str = "deepseek"
+
+
+class ChatResponse(BaseModel):
+    reply: str
+    credits_used: float
+    credits_remaining: float
+    transaction_id: str
