@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ProofVerifyPanel from "./ProofVerifyPanel";
 
 const TOKEN_KEY = "pocp_token";
 
@@ -10,15 +11,18 @@ const ROLES = [
   { value: "sponsor", label: "Sponsor (Org)", weight: 0.05 },
 ];
 
-const STEPS = ["invoke", "submit", "verify", "approve", "done"];
+const STEPS = ["execute", "submit", "verify", "done"];
 
 export default function SubmitFlow({ api, entities, tasks, currentEntityId, onComplete }) {
   const humans = entities.filter((e) => e.entity_type === "human");
   const agents = entities.filter((e) => e.entity_type === "agent");
   const skills = entities.filter((e) => e.entity_type === "skill");
   const orgs = entities.filter((e) => e.entity_type === "organization");
+  const finalizers = entities.filter((e) =>
+    ["agent", "llm", "skill", "human", "organization", "community"].includes(e.entity_type)
+  );
 
-  const [step, setStep] = useState("invoke");
+  const [step, setStep] = useState("execute");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
@@ -27,13 +31,18 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
     creatorId: humans[0]?.id || "",
     agentId: agents[0]?.id || "",
     skillId: skills[0]?.id || "",
-    reviewerId: humans[1]?.id || humans[0]?.id || "",
+    reviewerId: finalizers.find((e) => e.id.includes("clarion"))?.id
+      || agents[0]?.id
+      || finalizers[0]?.id
+      || "",
     sponsorId: orgs[0]?.id || "",
     description: "",
     contentPreview: "",
+    executeInput: tasks[0]?.description || "Organize study notes for this task.",
   });
 
   const [contributionId, setContributionId] = useState(null);
+  const [executionTraceId, setExecutionTraceId] = useState(null);
   const [approvalResult, setApprovalResult] = useState(null);
   const [verifyStatus, setVerifyStatus] = useState(null);
 
@@ -58,14 +67,56 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
     setLoading(true);
     setMessage(null);
     try {
-      await post("/api/v1/invocations", {
-        initiator_id: form.creatorId,
-        skill_entity_id: form.skillId,
-        agent_entity_id: form.agentId,
-        model_provider: "deepseek",
-        task_id: form.taskId || null,
-      });
-      setMessage("Invocation chain recorded: Human → Agent → Skill → LLM");
+      const agent = agents.find((a) => a.id === form.agentId);
+      const useStudyAgent = agent?.name === "StudyAgent";
+
+      let result;
+      if (useStudyAgent) {
+        result = await post("/api/v1/intelligence/agents/study/run", {
+          topic: form.executeInput,
+          task_id: form.taskId || null,
+          agent_entity_id: form.agentId,
+          skill_entity_id: form.skillId,
+          llm_provider: "mock",
+          submit_contribution: false,
+        });
+        setExecutionTraceId(result.trace_id);
+        setForm((f) => ({
+          ...f,
+          contentPreview: (result.draft || result.output || "").slice(0, 2000),
+          description: f.description || `Study notes via StudyAgent (${result.trace_id?.slice(0, 8)}…)`,
+        }));
+      } else if (form.agentId) {
+        result = await post(`/api/v1/capabilities/agents/${form.agentId}/execute`, {
+          input: form.executeInput,
+          skill_entity_id: form.skillId,
+          task_id: form.taskId || null,
+          llm_provider: "mock",
+          include_receipt: false,
+        });
+        setExecutionTraceId(result.trace_id);
+        setForm((f) => ({
+          ...f,
+          contentPreview: (result.output || "").slice(0, 2000),
+          description: f.description || `Output via ${agent?.name || "Agent"} + Skill`,
+        }));
+      } else {
+        result = await post(`/api/v1/capabilities/skills/${form.skillId}/execute`, {
+          input: form.executeInput,
+          task_id: form.taskId || null,
+          llm_provider: "mock",
+        });
+        setExecutionTraceId(result.trace_id);
+        setForm((f) => ({
+          ...f,
+          contentPreview: (result.output || "").slice(0, 2000),
+          description: f.description || "Output via Skill execution",
+        }));
+      }
+
+      setMessage(
+        `Executed ${useStudyAgent ? "StudyAgent" : agent?.name || "Skill"} — trace ${result.trace_id?.slice(0, 8)}…`
+      );
       setStep("submit");
     } catch (err) {
       setMessage(`Error: ${err.message}`);
@@ -96,6 +147,11 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
         evidence: {
           content_preview: form.contentPreview,
           artifact: "backend/services/proof.py",
+          capability_execution: {
+            trace_id: executionTraceId,
+            agent_entity_id: form.agentId,
+            skill_entity_id: form.skillId,
+          },
         },
         provenance: {
           creation_mode: "ai_assisted",
@@ -131,34 +187,22 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
     setLoading(true);
     setMessage(null);
     try {
-      await post(`/api/v1/contributions/${contributionId}/auto-verify`, {});
-      setVerifyStatus("ai_verified");
-      setStep("approve");
-      setMessage("AI witness review completed (advisory only). Awaiting human final approval.");
-    } catch (err) {
-      setMessage(`Error: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleApprove() {
-    if (!currentEntityId || currentEntityId === form.creatorId) {
-      setMessage("Error: Human approval must be completed from a different reviewer account.");
-      return;
-    }
-
-    setLoading(true);
-    setMessage(null);
-    try {
-      const approved = await post(`/api/v1/contributions/${contributionId}/approve`, {
-        reviewer_id: form.reviewerId,
-        feedback: "Approved by human reviewer.",
-      });
-      setApprovalResult(approved);
-      setMessage("Contribution approved! CP, Credits, and reputation recorded on ledger.");
-      setStep("done");
-      onComplete?.();
+      const result = await post(`/api/v1/contributions/${contributionId}/auto-verify`, {});
+      const status = result.status || "ai_verified";
+      setVerifyStatus(status);
+      const fin = result.finalization;
+      const verdict = result.verdict?.verdict || fin?.verdict;
+      if (status === "approved" || fin?.applied) {
+        setApprovalResult(result);
+        setStep("done");
+        setMessage(
+          `Auto-finalized by Entity policy (verdict ${verdict || "PASS"}, finalizer ${fin?.finalizer_entity_id?.slice(0, 12) || "delegate"}…).`
+        );
+        onComplete?.();
+      } else {
+        setStep("verify");
+        setMessage(`Verification did not pass (verdict ${verdict || "FAIL"}). Revise evidence and retry.`);
+      }
     } catch (err) {
       setMessage(`Error: ${err.message}`);
     } finally {
@@ -231,15 +275,15 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
           </select>
         </label>
         <label className="field-label">
-          Reviewer
+          Finalizer Entity (participant)
           <select
             className="field-select"
             value={form.reviewerId}
             onChange={(e) => setForm({ ...form, reviewerId: e.target.value })}
           >
-            {humans.map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.name}
+            {finalizers.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.name} ({e.entity_type})
               </option>
             ))}
           </select>
@@ -260,7 +304,18 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
             </select>
           </label>
         )}
-        {step !== "invoke" && (
+        {step === "execute" && (
+          <label className="field-label form-grid__full">
+            Execute input (Agent + Skill)
+            <textarea
+              className="field-textarea"
+              value={form.executeInput}
+              onChange={(e) => setForm({ ...form, executeInput: e.target.value })}
+              placeholder="What should the Agent/Skill produce?"
+            />
+          </label>
+        )}
+        {step !== "execute" && (
           <>
             <label className="field-label form-grid__full">
               Description
@@ -290,9 +345,9 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
       </p>
 
       <div>
-        {step === "invoke" && (
+        {step === "execute" && (
           <button type="button" className="btn btn--primary" onClick={handleInvoke} disabled={loading}>
-            1. Record Invocation Chain
+            1. Execute Agent + Skill
           </button>
         )}
         {step === "submit" && (
@@ -302,17 +357,7 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
         )}
         {step === "verify" && (
           <button type="button" className="btn btn--ai" onClick={handleVerify} disabled={loading}>
-            3. AI Witness Review
-          </button>
-        )}
-        {step === "approve" && (
-          <button
-            type="button"
-            className="btn btn--primary"
-            onClick={handleApprove}
-            disabled={loading || !currentEntityId || currentEntityId === form.creatorId}
-          >
-            4. Human Final Approval
+            3. Witness Verify + Auto-Finalize
           </button>
         )}
         {step === "done" && (
@@ -320,8 +365,9 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
             type="button"
             className="btn btn--ghost"
             onClick={() => {
-              setStep("invoke");
+              setStep("execute");
               setContributionId(null);
+              setExecutionTraceId(null);
               setApprovalResult(null);
               setVerifyStatus(null);
             }}
@@ -331,9 +377,9 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
         )}
       </div>
 
-      {verifyStatus && step !== "invoke" && step !== "submit" && (
+      {verifyStatus && step !== "execute" && step !== "submit" && (
         <div className="alert alert--info" style={{ marginTop: 12 }}>
-          AI verification status: <strong>{verifyStatus}</strong> (advisory — human approval required)
+          Witness status: <strong>{verifyStatus}</strong> (Entity-equal auto-finalization under policy)
         </div>
       )}
 
@@ -345,8 +391,11 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
           </p>
           {approvalResult.ai_verifications?.length > 0 && (
             <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: 8 }}>
-              AI witness scores recorded; human reviewer finalized this block.
+              AI witness scores recorded; finalizer Entity recorded in this block.
             </p>
+          )}
+          {contributionId && (
+            <ProofVerifyPanel apiBase={api} contributionId={contributionId} compact />
           )}
         </div>
       )}
@@ -354,11 +403,6 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
       {message && (
         <div className={`alert${message.startsWith("Error") ? " alert--error" : " alert--success"}`} style={{ marginTop: 12 }}>
           {message}
-        </div>
-      )}
-      {step === "approve" && (!currentEntityId || currentEntityId === form.creatorId) && (
-        <div className="alert alert--info" style={{ marginTop: 12 }}>
-          Human final approval requires a separate authenticated reviewer session (not the creator).
         </div>
       )}
     </div>

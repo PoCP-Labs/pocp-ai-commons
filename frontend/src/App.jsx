@@ -2,10 +2,23 @@ import { useCallback, useEffect, useState } from "react";
 import ContributionGraphView from "./ContributionGraph";
 import ContributionInsights from "./ContributionInsights";
 import EntityDetail from "./EntityDetail";
+import ExternalInspirationsPanel from "./ExternalInspirationsPanel";
+import CommunityPartnersPanel from "./CommunityPartnersPanel";
+import CapabilityCatalog from "./CapabilityCatalog";
+import IntelligencePanel from "./IntelligencePanel";
+import StudyAgentPanel from "./StudyAgentPanel";
+import ProofVerifyPanel, { CryptoReadinessBadge, LedgerVerifyBadge } from "./ProofVerifyPanel";
 import SubmitFlow from "./SubmitFlow";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const TOKEN_KEY = "pocp_token";
+
+/** Seeded demo personas (dev-login only). See docs/LOCAL-SETUP.md */
+const DEV_PERSONAS = [
+  { id: "rain", label: "Rain — founder / sponsor", username: "rain", email: "rain@example.com" },
+  { id: "bob", label: "Bob — governance proxy / reviewer", username: "bob", email: "bob@example.com" },
+  { id: "guest", label: "New guest (random)", username: null, email: null },
+];
 
 const LOOP_STEPS = [
   "Contribute",
@@ -170,7 +183,8 @@ function LedgerBlockPanel({ record, height }) {
 function AdvisoryBanner() {
   return (
     <div className="alert alert--info" style={{ marginBottom: "1rem" }}>
-      <strong>AI is advisory only.</strong> Human reviewers make final decisions on contributions, CP, and AI Credits.
+      <strong>Entity-equal network.</strong> All Entity types participate equally; finalization is policy-automated
+      after witness quorum — traceable in ledger, not controlled by humans.
     </div>
   );
 }
@@ -183,18 +197,26 @@ export default function App() {
   const [wallets, setWallets] = useState([]);
   const [reputation, setReputation] = useState([]);
   const [ledger, setLedger] = useState([]);
+  const [ledgerVerify, setLedgerVerify] = useState(null);
+  const [ledgerAnchor, setLedgerAnchor] = useState(null);
+  const [cryptoReadiness, setCryptoReadiness] = useState(null);
+  const [walletAudit, setWalletAudit] = useState(null);
+  const [issuanceBudget, setIssuanceBudget] = useState(null);
   const [graph, setGraph] = useState({ nodes: [], edges: [] });
   const [profile, setProfile] = useState(null);
   const [chatMessage, setChatMessage] = useState("");
   const [chatReply, setChatReply] = useState(null);
   const [chatLoading, setChatLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
+  const [devPersona, setDevPersona] = useState("rain");
   const [error, setError] = useState(null);
   const [tab, setTab] = useState("dashboard");
   const [apiVersion, setApiVersion] = useState("—");
+  const [capabilityLayer, setCapabilityLayer] = useState("—");
   const [aiUsage, setAiUsage] = useState([]);
   const [selectedEntityId, setSelectedEntityId] = useState(null);
   const [reviewQueue, setReviewQueue] = useState([]);
+  const [federationImports, setFederationImports] = useState(null);
 
   const loadProfile = useCallback(async () => {
     if (!getToken()) {
@@ -232,10 +254,38 @@ export default function App() {
       setLedger(l);
       setGraph(g);
       try {
+        const [lv, la, wa, cr] = await Promise.all([
+          fetch(`${API}/api/v1/ledger/verify`).then((r) => (r.ok ? r.json() : null)),
+          fetch(`${API}/api/v1/ledger/anchor`).then((r) => (r.ok ? r.json() : null)),
+          fetch(`${API}/api/v1/wallets/audit`).then((r) => (r.ok ? r.json() : null)),
+          fetch(`${API}/api/v1/crypto/readiness`).then((r) => (r.ok ? r.json() : null)),
+        ]);
+        setLedgerVerify(lv);
+        setLedgerAnchor(la);
+        setWalletAudit(wa);
+        setCryptoReadiness(cr);
+        try {
+          const budget = await fetch(`${API}/api/v1/issuance/budget`).then((r) => (r.ok ? r.json() : null));
+          setIssuanceBudget(budget);
+        } catch {
+          setIssuanceBudget(null);
+        }
+      } catch {
+        setLedgerVerify(null);
+        setLedgerAnchor(null);
+        setCryptoReadiness(null);
+      }
+      try {
         const queue = await fetchJson("/api/v1/reviews/queue?limit=5");
         setReviewQueue(queue.items || []);
       } catch {
         setReviewQueue([]);
+      }
+      try {
+        const fed = await fetchJson("/api/v1/federation/imports/graph-summary");
+        setFederationImports(fed);
+      } catch {
+        setFederationImports(null);
       }
     } catch (err) {
       const msg = err?.message || String(err);
@@ -259,7 +309,10 @@ export default function App() {
     loadProfile();
     fetch(`${API}/health`)
       .then((r) => r.json())
-      .then((h) => setApiVersion(h.version || "—"))
+      .then((h) => {
+        setApiVersion(h.version || "—");
+        setCapabilityLayer(h.capability_layer || "—");
+      })
       .catch(() => setApiVersion("offline"));
   }, [load, loadProfile]);
 
@@ -283,14 +336,19 @@ export default function App() {
   const devLogin = async () => {
     setAuthLoading(true);
     setError(null);
+    const persona = DEV_PERSONAS.find((p) => p.id === devPersona) || DEV_PERSONAS[0];
+    const body =
+      persona.username && persona.email
+        ? { username: persona.username, email: persona.email }
+        : {
+            username: `dev-${Date.now().toString(36)}`,
+            email: `dev-${Date.now()}@example.com`,
+          };
     try {
       const res = await fetch(`${API}/api/v1/auth/dev-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: `dev-${Date.now().toString(36)}`,
-          email: `dev-${Date.now()}@example.com`,
-        }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
@@ -347,6 +405,9 @@ export default function App() {
   const tabs = [
     { id: "dashboard", label: "Network" },
     { id: "entities", label: "Entities" },
+    { id: "intelligence", label: "Capability" },
+    { id: "inspirations", label: "Inspirations" },
+    { id: "partners", label: "Partners" },
     { id: "account", label: "Wallet" },
     { id: "chat", label: "AI Node" },
     { id: "workflow", label: "Contribute" },
@@ -365,6 +426,24 @@ export default function App() {
         <div className="network-bar__item">
           Blocks: <span className="network-bar__value">{ledger.length}</span>
         </div>
+        <LedgerVerifyBadge verify={ledgerVerify} anchor={ledgerAnchor} />
+        <CryptoReadinessBadge readiness={cryptoReadiness} anchor={ledgerAnchor} />
+        {walletAudit && (
+          <div className="network-bar__item network-bar__item--audit" title="Balances recomputed from transactions">
+            Wallets:{" "}
+            <span className={walletAudit.valid ? "network-bar__value" : "network-bar__value network-bar__value--warn"}>
+              {walletAudit.valid ? "audited" : `${walletAudit.invalid_count} mismatch`}
+            </span>
+          </div>
+        )}
+        {issuanceBudget?.enabled && (
+          <div className="network-bar__item network-bar__item--audit" title="Daily mint caps">
+            Mint left:{" "}
+            <span className="network-bar__mono">
+              {Math.round(issuanceBudget.remaining_today?.ai_credits ?? 0)} BC
+            </span>
+          </div>
+        )}
         <div className="network-bar__item">
           Entities: <span className="network-bar__value">{entities.length}</span>
         </div>
@@ -372,10 +451,13 @@ export default function App() {
           Contributions: <span className="network-bar__value">{contributions.length}</span>
         </div>
         <div className="network-bar__item">
+          Capability: <span className="network-bar__ai">v{capabilityLayer}</span>
+        </div>
+        <div className="network-bar__item">
           Protocol: <span className="network-bar__ai">v{apiVersion}</span>
         </div>
         <div className="network-bar__item">
-          AI Witness: <span className="network-bar__ai">Advisory Only</span>
+          AI Witness: <span className="network-bar__ai">Entity-Equal Auto</span>
         </div>
       </div>
 
@@ -407,6 +489,19 @@ export default function App() {
               <a href={`${API}/api/v1/auth/github/login`} className="btn btn--ghost" style={{ textDecoration: "none" }}>
                 GitHub Login
               </a>
+              <select
+                className="auth-persona-select"
+                value={devPersona}
+                onChange={(e) => setDevPersona(e.target.value)}
+                aria-label="Dev login persona"
+                disabled={authLoading}
+              >
+                {DEV_PERSONAS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
               <button type="button" className="btn btn--primary" onClick={devLogin} disabled={authLoading}>
                 {authLoading ? "Connecting…" : "Dev Login"}
               </button>
@@ -470,6 +565,19 @@ export default function App() {
                   </span>{" "}
                   AI Credits remaining
                 </div>
+                {walletAudit?.wallets && (
+                  <div className="wallet-audit-hint">
+                    {(() => {
+                      const row = walletAudit.wallets.find((w) => w.entity_id === profile.entity.id);
+                      if (!row) return null;
+                      return row.valid ? (
+                        <span className="wallet-audit-hint--ok">Balance verified from transaction history</span>
+                      ) : (
+                        <span className="wallet-audit-hint--bad">Balance mismatch detected — contact operator</span>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -543,7 +651,7 @@ export default function App() {
           <AdvisoryBanner />
           <h2 className="panel__title">Contribution Pipeline</h2>
           <p className="panel__subtitle">
-            Invoke → Submit → AI Witness Review → Human Final Approval → Credits + Reputation
+            Invoke → Submit → AI Witness Review → Traceable Finalization → Credits + Reputation
           </p>
           <SubmitFlow
             api={API}
@@ -583,6 +691,16 @@ export default function App() {
                   <span className="entity-row__name">{e.name}</span>
                   {GENESIS_IDS.has(e.id) && <span className="genesis-tag">GENESIS</span>}
                   {e.entity_type === "llm" && <span className="witness-tag">AI WITNESS</span>}
+                  {e.metadata?.roles?.includes("external_inspiration") && (
+                    <span className="inspiration-tag">INSPIRATION</span>
+                  )}
+                  {e.metadata?.roles?.includes("community_partner") && (
+                    <span className="partner-tag">PARTNER</span>
+                  )}
+                  {(e.metadata?.roles?.includes("federation_peer") ||
+                    e.metadata?.roles?.includes("federation_node")) && (
+                    <span className="inspiration-tag">FEDERATION</span>
+                  )}
                   <span className="entity-row__desc">{e.description}</span>
                 </button>
               ))}
@@ -591,10 +709,69 @@ export default function App() {
         </>
       )}
 
+      {tab === "intelligence" && (
+        <>
+          <CapabilityCatalog
+            fetchJson={fetchJson}
+            profile={profile}
+            entities={entities}
+            onRefresh={load}
+          />
+          <StudyAgentPanel
+            fetchJson={fetchJson}
+            tasks={tasks}
+            profile={profile}
+            onRefresh={load}
+          />
+          <IntelligencePanel
+            api={API}
+            fetchJson={fetchJson}
+            tasks={tasks}
+            profile={profile}
+            onSelectEntity={(id) => {
+              setSelectedEntityId(id);
+              setTab("entities");
+            }}
+          />
+        </>
+      )}
+
       {tab === "graph" && (
         <section className="panel">
           <h2 className="panel__title section-heading--ai">Contribution Graph</h2>
           <ContributionGraphView graph={graph} entities={entities} />
+        </section>
+      )}
+
+      {tab === "inspirations" && (
+        <section className="panel">
+          <h2 className="panel__title">External Inspirations</h2>
+          <p className="panel__subtitle">
+            Community entities — OSS projects whose patterns PoCP borrowed (no-token-first)
+          </p>
+          <ExternalInspirationsPanel
+            fetchJson={fetchJson}
+            onSelectEntity={(id) => {
+              setSelectedEntityId(id);
+              setTab("entities");
+            }}
+          />
+        </section>
+      )}
+
+      {tab === "partners" && (
+        <section className="panel">
+          <h2 className="panel__title">Community Partners</h2>
+          <p className="panel__subtitle">
+            Active outreach to open-source & distributed communities — capabilities, Entities, next actions
+          </p>
+          <CommunityPartnersPanel
+            fetchJson={fetchJson}
+            onSelectEntity={(id) => {
+              setSelectedEntityId(id);
+              setTab("entities");
+            }}
+          />
         </section>
       )}
 
@@ -672,9 +849,27 @@ export default function App() {
             </section>
           )}
 
+          {federationImports?.import_count > 0 && (
+            <section className="panel">
+              <h2 className="panel__title">Federated Imports</h2>
+              <p className="panel__subtitle">
+                Cross-node contributions mirrored as community graph hubs ({federationImports.import_count} total)
+              </p>
+              {(federationImports.recent || []).map((item) => (
+                <div key={item.id} className="mini-card">
+                  <strong>{item.task_title}</strong>
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: 4 }}>
+                    {item.peer_entity_name || item.source_node_id} →{" "}
+                    {item.primary_entity_name || item.primary_portable_id} · rep +{item.reputation_applied}
+                  </div>
+                </div>
+              ))}
+            </section>
+          )}
+
           {reviewQueue.length > 0 && (
             <section className="panel">
-              <h2 className="panel__title">Human Review Queue</h2>
+              <h2 className="panel__title">Finalization Queue</h2>
               <p className="panel__subtitle">Contributions awaiting final approval (Meritocrab-style queue)</p>
               {reviewQueue.map((item) => (
                 <div key={item.contribution_id} className="mini-card">
@@ -773,6 +968,10 @@ export default function App() {
           </div>
 
           {latestLedger && <LedgerBlockPanel record={latestLedger} height={ledger.length} />}
+
+          {contribution?.status === "approved" && (
+            <ProofVerifyPanel apiBase={API} contributionId={contribution.id} />
+          )}
         </>
       )}
     </div>

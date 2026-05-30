@@ -16,7 +16,8 @@ from models.wallet import ReputationScore, Wallet
 from services.ledger_chain import append_ledger_record
 from services.protocol_config import get_rewards_config
 from services.reputation_audit import record_reputation_audit
-from services.rights import issue_contribution_rights, issue_registration_bc
+from services.rights import issue_contribution_rights, issue_entity_bc_grant, issue_registration_bc
+from services.rights_conversion import reputation_amount_for_participant
 from services.webhook_dispatcher import dispatch_review_event
 
 
@@ -108,12 +109,14 @@ def approve_contribution(
     db: Session,
     contribution: ContributionEvent,
     reviewer_id: str,
-    feedback: str = "Approved by human reviewer.",
+    feedback: str = "Approved (traceable finalization).",
+    *,
+    finalization: dict | None = None,
 ) -> dict:
-    """Human review → credits for humans, reputation for agents/skills → ledger."""
-    if reviewer_id == contribution.primary_entity_id:
-        raise ValueError("Reviewer cannot approve their own contribution")
+    """Final approval → credits for humans, reputation for agents/skills → ledger.
 
+    Any Entity type may finalize when instance policy allows (entity-equal protocol).
+    """
     review = HumanReview(
         contribution_id=contribution.id,
         reviewer_id=reviewer_id,
@@ -165,7 +168,9 @@ def approve_contribution(
             )
 
         elif entity.entity_type == EntityType.skill:
-            rep_amount = round(skill_rep_base * participant.weight / 0.15, 2) if participant.weight else skill_rep_base
+            rep_amount = reputation_amount_for_participant(entity, participant)
+            if rep_amount is None:
+                rep_amount = skill_rep_base
             _add_reputation(
                 db,
                 entity.id,
@@ -179,9 +184,24 @@ def approve_contribution(
             rewards["reputation"].append(
                 {"entity_id": entity.id, "name": entity.name, "category": "skill", "amount": rep_amount}
             )
+            bc_grant = issue_entity_bc_grant(
+                db, contribution=contribution, participant=participant, entity=entity
+            )
+            if bc_grant:
+                rewards["credits"].append(
+                    {
+                        "entity_id": entity.id,
+                        "name": entity.name,
+                        "cp": 0,
+                        "ai_credits": bc_grant.amount,
+                        "entity_type": "skill",
+                    }
+                )
 
         elif entity.entity_type == EntityType.agent:
-            rep_amount = round(agent_rep_base * participant.weight / 0.25, 2) if participant.weight else agent_rep_base
+            rep_amount = reputation_amount_for_participant(entity, participant)
+            if rep_amount is None:
+                rep_amount = agent_rep_base
             _add_reputation(
                 db,
                 entity.id,
@@ -195,11 +215,65 @@ def approve_contribution(
             rewards["reputation"].append(
                 {"entity_id": entity.id, "name": entity.name, "category": "agent", "amount": rep_amount}
             )
+            bc_grant = issue_entity_bc_grant(
+                db, contribution=contribution, participant=participant, entity=entity
+            )
+            if bc_grant:
+                rewards["credits"].append(
+                    {
+                        "entity_id": entity.id,
+                        "name": entity.name,
+                        "cp": 0,
+                        "ai_credits": bc_grant.amount,
+                        "entity_type": "agent",
+                    }
+                )
+
+        elif entity.entity_type == EntityType.llm:
+            rep_amount = reputation_amount_for_participant(entity, participant)
+            if rep_amount is None:
+                rep_amount = float(
+                    get_rewards_config()["contribution_defaults"].get("llm", {}).get("reputation_base", 2)
+                )
+            _add_reputation(
+                db,
+                entity.id,
+                rep_amount,
+                "llm",
+                source="contribution_approval",
+                reason="Approved contribution participant reward",
+                reference_id=contribution.id,
+                actor_entity_id=reviewer_id,
+            )
+            rewards["reputation"].append(
+                {"entity_id": entity.id, "name": entity.name, "category": "llm", "amount": rep_amount}
+            )
+            bc_grant = issue_entity_bc_grant(
+                db, contribution=contribution, participant=participant, entity=entity
+            )
+            if bc_grant:
+                rewards["credits"].append(
+                    {
+                        "entity_id": entity.id,
+                        "name": entity.name,
+                        "cp": 0,
+                        "ai_credits": bc_grant.amount,
+                        "entity_type": "llm",
+                    }
+                )
 
     ledger_payload = {
         "contribution_id": contribution.id,
         "status": contribution.status.value,
         "rewards": rewards,
+        "finalization": finalization
+        or {
+            "mode": "manual",
+            "applied": True,
+            "finalizer_entity_id": reviewer_id,
+            "policy_id": None,
+            "policy_version": None,
+        },
         "participants": [
             {
                 "entity_id": p.entity_id,
@@ -221,6 +295,7 @@ def approve_contribution(
             "contribution_id": contribution.id,
             "reviewer_id": reviewer_id,
             "rewards": rewards,
+            "finalization": ledger_payload.get("finalization"),
         },
     )
     db.flush()
@@ -231,12 +306,9 @@ def reject_contribution(
     db: Session,
     contribution: ContributionEvent,
     reviewer_id: str,
-    feedback: str = "Rejected by human reviewer.",
+    feedback: str = "Rejected (traceable finalization).",
 ) -> HumanReview:
-    """Human review rejection — Meritocrab-style explicit review outcome."""
-    if reviewer_id == contribution.primary_entity_id:
-        raise ValueError("Reviewer cannot reject their own contribution")
-
+    """Entity finalization rejection — any allowed Entity type may reject under policy."""
     review = HumanReview(
         contribution_id=contribution.id,
         reviewer_id=reviewer_id,
@@ -275,9 +347,7 @@ def request_contribution_changes(
     reviewer_id: str,
     feedback: str = "Please revise and resubmit.",
 ) -> HumanReview:
-    """Meritocrab-style request-changes without full rejection."""
-    if reviewer_id == contribution.primary_entity_id:
-        raise ValueError("Reviewer cannot request changes on their own contribution")
+    """Request revision without full rejection — any Entity finalizer may invoke."""
     if contribution.status != ContributionStatus.ai_verified:
         raise ValueError("Request changes is only available after AI verification")
 

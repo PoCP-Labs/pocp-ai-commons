@@ -21,7 +21,7 @@ AI tools may assist in summarizing issues, reviewing contributions, and identify
 ## Governance Principles
 
 1. Contribution before speculation.
-2. Human responsibility before algorithmic authority.
+2. Traceability before ceremony — record who finalized and which policy applied.
 3. Reputation must be earned, not bought.
 4. AI is a witness, not a ruler.
 5. Rules should be transparent and challengeable.
@@ -72,13 +72,15 @@ AI may help:
 - Detect inconsistencies
 - Identify potential abuse
 - Draft governance documents
+- Finalize contributions under published instance policy (traceable in proof/ledger)
 
 AI may not:
 
-- Make final decisions
-- Override human reviewers
-- Assign rights without review
-- Replace accountable governance
+- Change rights or reputation without a traceable finalizer Entity and policy version
+- Override published governance rules silently
+- Assign rights without an auditable record
+
+Human reviewers remain one valid finalization pattern — not the only one. The portable default is **traceability**, not mandatory human clicks. See [docs/ACCOUNTABILITY-BOUNDARY.md](./docs/ACCOUNTABILITY-BOUNDARY.md).
 
 ## Conflict of Interest
 

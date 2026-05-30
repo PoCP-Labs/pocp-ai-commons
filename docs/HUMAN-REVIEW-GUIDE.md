@@ -1,14 +1,17 @@
 # Human Review Guide
 
-Human reviewers make **final** approval decisions. AI verifiers are witnesses, not rulers.
+**Default PoCP stance:** automate as much as the instance policy allows. Human review is one valid finalization pattern — not a protocol requirement for every contribution.
+
+See [ACCOUNTABILITY-BOUNDARY.md](./ACCOUNTABILITY-BOUNDARY.md).
 
 ## Roles
 
 | Role | Responsibility |
 |------|----------------|
-| AI Verifier (Lumen-0, DeSui, etc.) | Advisory score, feedback, suggested rewards |
-| Clarion-0 | Reviewer assistant — summary, rubric, questions (advisory) |
-| Human Reviewer | Final approve / reject / request changes |
+| AI Verifier (Lumen-0, DeSui, etc.) | Score, feedback, suggested rewards; may auto-finalize under policy |
+| Clarion-0 | Review assistant — summary, rubric, draft; may be configured to finalize when delegated |
+| Human Reviewer | Optional accountable finalizer when policy assigns a human Entity |
+| Agent finalizer | Valid when org charter assigns an Agent Entity + trace in proof |
 
 ## Approval flow
 
@@ -39,7 +42,7 @@ Returns advisory packet: summary, concerns, reviewer questions, suggested reward
 
 ## UI messaging
 
-All surfaces should state: **AI is advisory only. Human reviewers make final decisions.**
+All surfaces should state: **finalization must be traceable** — who finalized and under which policy is recorded; human review is optional instance policy, not a protocol requirement.
 
 ## Governance
 

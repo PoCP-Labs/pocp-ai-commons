@@ -223,7 +223,7 @@ def build_clarion_review_packet(db: Session, contribution: ContributionEvent) ->
 
     risk_score = unified_rubric["risk_score"]
     avg_score = unified_rubric["avg_score"]
-    recommended_status = "ready_for_human_review" if avg_score >= 0.7 and risk_score <= 0.45 else "request_changes"
+    recommended_status = "ready_for_finalization" if avg_score >= 0.7 and risk_score <= 0.45 else "request_changes"
 
     suggested_cp = reward_advisory.get("recommended", {}).get("cp") or heuristic["suggested_cp"]
     suggested_credits = reward_advisory.get("recommended", {}).get("ai_credits") or heuristic["suggested_credits"]
@@ -231,12 +231,12 @@ def build_clarion_review_packet(db: Session, contribution: ContributionEvent) ->
     return {
         "schema_version": CLARION_PACKET_VERSION,
         "review_packet_type": "clarion_unified_advisory_review",
-        "decision_boundary": "advisory_only_human_final_approval",
+        "decision_boundary": "traceable_finalization",
         "agent": {
             "id": CLARION_AGENT_ID,
             "name": "Clarion-0",
             "role": "Reviewer Assistant / Contribution Verifier Agent",
-            "decision_boundary": "advisory_only_human_final_approval",
+            "decision_boundary": "traceable_finalization",
         },
         "contribution": {
             "id": contribution.id,
@@ -299,6 +299,6 @@ def build_clarion_review_packet(db: Session, contribution: ContributionEvent) ->
                 for p in participants
             ],
             "recommended_status": recommended_status,
-            "human_review_required": True,
+            "traceable_finalization_required": True,
         },
     }

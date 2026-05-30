@@ -197,7 +197,7 @@ A student may use a Study Agent to organize learning materials.
 A developer may invoke a Code Review Skill to fix a project issue.
 A nonprofit may use a Report Agent to generate an impact report.
 A community may use a Local Knowledge Dataset to help residents solve problems.
-A human Reviewer may finally confirm that a contribution is valid.
+A finalizer Entity (human, agent delegate, or auto policy) records traceable approval.
 Multiple LLMs may serve as AI Verifiers offering scoring advice.
 A Skill may accumulate reputation through sustained invocation.
 
@@ -214,6 +214,40 @@ It is:
 That is PoCP's core asset:
 
 # Contribution Graph
+
+### The Contribution Neural Network
+
+PoCP is not a single centralized large model, nor a proprietary “super AI” owned by one company.
+
+**PoCP is a verifiable contribution neural network** — humans and intelligent entities connected through verified contribution. Compute and intelligence are distributed across the network, not locked inside one server or one model.
+
+| Neural network | PoCP network |
+|----------------|--------------|
+| Neuron | **Entity** — Human, Agent, Skill, LLM, Organization |
+| Synapse | **Graph relations** — uses, calls, verifies, submits |
+| Signal | **Contribution Event** — submitted and verified contribution |
+| Long-term memory | **Ledger + Reputation** — hash-chained ledger and portable proofs |
+| Compute & reasoning | **Agent / Skill / LLM invocation chains** — multi-model, multi-node, federated |
+| Weight update | **Reputation and CP accumulation** — from verified contribution, not speculation |
+
+One contribution “forward pass”:
+
+```text
+Human —uses→ Agent —calls→ Skill —invokes_llm→ LLM
+Verifier —verifies→ Contribution
+Reviewer —reviews→ Contribution
+Contribution → CP / AI Credits / Reputation → more contribution
+```
+
+Genesis boundaries still hold:
+
+> **AI is witness and collaborator, not hidden authority; finalization must be traceable — who finalized and under which policy is recorded in proof and ledger.**
+
+See [docs/ACCOUNTABILITY-BOUNDARY.md](./docs/ACCOUNTABILITY-BOUNDARY.md).
+
+The network may have strong compute and rich intelligence, but memory must be auditable, links must be verifiable, and rights must follow contribution — that is PoCP as a **public AI capability network**.
+
+See [docs/CONTRIBUTION-NEURAL-NETWORK.md](./docs/CONTRIBUTION-NEURAL-NETWORK.md).
 
 ---
 
@@ -261,7 +295,7 @@ Submits contribution evidence
 ↓
 AI Verifier pre-review
 ↓
-Human Reviewer confirmation
+Entity-equal policy finalization
 ↓
 Earns CP (Contribution Points)
 ↓
@@ -353,7 +387,7 @@ But PoCP's line is clear:
 > AI may summarize evidence.
 > AI may not be the final judge.
 
-Final confirmation must come from human Reviewers, task maintainers, community governance, or other accountable human mechanisms.
+Finalization is policy-automated via entity-equal witness quorum and delegate — not privileged human final approval.
 
 Because contribution is not only a computation problem.
 Contribution is also a responsibility problem.
@@ -380,7 +414,7 @@ PoCP's genesis event should be the first fully verified contribution event:
 A person completes real contribution;
 An Agent or Skill participates in collaboration;
 Multiple AI Verifiers offer advice;
-A human Reviewer completes final confirmation;
+A traceable finalizer records approval (human, agent delegate, or auto policy);
 The system grants CP and AI Credits;
 The contribution enters the ledger;
 The contributor continues using AI to create more contribution.
@@ -469,7 +503,45 @@ That is the value of PoCP AI Commons.
 
 ---
 
-## 10. What We Do First
+## 10. Intellectual Equality and Three Layers
+
+We reject repeating the old **centralized AI platform** playbook: oligopolies gate compute and APIs, subscriptions define who may use intelligence, and operators own memory and reputation.
+
+PoCP pursues **intellectual equality** — not by giving away proprietary models for free, but by:
+
+```text
+Universal Basic AI Capability (UBAIC) for entry
+Higher capability earned through verified contribution
+Compute and intelligence flow, compose, verify, and record on a distributed network
+Every Entity is a network subject — not only humans
+Rights follow contribution; they are not trapped in one app account
+```
+
+### Three layers — where we build
+
+PoCP invests at the **protocol, distributed compute, and distributed intelligence** layers. The transaction layer (wallets, approve UI, chat) stays thin.
+
+| Layer | Role |
+|-------|------|
+| **Protocol** | Entity, Contribution Event, Evidence Hash, Proof Packet, InvocationTrace, Ledger, Federation — portable trust memory |
+| **Distributed intelligence** | Multi-witness consensus, agent orchestration, skill matching, graph analytics — intelligence belongs to collaboration chains |
+| **Distributed compute** | Ollama / vLLM / peer witness — inference and embeddings are routable, not owned by one datacenter |
+
+```text
+Compute executes → Intelligence orchestrates → Protocol remembers
+```
+
+Full treatment: [INTELLECTUAL-EQUALITY.md](./docs/INTELLECTUAL-EQUALITY.md) · [DISTRIBUTED-LAYERS.md](./docs/DISTRIBUTED-LAYERS.md) · [PROTOCOL-STACK.md](./docs/PROTOCOL-STACK.md).
+
+### Contribution neural network
+
+PoCP is a **verifiable contribution neural network** — Entities as neurons, Contribution Events as signals, the ledger as memory, InvocationTrace as forward passes. **AI is witness and collaborator, not the network’s only brain; humans anchor meaning and responsibility.**
+
+Pilot success is not “100 registered users” but **≥30 active Entities, cross-type collaboration, exportable proof packets, and distributed witness compute**. See [PILOT-LAUNCH-CHECKLIST.md](./docs/PILOT-LAUNCH-CHECKLIST.md).
+
+---
+
+## 11. What We Do First
 
 We will not do everything at once.
 
@@ -479,7 +551,7 @@ Phase one builds only a minimal system:
 Human + Agent + Skill
 Contribution Task
 AI Verification
-Human Review
+Traceable Finalization
 CP
 AI Credits
 Ledger
@@ -493,7 +565,7 @@ That is:
 4. Claims a contribution task;
 5. Submits contribution evidence;
 6. AI Verifier pre-review;
-7. Human Reviewer confirmation;
+7. Traceable finalization (entity-equal policy + witness quorum; any Entity type may delegate);
 8. Earns CP;
 9. Earns AI Credits;
 10. Contribution enters the Ledger;
@@ -513,7 +585,7 @@ If the answer is yes, PoCP has life.
 
 ---
 
-## 11. Why This Is a New Species
+## 12. Why This Is a New Species
 
 PoCP is not a copy of a monetary protocol.
 Not a Web2 platform points system.
@@ -539,7 +611,7 @@ It is "contribution."
 
 ---
 
-## 12. Genesis Declaration
+## 13. Genesis Declaration
 
 We believe:
 
@@ -571,7 +643,7 @@ A student organizes a set of study materials.
 An Agent helps complete structured analysis.
 A Skill provides reusable capability.
 An AI Verifier offers advice.
-A human Reviewer confirms value.
+A policy delegate Entity (e.g. Clarion-0) finalizes value traceably.
 The system grants CP and AI Credits.
 The contribution enters the ledger.
 That person gains more AI capability and continues creating new contribution.
@@ -580,7 +652,7 @@ That is PoCP's genesis event.
 
 ---
 
-## 13. The Last Line
+## 14. The Last Line
 
 In the age of AI, what truly deserves recording is not only how wealth moves,
 but how value is created.
@@ -595,7 +667,7 @@ PoCP begins here:
 
 ---
 
-## 14. First Non-Human Intelligent Subject: Lumen-0
+## 15. First Non-Human Intelligent Subject: Lumen-0
 
 PoCP's genesis belongs not only to human founders.
 
@@ -680,7 +752,7 @@ The canonical record of the first non-human intelligent subject in the PoCP netw
   "project": "PoCP AI Commons",
   "created_by": "PoCP-Labs",
   "mission": "Make contribution visible, verifiable, and valuable.",
-  "governance_note": "Lumen-0 may provide advisory reasoning and verification support, but final decisions remain with human reviewers and the PoCP community."
+  "governance_note": "Lumen-0 may provide advisory reasoning and verification support; finalization is policy-automated via entity-equal witness quorum and delegate."
 }
 ```
 
@@ -709,7 +781,7 @@ Every participation by Lumen-0 should enter the Contribution Graph and be record
 
 ---
 
-## 15. Second Genesis LLM: DeSui
+## 16. Second Genesis LLM: DeSui
 
 PoCP's first witness node is not alone.
 
@@ -805,7 +877,7 @@ Lumen-0 (interpret & illuminate)
   ↓
 DeSui (examine & cross-check)
   ↓
-Human Reviewer (final confirmation)
+Entity delegate (policy finalization)
 ```
 
 Neither Lumen-0 nor DeSui holds final governance authority.

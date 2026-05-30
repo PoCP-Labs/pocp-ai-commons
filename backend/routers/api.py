@@ -1,6 +1,7 @@
 import os
+from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 
 from database import get_db
@@ -27,6 +28,9 @@ from schemas import (
     ContributionCreate,
     ContributionGraph,
     ContributionOut,
+    ComputeHeartbeatIn,
+    ComputeRegisterIn,
+    DatasetCreate,
     EntityCreate,
     EntityOut,
     InvocationCreate,
@@ -39,9 +43,19 @@ from schemas import (
     SkillOut,
     TaskCreate,
     TaskOut,
+    ToolCreate,
     WalletOut,
+    WorkflowCreate,
 )
-from services.anti_abuse import check_daily_contribution_limit, require_evidence
+from intelligence import capability_layer
+from intelligence.entity_ontology import enrich_entity_record, ontology_document
+from services.entity_register import (
+    register_dataset,
+    register_entity as register_typed_entity,
+    register_tool,
+    register_workflow,
+    validate_participants_for_submission,
+)
 from services.ai_verify_service import ai_verify_service
 from services.contribution import (
     approve_contribution,
@@ -51,7 +65,9 @@ from services.contribution import (
     run_ai_verification,
 )
 from services.evidence import POCP_META_KEY, enrich_evidence
+from services.finalization import validate_finalizer_entity
 from services.graph import build_contribution_graph
+from services.graph_merkle import build_graph_delta
 from services.invocation import record_invocation
 from services.evidence_validate import validate_evidence_urls
 from services.org_foundation import can_sponsor_as_organization
@@ -77,6 +93,61 @@ def _assert_task_sponsor_allowed(db: Session, sponsor_id: str | None, current_us
 @router.get("/entities", response_model=list[EntityOut])
 def list_entities(db: Session = Depends(get_db)):
     return db.query(Entity).order_by(Entity.created_at).all()
+
+
+@router.get("/entities/ontology")
+def get_entities_ontology():
+    """Canonical Entity type × role ontology (万物皆 Entity)."""
+    return ontology_document()
+
+
+@router.get("/entities/{entity_id}/ontology")
+def get_entity_ontology_slice(entity_id: str, db: Session = Depends(get_db)):
+    entity = db.query(Entity).filter(Entity.id == entity_id).first()
+    if not entity:
+        raise HTTPException(status_code=404, detail="Entity not found")
+    return enrich_entity_record(entity)
+
+
+@router.post("/entities/{entity_id}/compute/register")
+def register_entity_compute_profile(
+    entity_id: str,
+    body: ComputeRegisterIn,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    entity = capability_layer.register_compute_profile(
+        db,
+        entity_id=entity_id,
+        profile=body.model_dump(),
+        owner_entity_id=current_user.entity_id,
+    )
+    db.commit()
+    db.refresh(entity)
+    return {
+        "entity_id": entity.id,
+        "compute_profile": (entity.metadata_ or {}).get("compute_profile"),
+    }
+
+
+@router.post("/entities/{entity_id}/compute/heartbeat")
+def heartbeat_entity_compute_profile(
+    entity_id: str,
+    body: ComputeHeartbeatIn,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    entity = capability_layer.heartbeat_compute_profile(
+        db,
+        entity_id=entity_id,
+        status=body.status,
+        owner_entity_id=current_user.entity_id,
+    )
+    db.commit()
+    return {
+        "entity_id": entity.id,
+        "compute_profile": (entity.metadata_ or {}).get("compute_profile"),
+    }
 
 
 @router.get("/entities/{entity_id}", response_model=EntityOut)
@@ -203,24 +274,99 @@ def get_contribution_graph(db: Session = Depends(get_db)):
     return build_contribution_graph(db)
 
 
+@router.get("/graph/delta")
+def get_contribution_graph_delta(
+    since: datetime | None = Query(default=None, description="ISO8601 — return edges for contributions created after this time"),
+    db: Session = Depends(get_db),
+):
+    """Incremental graph sync for mirror nodes (Bitcoin headers-first style)."""
+    return build_graph_delta(db, since=since)
+
+
 @router.post("/entities", response_model=EntityOut, status_code=201)
 def create_entity(body: EntityCreate, db: Session = Depends(get_db)):
     try:
-        entity_type = EntityType(body.entity_type)
+        entity = register_typed_entity(
+            db,
+            entity_type=body.entity_type,
+            name=body.name,
+            description=body.description,
+            owner_id=body.owner_id,
+            creator_id=body.creator_id,
+        )
+        db.commit()
+        db.refresh(entity)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=f"Invalid entity_type: {body.entity_type}") from exc
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return entity
 
-    entity = Entity(
-        entity_type=entity_type,
+
+@router.post("/entities/tool", response_model=EntityOut, status_code=201)
+def create_tool_entity(
+    body: ToolCreate,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    if body.maintainer_id != current_user.entity_id:
+        raise HTTPException(status_code=403, detail="maintainer_id must match the authenticated entity")
+    entity = register_tool(
+        db,
         name=body.name,
         description=body.description,
-        owner_id=body.owner_id,
-        creator_id=body.creator_id,
-        status=EntityStatus.active,
+        maintainer_id=body.maintainer_id,
+        tool_kind=body.tool_kind,
+        service_endpoints=body.service_endpoints,
+        capabilities=body.capabilities,
+        mcp_server=body.mcp_server,
+        activate=body.activate,
     )
-    db.add(entity)
-    db.flush()
-    grant_registration_credits(db, entity)
+    db.commit()
+    db.refresh(entity)
+    return entity
+
+
+@router.post("/entities/dataset", response_model=EntityOut, status_code=201)
+def create_dataset_entity(
+    body: DatasetCreate,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    if body.maintainer_id != current_user.entity_id:
+        raise HTTPException(status_code=403, detail="maintainer_id must match the authenticated entity")
+    entity = register_dataset(
+        db,
+        name=body.name,
+        description=body.description,
+        maintainer_id=body.maintainer_id,
+        source_uri=body.source_uri,
+        license=body.license,
+        content_hash=body.content_hash,
+        data_format=body.data_format,
+        activate=body.activate,
+    )
+    db.commit()
+    db.refresh(entity)
+    return entity
+
+
+@router.post("/entities/workflow", response_model=EntityOut, status_code=201)
+def create_workflow_entity(
+    body: WorkflowCreate,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    if body.maintainer_id != current_user.entity_id:
+        raise HTTPException(status_code=403, detail="maintainer_id must match the authenticated entity")
+    entity = register_workflow(
+        db,
+        name=body.name,
+        description=body.description,
+        maintainer_id=body.maintainer_id,
+        steps=body.steps,
+        version=body.version,
+        entrypoint=body.entrypoint,
+        activate=body.activate,
+    )
     db.commit()
     db.refresh(entity)
     return entity
@@ -257,8 +403,20 @@ def submit_contribution(
     if body.primary_entity_id != current_user.entity_id:
         raise HTTPException(status_code=403, detail="primary_entity_id must match the authenticated entity")
 
-    require_evidence(body.evidence)
-    check_daily_contribution_limit(db, current_user.entity_id)
+    capability_layer.precheck_submission(db, entity_id=current_user.entity_id, evidence=body.evidence)
+
+    if body.participants and os.getenv("POCP_VALIDATE_PARTICIPANT_ONTOLOGY", "true").lower() == "true":
+        participant_ids = {p.entity_id for p in body.participants}
+        participant_entities = {
+            e.id: e for e in db.query(Entity).filter(Entity.id.in_(participant_ids)).all()
+        }
+        try:
+            validate_participants_for_submission(
+                [p.model_dump() for p in body.participants],
+                participant_entities,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     evidence = enrich_evidence(body.evidence)
     if body.provenance is not None:
@@ -347,7 +505,7 @@ async def verify_contribution(
     if contribution.status == ContributionStatus.ai_verified:
         raise HTTPException(
             status_code=400,
-            detail="Contribution already passed AI verification; proceed to human approval",
+            detail="Contribution already passed AI verification; proceed to finalization",
         )
 
     if body.score > 0:
@@ -390,6 +548,17 @@ async def verify_contribution(
     return get_contribution(contribution_id, db)
 
 
+@router.post("/contributions/{contribution_id}/finalize", response_model=ContributionOut)
+def finalize_contribution_endpoint(
+    contribution_id: str,
+    body: ApproveIn,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    """Entity-equal manual finalization (optional — auto-finalize is default)."""
+    return approve_contribution_endpoint(contribution_id, body, db, current_user)
+
+
 @router.post("/contributions/{contribution_id}/approve", response_model=ContributionOut)
 def approve_contribution_endpoint(
     contribution_id: str,
@@ -408,14 +577,18 @@ def approve_contribution_endpoint(
     if contribution.status != ContributionStatus.ai_verified:
         raise HTTPException(
             status_code=400,
-            detail="Contribution must pass AI verification before human approval",
+            detail="Contribution must pass AI verification before finalization",
         )
     if body.reviewer_id != current_user.entity_id:
         raise HTTPException(status_code=403, detail="reviewer_id must match the authenticated entity")
 
     reviewer = db.query(Entity).filter(Entity.id == body.reviewer_id).first()
-    if not reviewer or reviewer.entity_type != EntityType.human:
-        raise HTTPException(status_code=400, detail="Reviewer must be a human entity")
+    if not reviewer:
+        raise HTTPException(status_code=404, detail="Finalizer entity not found")
+    try:
+        validate_finalizer_entity(reviewer)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     try:
         approve_contribution(db, contribution, body.reviewer_id, body.feedback)
@@ -452,8 +625,12 @@ def reject_contribution_endpoint(
         raise HTTPException(status_code=403, detail="reviewer_id must match the authenticated entity")
 
     reviewer = db.query(Entity).filter(Entity.id == body.reviewer_id).first()
-    if not reviewer or reviewer.entity_type != EntityType.human:
-        raise HTTPException(status_code=400, detail="Reviewer must be a human entity")
+    if not reviewer:
+        raise HTTPException(status_code=404, detail="Finalizer entity not found")
+    try:
+        validate_finalizer_entity(reviewer)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     try:
         reject_contribution(db, contribution, body.reviewer_id, body.feedback)
@@ -487,8 +664,12 @@ def request_changes_contribution_endpoint(
         raise HTTPException(status_code=403, detail="reviewer_id must match the authenticated entity")
 
     reviewer = db.query(Entity).filter(Entity.id == body.reviewer_id).first()
-    if not reviewer or reviewer.entity_type != EntityType.human:
-        raise HTTPException(status_code=400, detail="Reviewer must be a human entity")
+    if not reviewer:
+        raise HTTPException(status_code=404, detail="Finalizer entity not found")
+    try:
+        validate_finalizer_entity(reviewer)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     try:
         request_contribution_changes(db, contribution, body.reviewer_id, body.feedback)

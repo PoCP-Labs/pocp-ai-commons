@@ -18,7 +18,11 @@ It is a contribution-based AI capability network where humans, agents, skills, m
 
 PoCP is also not a technical assembly of LLM APIs, points, task boards, and graph UI. Its goal is to define native protocol primitives for contribution: Entity, Contribution Event, Evidence Hash, Human-AI Verification State, Contribution Proof Packet, Contribution Graph, Rights Conversion, and Ledger Memory.
 
-See also: [PoCP as the Contribution Internet](./docs/CONTRIBUTION-INTERNET.md), [PoCP Core Technology Stack](./docs/CORE-TECH-STACK.md), [PoCP Native Technology Principles](./docs/NATIVE-TECHNOLOGY-PRINCIPLES.md), and [PoCP Intelligence Capability Layer](./docs/INTELLIGENCE-LAYER.md).
+**Build at the protocol and capability layers** — not by stacking transaction-layer SaaS features. See [Protocol Stack](./docs/PROTOCOL-STACK.md) and [Intelligence Capability Layer](./docs/INTELLIGENCE-LAYER.md).
+
+**Language:** The platform (UI, API defaults, operator docs) is **[English-first](./docs/LANGUAGE-POLICY.md)**. Genesis and other manifesto translations live under `docs/genesis/`.
+
+See also: [PoCP as the Contribution Internet](./docs/CONTRIBUTION-INTERNET.md), [Contribution Neural Network](./docs/CONTRIBUTION-NEURAL-NETWORK.md), [Openness and Anti-Monopoly](./docs/OPENNESS-AND-ANTI-MONOPOLY.md), [Neural Network GitHub Adoption](./docs/NEURAL-NETWORK-GITHUB-ADOPTION.md), [PoCP Core Technology Stack](./docs/CORE-TECH-STACK.md), [PoCP Native Technology Principles](./docs/NATIVE-TECHNOLOGY-PRINCIPLES.md), and [PoCP Intelligence Capability Layer](./docs/INTELLIGENCE-LAYER.md).
 
 ---
 
@@ -181,9 +185,11 @@ They may evaluate:
 * suggested CP;
 * suggested AI Credits.
 
-But AI cannot make the final decision.
+But AI does not hold hidden authority.
 
-Final approval must always be made by human reviewers or accountable human governance.
+Finalization must be **traceable**: every approval records which Entity (human, agent, or org delegate) and which policy version finalized the outcome. Instance policy may auto-finalize under witness quorum — human click is not a protocol requirement.
+
+See [docs/ACCOUNTABILITY-BOUNDARY.md](./docs/ACCOUNTABILITY-BOUNDARY.md).
 
 ---
 
@@ -262,11 +268,13 @@ It begins with contribution, verification, AI access, reputation, and human-agen
 
 ### Phase 3: Pilot
 
-* 30–100 early users
+* 30–100 **active Entities** (≥4 types — Human, Agent, Skill, LLM, …)
 * students, developers, creators, volunteers
-* verified contribution tasks
-* AI Credits distribution
+* verified contribution tasks + StudyAgent multi-Entity paths
+* AI Credits distribution + distributed witness compute
 * feedback and anti-abuse testing
+
+See [docs/INTELLECTUAL-EQUALITY.md](./docs/INTELLECTUAL-EQUALITY.md) · [docs/PILOT-LAUNCH-CHECKLIST.md](./docs/PILOT-LAUNCH-CHECKLIST.md).
 
 ### Phase 4: Contribution Graph
 
@@ -300,35 +308,65 @@ It begins with contribution, verification, AI access, reputation, and human-agen
 
 ## Development Status
 
-PoCP AI Commons is in the **Genesis MVP → Sprint Alpha** transition.
+PoCP AI Commons is in **Phase A** of the [three-phase roadmap](./docs/ROADMAP-THREE-PHASES.md): **demonstrable public loop** (fork → run → verified contribution in ~30 minutes).
 
-Genesis established the repo, protocol spec, demo seed, and contribution loop. Sprint Alpha turns that demo into a real usable MVP:
+### Phase A — Quickstart (one command)
 
-```text
-Dev Login / GitHub Login
-→ 100 starter AI Credits
-→ AI Chat burns Credits
-→ Contribution submission
-→ AI Verifier advisory review
-→ Human reviewer confirms
-→ CP + AI Credits issued
-→ Ledger + Contribution Graph
+**Windows (PowerShell):**
+
+```powershell
+.\scripts\run-phase-a.ps1              # single node :8000 + :3000
+.\scripts\run-phase-a.ps1 -Federation  # node-a :8100, node-b :8101
 ```
 
-**Sprint Alpha status:** backend loop implemented (auth, wallet, AI chat, verifiers, ledger, proof, federation). Frontend polish, GitHub OAuth in production, and contributor onboarding are in progress.
+**Linux / macOS:**
 
-See [docs/SPRINT_ALPHA.md](./docs/SPRINT_ALPHA.md) for endpoints and local test flow.
+```bash
+chmod +x scripts/run-phase-a.sh
+./scripts/run-phase-a.sh              # single node
+./scripts/run-phase-a.sh --federation # federation demo
+```
+
+**Acceptance only** (API already running):
+
+```bash
+python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8000
+python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8100 --federation http://127.0.0.1:8101
+```
+
+Staging template: [backend/.env.staging.example](./backend/.env.staging.example) (`ENABLE_DEV_LOGIN=false`, GitHub OAuth).
+
+---
+
+PoCP AI Commons is in the **Sprint Alpha → Entity Network Pilot** transition.
+
+Genesis established the repo, protocol spec, demo seed, and contribution loop. Sprint Alpha turned the demo into a usable backend. The **Entity Network Pilot** validates three layers together — protocol memory, distributed intelligence, distributed compute — not human signup count alone:
+
+```text
+Entity participates (Human / Agent / Skill / LLM / …)
+→ Distributed witness + Agent orchestration
+→ Contribution → Proof Packet → Ledger + Graph
+→ Human accountability anchor approves
+→ Credits + Reputation → more contribution
+```
+
+**Sprint Alpha status:** backend loop implemented (auth, wallet, AI chat, verifiers, ledger, proof, federation, peer compute prototype). Pilot onboarding, GitHub OAuth in production, and ≥30 active Entities across types are next.
+
+See [docs/INTELLECTUAL-EQUALITY.md](./docs/INTELLECTUAL-EQUALITY.md) · [docs/SPRINT_ALPHA.md](./docs/SPRINT_ALPHA.md) · [docs/PILOT-LAUNCH-CHECKLIST.md](./docs/PILOT-LAUNCH-CHECKLIST.md).
 
 ## Project Planning
 
 | Document | Purpose |
 |----------|---------|
-| [CURRENT-STAGE-REVIEW.md](./CURRENT-STAGE-REVIEW.md) | Stage review: Genesis MVP → Sprint Alpha |
+| [docs/ROADMAP-THREE-PHASES.md](./docs/ROADMAP-THREE-PHASES.md) | **Phase A/B/C** — demonstrable loop → operable network → Contribution Internet |
 | [SPRINT-ALPHA-PLAN.md](./SPRINT-ALPHA-PLAN.md) | Sprint Alpha goals, loop, and P0 features |
 | [NO-TOKEN-FIRST.md](./NO-TOKEN-FIRST.md) | Why PoCP starts with contribution, not tokens |
 | [AI-CREDITS-CP-REPUTATION.md](./AI-CREDITS-CP-REPUTATION.md) | AI Credits, CP, and reputation model |
 | [LUMEN-0-CONTRIBUTION-RECORD.md](./LUMEN-0-CONTRIBUTION-RECORD.md) | Lumen-0 genesis AI collaborator contribution record |
 | [docs/README-ALIGNMENT-NOTES.md](./docs/README-ALIGNMENT-NOTES.md) | README alignment notes for public narrative |
+| [docs/PILOT-LAUNCH-CHECKLIST.md](./docs/PILOT-LAUNCH-CHECKLIST.md) | Pilot launch checklist |
+| [docs/PILOT-REVIEWER-RECRUIT.md](./docs/PILOT-REVIEWER-RECRUIT.md) | Reviewer & community recruitment templates |
+| [docs/FEDERATION-DEMO-TROUBLESHOOTING.md](./docs/FEDERATION-DEMO-TROUBLESHOOTING.md) | Epic D dual-node troubleshooting |
 
 Use GitHub issue templates: `sprint_alpha_task`, `readme_cleanup_task`.
 
@@ -346,7 +384,8 @@ Use GitHub issue templates: `sprint_alpha_task`, `readme_cleanup_task`.
 
 | Document | Purpose |
 |----------|---------|
-| [GENESIS.md](./GENESIS.md) | Why PoCP is a new species for the AI age; genesis Entities: **Lumen-0** (witness) and **DeSui** (validator). **Translations:** [中文](docs/genesis/zh-CN.md) · [Français](docs/genesis/fr.md) · [Deutsch](docs/genesis/de.md) · [العربية](docs/genesis/ar.md) · [Русский](docs/genesis/ru.md) — see [docs/genesis/README.md](docs/genesis/README.md) |
+| [GENESIS.md](./GENESIS.md) | Why PoCP is a new species for the AI age; genesis Entities: **Lumen-0** (witness) and **DeSui** (validator). §10 Intellectual equality & three layers. **Translations:** [中文](docs/genesis/zh-CN.md) · [Français](docs/genesis/fr.md) · [Deutsch](docs/genesis/de.md) · [العربية](docs/genesis/ar.md) · [Русский](docs/genesis/ru.md) — see [docs/genesis/README.md](docs/genesis/README.md) |
+| [docs/INTELLECTUAL-EQUALITY.md](./docs/INTELLECTUAL-EQUALITY.md) | Intellectual equality — protocol, distributed compute, distributed intelligence (zh + en) |
 | [AI-COMMONS.md](./AI-COMMONS.md) | First application: the AI commons network |
 | [PROTOCOL-SPEC-v0.1.md](./PROTOCOL-SPEC-v0.1.md) | Minimal protocol spec for implementation |
 | [docs/INTELLIGENCE-LAYER.md](./docs/INTELLIGENCE-LAYER.md) | PoCP Intelligence Capability Layer — nine contribution-intelligence modules |
@@ -384,6 +423,8 @@ Broad participation in building PoCP — not only programmers. Requirements, iss
 | [AI-ASSISTED-CODING-GUIDE.md](./AI-ASSISTED-CODING-GUIDE.md) | Human + Agent + Skill workflows; AI advisory, human responsible |
 | [REVIEW-GUIDE.md](./REVIEW-GUIDE.md) | Review rubrics for code, docs, and verification |
 | [docs/CODE-COMMONS-LAUNCH.md](./docs/CODE-COMMONS-LAUNCH.md) | Launch plan for the code contribution wave |
+| [docs/CAPABILITY-INTEGRATION.md](./docs/CAPABILITY-INTEGRATION.md) | **Required:** integrate OpenClaw, AgentSkills, MCP, and agents into PoCP |
+| [docs/ENTITY-ONTOLOGY.md](./docs/ENTITY-ONTOLOGY.md) | Entity types, participant roles, accountability — the「万物」ontology |
 
 Use GitHub issue templates under `.github/ISSUE_TEMPLATE/` (`code_contribution_task`, `issue_spec_task`, `test_task`, `skill_task`, `review_task`).
 
@@ -405,7 +446,22 @@ This repository now includes a zero-build static facade for a public PoCP manife
 
 ---
 
-## Quick Start (Developers)
+## Capability Integration (required)
+
+PoCP **registers and proves** external AI capabilities; OpenClaw, MCP, and LLM APIs **execute** them.
+
+| API | Purpose |
+|-----|---------|
+| `GET /api/v1/capabilities/sources` | Supported sources (OpenClaw, AgentSkills, MCP, …) |
+| `GET /api/v1/capabilities/catalog` | Registered skills, agents, tools |
+| `POST /api/v1/capabilities/import/agentskills` | Import `SKILL.md` → Skill entity |
+| `POST /api/v1/capabilities/import/agent` | Import agent manifest |
+| `POST /api/v1/capabilities/skills/{id}/execute` | **Execute Skill** (native or OpenClaw) |
+| `POST /api/v1/capabilities/agents/{id}/execute` | **Execute Agent** (StudyAgent or generic) |
+
+See [docs/CAPABILITY-INTEGRATION.md](./docs/CAPABILITY-INTEGRATION.md).
+
+---
 
 ```bash
 docker compose up --build
@@ -438,7 +494,7 @@ See [backend/.env.example](./backend/.env.example) for database, OAuth, AI provi
 
 For the public-site publishing path, see [docs/DEPLOY-CHECKLIST.md](./docs/DEPLOY-CHECKLIST.md).
 
-See also: [docs/VISION.md](./docs/VISION.md) · [docs/OPENNESS-AND-ANTI-MONOPOLY.md](./docs/OPENNESS-AND-ANTI-MONOPOLY.md) · [docs/LOCAL-SETUP.md](./docs/LOCAL-SETUP.md) · [docs/PUBLIC-DEPLOY.md](./docs/PUBLIC-DEPLOY.md) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) · [docs/API-SPEC.md](./docs/API-SPEC.md) · [docs/PUBLIC-DEMO.md](./docs/PUBLIC-DEMO.md) · [docs/PROTOCOL.md](./docs/PROTOCOL.md) · [docs/SCHEMA.md](./docs/SCHEMA.md) · [docs/DATABASE.md](./docs/DATABASE.md) · [PROTOCOL-SPEC-v0.1.md](./PROTOCOL-SPEC-v0.1.md)
+See also: [docs/VISION.md](./docs/VISION.md) · [docs/INTELLECTUAL-EQUALITY.md](./docs/INTELLECTUAL-EQUALITY.md) · [docs/DISTRIBUTED-LAYERS.md](./docs/DISTRIBUTED-LAYERS.md) · [docs/CONTRIBUTION-NEURAL-NETWORK.md](./docs/CONTRIBUTION-NEURAL-NETWORK.md) · [docs/OPENNESS-AND-ANTI-MONOPOLY.md](./docs/OPENNESS-AND-ANTI-MONOPOLY.md) · [docs/LOCAL-SETUP.md](./docs/LOCAL-SETUP.md) · [docs/PUBLIC-DEPLOY.md](./docs/PUBLIC-DEPLOY.md) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) · [docs/API-SPEC.md](./docs/API-SPEC.md) · [docs/PUBLIC-DEMO.md](./docs/PUBLIC-DEMO.md) · [docs/PROTOCOL.md](./docs/PROTOCOL.md) · [docs/SCHEMA.md](./docs/SCHEMA.md) · [docs/DATABASE.md](./docs/DATABASE.md) · [PROTOCOL-SPEC-v0.1.md](./PROTOCOL-SPEC-v0.1.md)
 
 ---
 

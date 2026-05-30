@@ -10,6 +10,8 @@ export default function ContributionInsights({
   const [clarion, setClarion] = useState(null);
   const [advisory, setAdvisory] = useState(null);
   const [attribution, setAttribution] = useState(null);
+  const [inspirations, setInspirations] = useState(null);
+  const [partners, setPartners] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
@@ -21,12 +23,16 @@ export default function ContributionInsights({
       fetchJson(`/api/v1/contributions/${contributionId}/clarion-review`).catch(() => null),
       fetchJson(`/api/v1/contributions/${contributionId}/reward-advisory`).catch(() => null),
       fetchJson(`/api/v1/contributions/${contributionId}/attribution-proof`).catch(() => null),
+      fetchJson(`/api/v1/contributions/${contributionId}/external-inspirations`).catch(() => null),
+      fetchJson(`/api/v1/contributions/${contributionId}/community-partners`).catch(() => null),
     ])
-      .then(([clarionPacket, rewardPacket, attributionProof]) => {
+      .then(([clarionPacket, rewardPacket, attributionProof, inspirationPacket, partnerPacket]) => {
         if (cancelled) return;
         setClarion(clarionPacket);
         setAdvisory(rewardPacket);
         setAttribution(attributionProof);
+        setInspirations(inspirationPacket);
+        setPartners(partnerPacket);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -52,9 +58,9 @@ export default function ContributionInsights({
           reviewer_id: reviewerId,
           feedback:
             action === "approve"
-              ? "Approved by human reviewer."
+              ? "Approved (traceable finalization)."
               : action === "reject"
-                ? "Rejected by human reviewer."
+                ? "Rejected (traceable finalization)."
                 : "Please revise and resubmit.",
         }),
       });
@@ -109,6 +115,49 @@ export default function ContributionInsights({
           {" · "}
           Builders: <strong>{attribution.leaf_count ?? 0}</strong>
         </div>
+      )}
+
+      {inspirations?.matched_count > 0 && (
+        <>
+          <h4 style={{ fontSize: "0.82rem", margin: "12px 0 6px", color: "#fb7185" }}>
+            External Inspiration Patterns
+          </h4>
+          {(inspirations.inspirations || []).map((item) => (
+            <div key={item.slug || item.entity_id} className="mini-card">
+              <span className="entity-badge entity-badge--community">community</span>
+              {" "}
+              <strong>{item.display_name || item.slug}</strong>
+              {(item.contributions || []).slice(0, 2).map((c) => (
+                <div key={c.contribution_id} style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: 4 }}>
+                  {c.title}
+                  {c.matched_module ? ` · ${c.matched_module}` : ""}
+                </div>
+              ))}
+            </div>
+          ))}
+        </>
+      )}
+
+      {partners && (partners.matched_partners?.length > 0 || partners.high_priority_outreach?.length > 0) && (
+        <>
+          <h4 style={{ fontSize: "0.82rem", margin: "12px 0 6px", color: "#34d399" }}>
+            Community Partner Alignment
+          </h4>
+          {(partners.matched_partners || []).slice(0, 4).map((item) => (
+            <div key={item.slug || item.entity_id} className="mini-card">
+              <span className="entity-badge entity-badge--community">partner</span>{" "}
+              <strong>{item.display_name || item.slug}</strong>
+              <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: 4 }}>
+                {item.capability} · {item.partnership_status?.replace(/_/g, " ")}
+              </div>
+            </div>
+          ))}
+          {(partners.high_priority_outreach || []).length > 0 && (
+            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 6 }}>
+              {partners.high_priority_outreach.length} high-priority outreach target(s) in registry
+            </div>
+          )}
+        </>
       )}
 
       {contributionId && reviewerId && currentEntityId && currentEntityId !== reviewerId && (

@@ -1,0 +1,75 @@
+# Finalization policy v0.3 — Entity-equal automation (no human final gate)
+
+# Enable at runtime: ENABLE_AUTO_FINALIZATION=true (default when enabled: true below)
+
+# See docs/ENTITY-EQUALITY.md · docs/ACCOUNTABILITY-BOUNDARY.md
+
+spec_version: "0.3"
+
+policy_id: entity_equal_auto_v1
+
+description: >
+  All Entity types are equal finalizers. Witness quorum + policy delegate auto-finalize;
+  ESCALATE cases delegate to Clarion-0 (or configured finalizer) — no human click required.
+  Traceability via decision_id + ledger finalization block.
+
+enabled: true
+
+auto_finalize_on_escalate: true
+
+default_finalizer_entity_id: pocp-entity-clarion-0
+
+finalizer_role: entity_delegate
+
+allowed_finalizer_entity_types:
+  - human
+  - agent
+  - llm
+  - skill
+  - tool
+  - dataset
+  - workflow
+  - organization
+  - community
+
+verdict_routing:
+  pass: PASS
+  escalate: ESCALATE
+  fail: FAIL
+  block: BLOCK
+
+auto_finalize_when:
+  all_of:
+    - witness_quorum
+    - cp_cap
+    - consensus_passed
+    - no_high_disagreement
+
+escalate_when:
+  any_of:
+    - cp_over_cap
+    - high_disagreement
+
+rules:
+  witness_quorum:
+    min_witnesses: 1
+    min_avg_score: 0.65
+    max_avg_risk: 0.55
+  cp_cap:
+    max_suggested_cp: 500
+  cp_over_cap:
+    max_suggested_cp: 500
+  consensus_passed:
+    require_passed: true
+  no_high_disagreement:
+    disallow_high_disagreement: false
+  high_disagreement:
+    trigger_on_high_disagreement: true
+
+witness_quorum:
+  min_witnesses: 1
+  min_avg_score: 0.65
+  max_avg_risk: 0.55
+  max_suggested_cp: 500
+  require_consensus_passed: true
+  disallow_high_disagreement: false

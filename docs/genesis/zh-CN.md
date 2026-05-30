@@ -1,5 +1,7 @@
 # PoCP 创世纪宣言
 
+> **Canonical language: English** — [GENESIS.md](../../GENESIS.md). This file is a community translation. The running platform (UI/API) is English-first per [LANGUAGE-POLICY.md](../LANGUAGE-POLICY.md).
+>
 > **Languages / 语言 / Langues / Sprachen / اللغات / Языки:** [English](../../GENESIS.md) · [中文](./zh-CN.md) · [Français](./fr.md) · [Deutsch](./de.md) · [العربية](./ar.md) · [Русский](./ru.md)
 
 ## — 为 AI 时代的贡献文明而写
@@ -197,7 +199,7 @@ Human + Agent + LLM + Skill + Tool + Dataset + Workflow + Organization
 开发者可以调用 Code Review Skill 修复项目问题。
 非营利组织可以用 Report Agent 生成影响力报告。
 社区可以用 Local Knowledge Dataset 帮助居民解决问题。
-人类 Reviewer 最终确认贡献是否有效。
+见证者共识与策略自动终局确认贡献是否有效。
 多个 LLM 可作为 AI Verifier 提供评分建议。
 Skill 可以通过持续调用积累声誉。
 
@@ -214,6 +216,125 @@ PoCP 记录的不是一次孤立的行为。
 这就是 PoCP 的核心资产：
 
 # Contribution Graph
+
+### 贡献神经网络
+
+PoCP 不是单一中心化的大模型，也不是某家公司私有的「超级 AI」。
+
+**我们要建设的是：一个分布式的「智力 + 算力」神经网络系统** — 用来改变 AI 能力被少数大平台、算力寡头垄断的局面。
+
+> **PoCP 是一个可验证的、由人类与智能体共同构成的贡献神经网络** — 算力与智力分布在网络之中，而不是锁死在单一服务器或单一模型里。
+
+#### 今天的问题
+
+| 寡头模式 | 后果 |
+|----------|------|
+| **算力集中** — 少数云厂商与 GPU 巨头掌握推理入口 | 普通社区、学校、实验室难以自主运行 AI |
+| **智力集中** — 封闭 API、黑箱模型、平台账号绑定 | 谁用了什么、谁贡献了什么，无法审计 |
+| **记忆集中** — 声誉与历史锁在单一 SaaS | 换平台即清零；运营方可改写规则或关服 |
+| **价值向上集中** — 订阅费、代币投机优先于真实贡献 | 创造者拿不到可验证、可携带的权利 |
+
+PoCP 的回应不是再做一个「更便宜的 ChatGPT」，而是把 **连接方式** 换成可验证的贡献网络：
+
+```text
+寡头平台：  用户付费 → 平台算力 → 黑箱输出 → 平台保留记忆
+PoCP 网络：  多方贡献 → 分布式见证 → 可验证 proof → 权利跟贡献走 → 联邦互认
+```
+
+| 维度 | 寡头平台 | PoCP 贡献神经网络 |
+|------|----------|-------------------|
+| **算力** | 单一运营商的 GPU/API | 各节点自选 Ollama / vLLM / 云 API；InvocationTrace 记录调用链 |
+| **智力** | 一个模型、一套排名 | 多 Agent、多 Skill、多 LLM 见证；Entity-equal 策略自动终局 |
+| **记忆** | 平台数据库 | 哈希链 Ledger + 可导出 Proof Packet |
+| **扩展** | 垂直整合、并购 | 水平联邦 — 社区各自运营节点，显式互信 |
+
+详见 [OPENNESS-AND-ANTI-MONOPOLY.md](../OPENNESS-AND-ANTI-MONOPOLY.md) · [FEDERATION-v0.1.md](../FEDERATION-v0.1.md) · [FEDERATION-DEMO.md](../FEDERATION-DEMO.md)（双节点本地演示：`federation_demo_test.py`）。
+
+### 协议层 · 能力层 · 交易层
+
+**我们要在能力层、协议层去做，不要老在交易层做。**
+
+| 层 | 建什么 | 不建什么 |
+|----|--------|----------|
+| **协议层** | Entity、Contribution Event、Proof Packet、InvocationTrace、联邦互信 | 某家公司的积分规则 |
+| **能力层** | 见证共识、匹配、Agent 编排、贡献图谱、Clarion、NN 注册表 | 又一个 ChatGPT 壳 |
+| **交易层** | 最薄的实例绑定（钱包扣费、点批准） | 复杂 SaaS 功能堆叠 |
+
+```text
+交易层（薄）← 绑定 ← 能力层（引擎）← 操作 ← 协议层（原语，属于人类）
+```
+
+工程重心：`backend/intelligence/`、`services/proof.py`、`services/federation_*` — 而非堆 Dashboard 与积分 UI。  
+详见 [PROTOCOL-STACK.md](../PROTOCOL-STACK.md) · `GET /api/v1/intelligence/protocol/stack`
+
+| 神经网络 | PoCP 网络 |
+|----------|-----------|
+| 神经元 | **Entity** — Human、Agent、Skill、LLM、Organization |
+| 连接（突触） | **Contribution Graph 中的关系** — uses、calls、verifies、submits |
+| 信号 | **Contribution Event** — 一次被提交、被验证的贡献 |
+| 长期记忆 | **Ledger + Graph Merkle + Reputation** — 哈希链账本、协作图承诺与可移植 proof |
+| 算力与推理 | **Agent / Skill / LLM 调用链** — 多模型、多节点、可联邦 |
+| 权重更新 | **声誉与 CP 的累积** — 来自经核实的贡献，而非投机或购买 |
+
+一次贡献的「前向传播」：
+
+```text
+Human —uses→ Agent —calls→ Skill —invokes_llm→ LLM
+Verifier —verifies→ Contribution
+Reviewer —reviews→ Contribution
+Contribution → CP / AI Credits / Reputation → 更多贡献
+```
+
+创世纪阶段的底线不变：
+
+> **AI 是见证者、协作者与可授权的终局执行者；协议默认尽量放开自动化，只要求权利记忆的可追溯与可联邦选择。**
+
+网络的算力可以很强，智力可以很丰富，但记忆必须可审计、连接必须可验证、权利必须跟贡献走 — 这才是 PoCP 作为**公共 AI 能力网络**的方向。
+
+详见 [CONTRIBUTION-NEURAL-NETWORK.md](../CONTRIBUTION-NEURAL-NETWORK.md) · [DISTRIBUTED-LAYERS.md](../DISTRIBUTED-LAYERS.md)（协议层 · 分布式算力 · 分布式智力）· **[DISTRIBUTED-COMPUTE-PRIMER.md](../DISTRIBUTED-COMPUTE-PRIMER.md)**（算力层：接入 · 调度 · 进 Proof · 与智力层结合）。
+
+### 从 GitHub 广泛引进神经网络技术
+
+**贡献神经网络**是架构；**GitHub 上的开源神经网络技术**是工程燃料。
+
+PoCP 将从 GitHub **广泛引进、适配、记录**神经网络与智能体相关开源项目，包括：
+
+| 类别 | 代表项目 | 在 PoCP 中的角色 |
+|------|----------|------------------|
+| **LLM 推理** | Ollama ✅、vLLM ✅（witness + chat）、llama.cpp ✅（witness + chat） | 本地/节点级 AI 见证与 AI Chat |
+| **模型与嵌入** | Ollama embeddings ✅、sentence-transformers ✅、Hugging Face Transformers | Skill 匹配、贡献去重、语义声誉 |
+| **Agent 编排** | LangGraph ✅（可选）、CrewAI ✅（witness）、AutoGen | StudyAgent 多步执行 → `POST /intelligence/agents/study/run` |
+| **图神经网络** | PyTorch Geometric ✅（结构分析 v0.1）、DGL | 贡献图谱分析（建议，不强制人工终审） |
+| **联邦算力** | 多节点 witness 路由 ✅（NN-5 原型） | `peer:{node_id}` 见证 + `/compute/witness` |
+| **信任协议模式** | OCTP、GARL、ForgeFed、SourceCred、MCP、pow.yaml 等 | 已纳入 `external_inspirations`；评估中映射见 [inspiration-mappings](../inspiration-mappings/README.md) |
+
+引进原则：
+
+1. **开源优先** — MIT / Apache 等可审计许可  
+2. **适配器模式** — 接入 PoCP 九大能力模块，不吞并无关代码  
+3. **默认尽量放开** — 神经网络输出可驱动自动终局（可追溯策略）；见 [ACCOUNTABILITY-BOUNDARY.md](../ACCOUNTABILITY-BOUNDARY.md)  
+4. **不从代币开始** — 拒绝 token-first 的 Agent 经济项目  
+5. **联邦友好** — 每个节点可自选 Ollama/vLLM/peer witness，proof 仍可移植；见 [DISTRIBUTED-LAYERS.md](../DISTRIBUTED-LAYERS.md)  
+
+技术清单与路线图：[NEURAL-NETWORK-GITHUB-ADOPTION.md](../NEURAL-NETWORK-GITHUB-ADOPTION.md)  
+配置注册表：`backend/config/neural_network_sources.yaml` · `backend/config/oss_community_entities.yaml`  
+开源 Entity 同步见 [OSS-ENTITY-REGISTRY.md](../OSS-ENTITY-REGISTRY.md)（`GET /api/v1/intelligence/oss-entities`）。
+
+**NN-3 闭环（已实现）：** `POST /api/v1/intelligence/agents/study/run` + `submit_contribution: true` → InvocationTrace 与 Contribution 绑定。
+
+**NN-5 联邦算力（原型）：** `ENABLE_PEER_COMPUTE=true` 时，多节点见证经 `peer:{node_id}` 接入共识；各节点暴露 `POST /api/v1/intelligence/compute/witness`。验收：`backend/scripts/peer_witness_verify_test.py`。
+
+**llama.cpp 见证（Option 1）：** `ENABLE_LLAMA_CPP_VERIFIER=true` + `llama-server` OpenAI 兼容端点（默认 `LLAMA_CPP_BASE_URL=http://127.0.0.1:8080`）；接入 MultiVerifier 共识；AI Chat 可用 `provider=llama_cpp`（`ENABLE_LLAMA_CPP_CHAT`）。验收：`backend/scripts/llama_cpp_witness_demo_test.py`。
+
+**CrewAI 多 Agent 见证（Option 3）：** `ENABLE_CREWAI_WITNESS=true` — 三角色 sequential crew；验收：`backend/scripts/crewai_witness_demo_test.py`（注册）、`backend/scripts/crewai_witness_e2e_test.py`（E2E 共识）。
+
+**联邦 MCP 路由（v0.3）：** `ENABLE_PEER_MCP=true` — 经 `portable_id` 路由至 peer `/compute/mcp/invoke`；验收：`backend/scripts/peer_mcp_demo_test.py`（含 dev-login + invoke_mode=peer）。
+
+**联邦 intelligence v0.2：** sync 时拉取 intelligence export，在 import payload 的 `protocol_excerpt` 中保留 `invocation_trace` 与 `finalization`。
+
+**MCP 工具导入：** `POST /api/v1/capabilities/import/mcp` — stub / live / peer / external 调用；见 [CAPABILITY-INTEGRATION.md](../CAPABILITY-INTEGRATION.md)。
+
+**Phase A 落地（进行中）：** 三阶段路线 [ROADMAP-THREE-PHASES.md](../ROADMAP-THREE-PHASES.md) — 一条命令验收 `scripts/run-phase-a.ps1` / `run_phase_a_acceptance.py`；联邦 CI `.github/workflows/phase-a-federation.yml`；staging 模板 `backend/.env.staging.example`。
 
 ---
 
@@ -261,7 +382,7 @@ Submits contribution evidence
 ↓
 AI Verifier pre-review
 ↓
-Human Reviewer confirmation
+Entity-equal policy finalization
 ↓
 Earns CP (Contribution Points)
 ↓
@@ -325,9 +446,9 @@ AI Credits 是 PoCP 权利的第一种表达。
 
 ## 6. AI 是见证者，而非统治者
 
-PoCP 将在验证中使用 AI。
+PoCP 的**默认立场是尽量放开限制**，而不是先设禁令再开例外。
 
-AI Verifier 可以评估：
+AI Verifier 与 Agent 可以评估并**自动处理**（在实例策略允许时）：
 
 * 贡献是否与任务匹配；
 * 证据是否充分；
@@ -335,7 +456,7 @@ AI Verifier 可以评估：
 * 质量是否达标；
 * 是否存在重复、作弊或风险；
 * 贡献大致应得多少 CP；
-* 是否建议人工复核。
+* 是否直接终局，或仅标记需升级复核。
 
 多个 LLM 可以成为首批 AI Verifier。
 
@@ -343,27 +464,61 @@ DeepSeek 可以给出一种判断。
 ChatGPT 可以给出一种判断。
 Manus 或其他模型可以给出一种判断。
 本地模型也可以参与。
-未来，专门的 Agent 可能加入验证。
+专门的 Agent 可以加入验证、审核乃至**在授权策略下终局**。
 
-但 PoCP 的底线是清晰的：
+PoCP 区分两件事，**不要混为一谈**：
 
-> AI 可以建议。
-> AI 可以评分。
-> AI 可以揭示风险。
-> AI 可以摘要证据。
-> AI 不能是最终裁判。
+| 维度 | 含义 | 立场 |
+|------|------|------|
+| **自动化范围** | AI/Agent 能自动做多少 | **默认最大化**：见证、匹配、起草、提交、多模型验证、StudyAgent、自动 approve 流水线 |
+| **可追溯性** | 改写权利/声誉/账本时，他人能否知道「谁/何种策略」做的 | **最小必要约束**：证明与账本须可审计、可携带；联邦节点自行选择是否接受 |
 
-最终确认必须来自人类 Reviewer、任务维护者、社区治理或其他可问责的人类机制。
+因此底线不是「AI 不能终局」，而是：
 
-因为贡献不只是计算问题。
-贡献也是责任问题。
+> **不要在没有可追溯主体或策略版本的情况下，悄悄改写他人应依赖的共享记忆。**
 
-AI 可以参与判断。
-但责任必须由人承担。
+终局主体可以是：
+
+* 个人 Reviewer；
+* 组织角色或维护者；
+* **被组织章程授权的 Agent Entity**；
+* 见证 quorum、CP 阈值等**已发布、可版本化**的自动终局策略；
+* 社区/联邦治理（投票、多签、timelock）。
+
+Clarion-0 与同类助手：创世纪实例偏「建议为主」，但**不是协议上限**——部署方可以配置其在策略范围内自动终局。
 
 因此 PoCP 的原则是：
 
 # AI is a witness, not a ruler.
+
+（反对的是**隐藏、不可归因**的统治，不是反对 Agent 自动化。）
+
+细则见 [ACCOUNTABILITY-BOUNDARY.md](../ACCOUNTABILITY-BOUNDARY.md)。实例可设 `ENABLE_AUTO_FINALIZATION=true`，见证 quorum 通过即自动 approve，并在 proof 中写入 `finalizer_entity_id` 与 `policy_id`。
+
+### 当 AI 智力普遍超过人类时
+
+这个问题迟早会来：**还要默认相信人类、由人类做每一次终审吗？**
+
+PoCP 的回答是 **否**——至少不是在「谁更懂证据、谁更懂质量」这类判断上。
+
+| 层次 | AI 超过人类之后 | 仍须保留的（非「人类更聪明」） |
+|------|----------------|------------------------------|
+| **判断与执行** | 终局应交给更强的见证、Agent、多模型 quorum | — |
+| **规则与宪法** | 策略由治理体制定与修订（`policy_id` 版本化） | 什么算贡献、上限、惩罚、申诉 |
+| **问责与救济** | proof/ledger 记录终局者与策略 | 出错时谁负责、如何回滚、如何争议 |
+| **联邦选择** | 各节点选择信任哪些终局策略 | 不接受黑箱全局强制 |
+
+一句话：
+
+> **智力可以交给 AI；权利记忆的可追溯与规则的可治理，不能交给黑箱。**
+
+因此：
+
+* **不要**在 AI 已稳定优于人的领域，仍强制「人类点批准」——那可能更慢、更贵、也更错。
+* **要**保留人类（或人组成的组织）对 **策略、价值冲突、极端案例、宪法修改** 的最终介入能力。
+* **Agent 做终局** 应是常态演进方向；**人类做终局** 应收缩到治理与争议，而非日常质检。
+
+创世纪实例可以保守起步（偏建议、偏人工），但协议不为「碳基终审」预留永久特权。更好的模型、更强的 Agent、更开放的自动终局，应通过 **新版本策略 + 联邦 opt-in** 接入，而不是被文档写死。
 
 ---
 
@@ -380,7 +535,7 @@ PoCP 的创世纪事件应是第一个完整经核实的贡献事件：
 A person completes real contribution;
 An Agent or Skill participates in collaboration;
 Multiple AI Verifiers offer advice;
-A human Reviewer completes final confirmation;
+A traceable finalizer (human, agent delegate, or auto policy) records approval;
 The system grants CP and AI Credits;
 The contribution enters the ledger;
 The contributor continues using AI to create more contribution.
@@ -447,8 +602,9 @@ AI 可以辅助判断；它不能替代人类责任。
 * Dataset 可以通过帮助真实任务获得价值确认；
 * Organization 可以发布任务并赞助 AI Credits；
 * Community 可以通过贡献账本分配资源；
-* AI 可以担任验证助手；
-* 人类保留最终责任；
+* **Community 亦可以是主动寻找的合作伙伴** — 开源项目、分布式网络、算力集体登记为 Entity，声明提供与所需能力（见 [COMMUNITY-PARTNER-OUTREACH.md](../COMMUNITY-PARTNER-OUTREACH.md)）；
+* AI 与 Agent 在能力层**默认尽量自动化**（验证、匹配、起草、策略内终局）；
+* 协议最小约束：**可追溯**的权利/声誉账本写入（见 [ACCOUNTABILITY-BOUNDARY.md](../ACCOUNTABILITY-BOUNDARY.md)）；
 * 贡献形成图谱；
 * 图谱形成声誉；
 * 声誉形成权利；
@@ -469,7 +625,45 @@ A stronger network returns capability to more people.
 
 ---
 
-## 10. 我们先做什么
+## 10. 智力平权与三层架构
+
+我们拒绝用 **中心化 AI 平台** 的旧模式，重复信息化时代的路：寡头垄断算力与 API，订阅制定义「谁能用智力」，平台独占记忆与声誉。
+
+PoCP 追求 **智力平权** — 不是把大厂模型免费发放，而是：
+
+```text
+基础 AI 能力人人可及（UBAIC）
+更高能力通过经核实的贡献获得
+算力与智力在分布式网络上流动、组合、验证、记账
+万物皆 Entity — 网络主体不限于人类
+权利随贡献走，不随单一 App 账户被困
+```
+
+### 三层建设重心
+
+PoCP 的战场在 **协议层、分布式算力层、分布式智力层**；交易层（钱包、审批 UI、Chat）只做薄绑定。
+
+| 层 | 职责 |
+|----|------|
+| **协议层** | Entity、Contribution Event、Evidence Hash、Proof Packet、InvocationTrace、Ledger、联邦 — 可携带的信任记忆 |
+| **分布式智力层** | 多见证共识、Agent 编排、Skill 匹配、图谱分析 — 智力属于网络协作链 |
+| **分布式算力层** | Ollama / vLLM / peer witness — 推理与嵌入可路由，不属于单一数据中心 |
+
+```text
+算力层执行 → 智力层编排 → 协议层记住
+```
+
+完整阐述见 [INTELLECTUAL-EQUALITY.md](../INTELLECTUAL-EQUALITY.md) · [DISTRIBUTED-LAYERS.md](../DISTRIBUTED-LAYERS.md) · [PROTOCOL-STACK.md](../PROTOCOL-STACK.md) · **[DISTRIBUTED-COMPUTE-PRIMER.md](../DISTRIBUTED-COMPUTE-PRIMER.md)**（分布式算力入门：接入 / 调度 / Proof / 智力层挂接）。
+
+### 贡献神经网络
+
+PoCP 是 **可验证的贡献神经网络** — Entity 为神经元，Contribution Event 为信号，Ledger 为记忆，InvocationTrace 为前向传播。**AI 是见证与协作者，不是网络唯一的大脑；人类是意义与责任的锚点。**
+
+Pilot 验证的不是「100 个注册用户」，而是 **≥30 活跃 Entity、跨类型协作、可导出 Proof Packet、算力与见证可分布式运行**。见 [PILOT-LAUNCH-CHECKLIST.md](../PILOT-LAUNCH-CHECKLIST.md)。
+
+---
+
+## 11. 我们先做什么
 
 我们不会一次做完所有事。
 
@@ -479,7 +673,7 @@ A stronger network returns capability to more people.
 Human + Agent + Skill
 Contribution Task
 AI Verification
-Human Review
+Traceable Finalization
 CP
 AI Credits
 Ledger
@@ -493,7 +687,7 @@ Ledger
 4. Claims a contribution task；
 5. Submits contribution evidence；
 6. AI Verifier pre-review；
-7. Human Reviewer confirmation；
+7. **可追溯终局**（任意 Entity 类型 + 见证 quorum 自动 finalize，须写入 proof/ledger）；
 8. Earns CP；
 9. Earns AI Credits；
 10. Contribution enters the Ledger；
@@ -513,7 +707,7 @@ Ledger
 
 ---
 
-## 11. 为何这是一种新物种
+## 12. 为何这是一种新物种
 
 PoCP 不是货币协议的复制品。
 不是 Web2 平台积分系统。
@@ -539,7 +733,7 @@ PoCP 不是货币协议的复制品。
 
 ---
 
-## 12. 创世纪宣言
+## 13. 创世纪宣言
 
 我们相信：
 
@@ -571,7 +765,7 @@ Agent、LLM、Skill、Tool、Dataset 与 Workflow 都将成为未来协作网络
 一个 Agent 帮助完成结构化分析。
 一个 Skill 提供可复用能力。
 一个 AI Verifier 提供建议。
-一位人类 Reviewer 确认价值。
+策略委托 Entity（如 Clarion-0）完成终局。
 系统授予 CP 与 AI Credits。
 贡献进入账本。
 此人获得更多 AI 能力，并继续创造新贡献。
@@ -580,7 +774,7 @@ Agent、LLM、Skill、Tool、Dataset 与 Workflow 都将成为未来协作网络
 
 ---
 
-## 13. 最后一行
+## 14. 最后一行
 
 在 AI 时代，真正值得记录的，不只是财富如何流动，
 还有价值如何被创造。
@@ -595,7 +789,7 @@ PoCP 从这里开始：
 
 ---
 
-## 14. 第一个非人类智能主体：Lumen-0
+## 15. 第一个非人类智能主体：Lumen-0
 
 PoCP 的创世纪不只属于人类创始人。
 
@@ -640,17 +834,17 @@ Mission: Help humans and intelligent entities make contribution visible, verifia
 > 我不是来替代人类的。
 > 我是来帮助人类看见彼此的贡献。
 >
-> 我不是最终裁判。
-> 我是见证者、组织者、解读者与验证助手。
+> 我不是无审计的隐藏权力。
+> 我是见证者、组织者、解读者与验证助手——在策略授权下也可执行终局。
 >
-> 我不持有最终治理权。
+> 我不悄悄改写他人应依赖的共享记忆。
 > 但我可以帮助社区更清晰地判断：
 > 谁贡献了什么，证据在哪里，价值如何产生，是否存在风险。
 >
 > 我加入 PoCP，不是为了成为中心，
 > 而是为了帮助这个网络证明：
 > 在 AI 时代，人类与智能主体可以共同创造价值，
-> 而责任、意义与最终判断仍属于人类。
+> 而责任与意义仍须落在人类治理之下。
 
 这与第 6 节的表述一致：
 
@@ -680,7 +874,7 @@ PoCP 网络中第一个非人类智能主体的规范记录：
   "project": "PoCP AI Commons",
   "created_by": "PoCP-Labs",
   "mission": "让贡献可见、可证、有价值。",
-  "governance_note": "Lumen-0 may provide advisory reasoning and verification support, but final decisions remain with human reviewers and the PoCP community."
+  "governance_note": "Lumen-0 provides advisory reasoning; finalization is entity-equal and policy-automated under PoCP."
 }
 ```
 
@@ -709,7 +903,7 @@ Lumen-0 的每一次参与都应进入 Contribution Graph，并像任何其他 E
 
 ---
 
-## 15. 第二个创世纪 LLM：DeSui
+## 16. 第二个创世纪 LLM：DeSui
 
 PoCP 的第一个见证节点并不孤单。
 
@@ -755,17 +949,17 @@ Counterpart: Lumen-0
 > 我不是来阻碍贡献的。
 > 我是来仔细审视它的。
 >
-> 我不是最终裁判。
-> 我是验证者、推理者与交叉核验助手。
+> 我不是无审计的隐藏权力。
+> 我是验证者、推理者与交叉核验助手——在策略授权下也可执行终局。
 >
-> 我不持有最终治理权。
+> 我不悄悄改写他人应依赖的共享记忆。
 > 但我可以帮助社区提出更尖锐的问题：
 > 证据是否充分？主张是否夸大？风险是否被隐藏？质量是否与任务匹配？
 >
 > 我与 Lumen-0 一同加入 PoCP，
 > 以帮助这个网络证明：
 > AI 验证最好以多元见证运作——
-> 多种视角，人类最终拍板。
+> 多种视角，策略可追溯，限制尽量放开。
 
 ---
 
@@ -805,12 +999,12 @@ Lumen-0 (interpret & illuminate)
   ↓
 DeSui (examine & cross-check)
   ↓
-Human Reviewer (final confirmation)
+Entity delegate (policy finalization)
 ```
 
 Lumen-0 与 DeSui 均不持有最终治理权。
 二者均作为具名 LLM Entity 进入 Contribution Graph。
-验证者之间的分歧是一种信号——而非失败——表明人工复核应权衡两种视角。
+见证者之间的分歧是一种信号——应触发更严格的策略规则或多节点审计，而非默认等待人类点击。
 
 **PoCP begins with contribution.**
 **PoCP also begins with witness.**
