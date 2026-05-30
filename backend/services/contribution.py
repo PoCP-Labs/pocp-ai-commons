@@ -15,10 +15,22 @@ from models.entity import Entity, EntityType
 from models.wallet import ReputationScore, Wallet
 from services.ledger_chain import append_ledger_record
 from services.protocol_config import get_rewards_config
+from services.reputation_audit import record_reputation_audit
 from services.rights import issue_contribution_rights, issue_registration_bc
+from services.webhook_dispatcher import dispatch_review_event
 
 
-def _add_reputation(db: Session, entity_id: str, amount: float, category: str) -> ReputationScore:
+def _add_reputation(
+    db: Session,
+    entity_id: str,
+    amount: float,
+    category: str,
+    *,
+    source: str = "contribution_approval",
+    reason: str | None = None,
+    reference_id: str | None = None,
+    actor_entity_id: str | None = None,
+) -> ReputationScore:
     rep = (
         db.query(ReputationScore)
         .filter(ReputationScore.entity_id == entity_id, ReputationScore.category == category)
@@ -29,6 +41,18 @@ def _add_reputation(db: Session, entity_id: str, amount: float, category: str) -
         db.add(rep)
     else:
         rep.score += amount
+    db.flush()
+    record_reputation_audit(
+        db,
+        entity_id=entity_id,
+        category=category,
+        delta=amount,
+        balance_after=rep.score,
+        source=source,
+        reason=reason,
+        reference_id=reference_id,
+        actor_entity_id=actor_entity_id,
+    )
     return rep
 
 
@@ -142,14 +166,32 @@ def approve_contribution(
 
         elif entity.entity_type == EntityType.skill:
             rep_amount = round(skill_rep_base * participant.weight / 0.15, 2) if participant.weight else skill_rep_base
-            _add_reputation(db, entity.id, rep_amount, "skill")
+            _add_reputation(
+                db,
+                entity.id,
+                rep_amount,
+                "skill",
+                source="contribution_approval",
+                reason="Approved contribution participant reward",
+                reference_id=contribution.id,
+                actor_entity_id=reviewer_id,
+            )
             rewards["reputation"].append(
                 {"entity_id": entity.id, "name": entity.name, "category": "skill", "amount": rep_amount}
             )
 
         elif entity.entity_type == EntityType.agent:
             rep_amount = round(agent_rep_base * participant.weight / 0.25, 2) if participant.weight else agent_rep_base
-            _add_reputation(db, entity.id, rep_amount, "agent")
+            _add_reputation(
+                db,
+                entity.id,
+                rep_amount,
+                "agent",
+                source="contribution_approval",
+                reason="Approved contribution participant reward",
+                reference_id=contribution.id,
+                actor_entity_id=reviewer_id,
+            )
             rewards["reputation"].append(
                 {"entity_id": entity.id, "name": entity.name, "category": "agent", "amount": rep_amount}
             )
@@ -172,6 +214,14 @@ def approve_contribution(
         contribution_id=contribution.id,
         event_type="contribution_approved",
         payload=ledger_payload,
+    )
+    dispatch_review_event(
+        "contribution.approved",
+        {
+            "contribution_id": contribution.id,
+            "reviewer_id": reviewer_id,
+            "rewards": rewards,
+        },
     )
     db.flush()
     return rewards
@@ -203,6 +253,58 @@ def reject_contribution(
         payload={
             "contribution_id": contribution.id,
             "status": contribution.status.value,
+            "reviewer_id": reviewer_id,
+            "feedback": feedback,
+        },
+    )
+    dispatch_review_event(
+        "contribution.rejected",
+        {
+            "contribution_id": contribution.id,
+            "reviewer_id": reviewer_id,
+            "feedback": feedback,
+        },
+    )
+    db.flush()
+    return review
+
+
+def request_contribution_changes(
+    db: Session,
+    contribution: ContributionEvent,
+    reviewer_id: str,
+    feedback: str = "Please revise and resubmit.",
+) -> HumanReview:
+    """Meritocrab-style request-changes without full rejection."""
+    if reviewer_id == contribution.primary_entity_id:
+        raise ValueError("Reviewer cannot request changes on their own contribution")
+    if contribution.status != ContributionStatus.ai_verified:
+        raise ValueError("Request changes is only available after AI verification")
+
+    review = HumanReview(
+        contribution_id=contribution.id,
+        reviewer_id=reviewer_id,
+        approved=False,
+        feedback=f"[request_changes] {feedback}",
+    )
+    db.add(review)
+    contribution.status = ContributionStatus.submitted
+
+    append_ledger_record(
+        db,
+        contribution_id=contribution.id,
+        event_type="contribution_request_changes",
+        payload={
+            "contribution_id": contribution.id,
+            "status": contribution.status.value,
+            "reviewer_id": reviewer_id,
+            "feedback": feedback,
+        },
+    )
+    dispatch_review_event(
+        "contribution.request_changes",
+        {
+            "contribution_id": contribution.id,
             "reviewer_id": reviewer_id,
             "feedback": feedback,
         },

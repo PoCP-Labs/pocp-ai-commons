@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from models.entity import Entity, EntityType
 from models.federation import FederatedImport
 from models.wallet import ReputationScore
+from services.reputation_audit import record_reputation_audit
 from schemas.federation import ImportEventPayload, TrustedNode
 from services.entity_portable import resolve_or_create_portable_entity
 from services.evidence import POCP_META_KEY, hash_evidence
@@ -27,7 +28,14 @@ def _trust_weight(source_node_id: str) -> float:
     return float(os.getenv("POCP_FEDERATION_TRUST_WEIGHT", cfg.get("default_trust_weight", 0.5)))
 
 
-def _add_reputation(db: Session, entity_id: str, amount: float, category: str) -> None:
+def _add_reputation(
+    db: Session,
+    entity_id: str,
+    amount: float,
+    category: str,
+    *,
+    reference_id: str | None = None,
+) -> None:
     rep = (
         db.query(ReputationScore)
         .filter(ReputationScore.entity_id == entity_id, ReputationScore.category == category)
@@ -38,6 +46,17 @@ def _add_reputation(db: Session, entity_id: str, amount: float, category: str) -
         db.add(rep)
     else:
         rep.score += amount
+    db.flush()
+    record_reputation_audit(
+        db,
+        entity_id=entity_id,
+        category=category,
+        delta=amount,
+        balance_after=rep.score,
+        source="federation_import",
+        reason="Imported approved contribution reputation",
+        reference_id=reference_id,
+    )
 
 
 def _verify_import_signature(payload: ImportEventPayload, evidence_hash: str, trusted: dict[str, TrustedNode]) -> None:
@@ -145,20 +164,20 @@ def import_federated_event(db: Session, payload: ImportEventPayload) -> Federate
         weight = participant.weight or 1.0
         if role == "skill_provider":
             amount = round(skill_rep_base * weight * trust_weight, 2)
-            _add_reputation(db, entity.id, amount, "skill")
+            _add_reputation(db, entity.id, amount, "skill", reference_id=payload.contribution_id)
             reputation_applied += amount
         elif role == "executor" and entity.entity_type == EntityType.agent:
             amount = round(agent_rep_base * weight * trust_weight, 2)
-            _add_reputation(db, entity.id, amount, "agent")
+            _add_reputation(db, entity.id, amount, "agent", reference_id=payload.contribution_id)
             reputation_applied += amount
         elif role in ("creator", "executor", "reviewer"):
             amount = round(human_rep_base * weight * trust_weight, 2)
-            _add_reputation(db, entity.id, amount, "human")
+            _add_reputation(db, entity.id, amount, "human", reference_id=payload.contribution_id)
             reputation_applied += amount
 
     if not payload.participants:
         amount = round(human_rep_base * trust_weight, 2)
-        _add_reputation(db, primary.id, amount, "human")
+        _add_reputation(db, primary.id, amount, "human", reference_id=payload.contribution_id)
         reputation_applied += amount
 
     record = FederatedImport(

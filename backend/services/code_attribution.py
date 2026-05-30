@@ -215,6 +215,7 @@ def sync_scan_to_records(db: Session, root: Path | None = None) -> dict[str, int
 def award_registry_reputation(db: Session) -> dict[str, float]:
     """Grant reputation from scanned file counts (capped per builder)."""
     from models.wallet import ReputationScore
+    from services.reputation_audit import record_reputation_audit
 
     data = load_registry()
     policy = data.get("reward_policy") or {}
@@ -241,8 +242,21 @@ def award_registry_reputation(db: Session) -> dict[str, float]:
         if rep is None:
             rep = ReputationScore(entity_id=entity_id, score=amount, category="code_registry")
             db.add(rep)
+            delta = amount
         else:
+            delta = amount - rep.score
             rep.score = amount
+        db.flush()
+        record_reputation_audit(
+            db,
+            entity_id=entity_id,
+            category="code_registry",
+            delta=delta,
+            balance_after=rep.score,
+            source="code_attribution_sync",
+            reason="Registry scan reputation bootstrap",
+            reference_id=slug,
+        )
         awarded[slug] = amount
     return awarded
 

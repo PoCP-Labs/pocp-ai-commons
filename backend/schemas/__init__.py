@@ -185,6 +185,11 @@ class RejectIn(BaseModel):
     feedback: str = "Rejected by human reviewer."
 
 
+class RequestChangesIn(BaseModel):
+    reviewer_id: str
+    feedback: str = "Please revise and resubmit."
+
+
 class AgentCreate(BaseModel):
     name: str
     description: str | None = None

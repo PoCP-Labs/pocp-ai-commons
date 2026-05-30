@@ -8,6 +8,7 @@ from pathlib import Path
 import yaml
 
 from services.verifiers.base import BaseVerifier
+from services.verifiers.clarion_verifier import ClarionVerifier
 from services.verifiers.deepseek_verifier import DeepSeekVerifier
 from services.verifiers.http_verifier import HttpVerifier
 from services.verifiers.mock_verifier import MockVerifier
@@ -31,9 +32,10 @@ def _load_external_verifier_configs() -> list[dict]:
 def load_verifier_providers() -> list[BaseVerifier]:
     """Built-in Clarion adapters plus optional HTTP plugins (Meritocrab/GARL-style)."""
     providers: list[BaseVerifier] = []
+    clarion = ClarionVerifier()
     if os.getenv("ENABLE_MOCK_VERIFIER", "true").lower() == "true":
         mock = MockVerifier()
-        providers.append(mock)
+        providers.extend([clarion, mock])
         if os.getenv("ENABLE_GENESIS_WITNESSES", "true").lower() == "true":
             providers.extend(
                 [
@@ -43,7 +45,7 @@ def load_verifier_providers() -> list[BaseVerifier]:
             )
     else:
         inner = MockVerifier()
-        providers.extend([OpenAIVerifier(), DeepSeekVerifier(), inner])
+        providers.extend([clarion, OpenAIVerifier(), DeepSeekVerifier(), inner])
         if os.getenv("ENABLE_GENESIS_WITNESSES", "true").lower() == "true":
             providers.extend(
                 [

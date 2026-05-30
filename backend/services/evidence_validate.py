@@ -62,3 +62,21 @@ def validate_evidence_urls(evidence: dict | None, *, timeout: float = 5.0) -> di
         "checks": checks,
         "compat": "octp-integrity-v0",
     }
+
+
+def validate_evidence_full(evidence: dict | None, *, timeout: float = 5.0) -> dict[str, Any]:
+    """Combined URL + git commit integrity checks."""
+    from services.evidence_git import validate_git_commits
+
+    url_report = validate_evidence_urls(evidence, timeout=timeout)
+    git_report = validate_git_commits(evidence)
+    failed = url_report.get("failed_count", 0) + git_report.get("failed_count", 0)
+    checked = url_report.get("checked_count", 0) + git_report.get("checked_count", 0)
+    return {
+        "checked_count": checked,
+        "failed_count": failed,
+        "all_ok": checked > 0 and failed == 0,
+        "urls": url_report,
+        "git": git_report,
+        "compat": "octp-integrity-v0",
+    }

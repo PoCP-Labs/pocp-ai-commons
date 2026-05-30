@@ -1,0 +1,13 @@
+# Optional review workflow webhooks (Meritocrab audit / notification pattern).
+# Set enabled: true and configure url to receive contribution review events.
+
+webhooks:
+  - name: example
+    enabled: false
+    url: https://example.com/hooks/pocp
+    secret_env: POCP_WEBHOOK_EXAMPLE_SECRET
+    timeout_seconds: 5
+    events:
+      - contribution.approved
+      - contribution.rejected
+      - contribution.request_changes

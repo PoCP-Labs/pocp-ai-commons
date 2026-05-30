@@ -1,5 +1,6 @@
 from models.agent import Agent
 from models.agent_feedback import AgentFeedback
+from models.reputation_audit import ReputationAuditEntry
 from models.ai_usage import AIUsageLog
 from models.code_attribution import CodeAttributionRecord
 from models.contribution import (
@@ -23,6 +24,7 @@ __all__ = [
     "Skill",
     "Agent",
     "AgentFeedback",
+    "ReputationAuditEntry",
     "Organization",
     "Task",
     "ContributionEvent",

@@ -12,11 +12,15 @@ from sqlalchemy.orm import Session
 
 from models.contribution import ContributionEvent
 from models.entity import Entity
+from services.code_attribution_bridge import build_code_attribution_context
 from services.evidence import POCP_META_KEY, evidence_types, standardize_evidence_items
-
+from services.evidence_validate import validate_evidence_full
+from services.expert_cards import expert_cards_from_contribution
+from services.provenance import provenance_from_evidence
+from services.reward_advisory import build_reward_advisory
 
 CLARION_AGENT_ID = "pocp-entity-clarion-0"
-CLARION_PACKET_VERSION = "0.1"
+CLARION_PACKET_VERSION = "0.2"
 
 
 def _text(value: Any) -> str:
@@ -79,6 +83,15 @@ def _score_task_match(task_description: str, contribution_description: str) -> f
     return round(min(0.45 + overlap * 1.2, 0.95), 4)
 
 
+def _compute_risk_score(evidence_score: float, task_match: float, participants: list[dict]) -> float:
+    creator_ids = {p.get("entity_id") for p in participants if p.get("role") in {"creator", "executor"}}
+    reviewer_ids = {p.get("entity_id") for p in participants if p.get("role") == "reviewer"}
+    risk_score = 0.15 + (0.25 if evidence_score < 0.5 else 0.0) + (0.20 if task_match < 0.6 else 0.0)
+    if creator_ids & reviewer_ids:
+        risk_score += 0.20
+    return round(min(risk_score, 0.95), 4)
+
+
 def _participant_summary(db: Session, contribution: ContributionEvent) -> list[dict]:
     ids = [p.entity_id for p in contribution.participants]
     entities = {e.id: e for e in db.query(Entity).filter(Entity.id.in_(ids)).all()} if ids else {}
@@ -95,8 +108,73 @@ def _participant_summary(db: Session, contribution: ContributionEvent) -> list[d
     ]
 
 
+def score_context_for_verifier(context: dict) -> dict:
+    """Score a verifier context dict using Clarion heuristics (no DB required)."""
+    task = context.get("task") or {}
+    contribution = context.get("contribution") or {}
+    task_title = _text(task.get("title"))
+    task_description = _text(task.get("description"))
+    contribution_description = _text(contribution.get("description"))
+    evidence = contribution.get("evidence") or {}
+    participants = context.get("participants") or []
+
+    evidence_score = _score_evidence(evidence)
+    task_match = _score_task_match(f"{task_title} {task_description}", contribution_description)
+    quality = round(min(0.45 + min(len(contribution_description) / 600, 0.35) + evidence_score * 0.2, 0.92), 4)
+    originality = 0.55
+    impact = round(0.55 + (0.15 if task_title else 0.0) + min(len(participants) * 0.03, 0.15), 4)
+
+    concerns: list[str] = []
+    if evidence_score < 0.5:
+        concerns.append("Evidence is weak or too sparse for confident approval.")
+    if task_match < 0.6:
+        concerns.append("Task alignment is unclear from the current description.")
+
+    risk_score = _compute_risk_score(evidence_score, task_match, participants)
+    avg_score = round((task_match + quality + originality + impact + evidence_score) / 5, 4)
+    suggested_cp = round(avg_score * 25 * (1 - min(risk_score, 0.8) * 0.35), 2)
+    suggested_credits = round(avg_score * 100 * (1 - min(risk_score, 0.8) * 0.35), 2)
+
+    return {
+        "task_match": task_match,
+        "quality": quality,
+        "originality": originality,
+        "impact": impact,
+        "evidence_score": evidence_score,
+        "risk_score": risk_score,
+        "avg_score": avg_score,
+        "suggested_cp": suggested_cp,
+        "suggested_credits": suggested_credits,
+        "concerns": concerns,
+        "rationale": (
+            f"Clarion-0 heuristic review: avg={avg_score}, evidence={evidence_score}, "
+            f"task_match={task_match}, risk={risk_score}."
+        ),
+    }
+
+
+def _merge_ai_consensus(heuristic: dict[str, float], consensus: dict | None) -> dict[str, float]:
+    if not consensus:
+        return heuristic
+    merged = dict(heuristic)
+    mapping = {
+        "task_match": "avg_task_match",
+        "quality": "avg_quality",
+        "originality": "avg_originality",
+        "impact": "avg_impact",
+        "evidence_score": "avg_evidence",
+        "risk_score": "avg_risk",
+        "avg_score": "avg_score",
+    }
+    for key, ai_key in mapping.items():
+        ai_val = consensus.get(ai_key)
+        if ai_val is not None and key in merged:
+            merged[key] = round((merged[key] + float(ai_val)) / 2, 4)
+    return merged
+
+
 def build_clarion_review_packet(db: Session, contribution: ContributionEvent) -> dict:
-    """Build an advisory packet for human review without mutating the database."""
+    """Build a unified advisory packet merging heuristics, AI consensus, and integrations."""
     task = contribution.task
     task_title = _text(getattr(task, "title", ""))
     task_description = _text(getattr(task, "description", ""))
@@ -107,42 +185,52 @@ def build_clarion_review_packet(db: Session, contribution: ContributionEvent) ->
     evidence_meta = evidence.get(POCP_META_KEY) if isinstance(evidence.get(POCP_META_KEY), dict) else {}
     participants = _participant_summary(db, contribution)
 
-    evidence_score = _score_evidence(evidence)
-    task_match = _score_task_match(f"{task_title} {task_description}", contribution_description)
-    quality = round(min(0.45 + min(len(contribution_description) / 600, 0.35) + evidence_score * 0.2, 0.92), 4)
-    originality = 0.55
-    impact = round(0.55 + (0.15 if task_title else 0.0) + min(len(participants) * 0.03, 0.15), 4)
+    heuristic = score_context_for_verifier(
+        {
+            "task": {"title": task_title, "description": task_description},
+            "contribution": {
+                "description": contribution_description,
+                "evidence": evidence,
+            },
+            "participants": participants,
+        }
+    )
 
-    concerns: list[str] = []
+    reward_advisory = build_reward_advisory(db, contribution)
+    consensus = reward_advisory.get("consensus")
+    unified_rubric = _merge_ai_consensus(
+        {
+            "task_match": heuristic["task_match"],
+            "quality": heuristic["quality"],
+            "originality": heuristic["originality"],
+            "impact": heuristic["impact"],
+            "evidence_score": heuristic["evidence_score"],
+            "risk_score": heuristic["risk_score"],
+            "avg_score": heuristic["avg_score"],
+        },
+        consensus,
+    )
+
+    concerns = list(heuristic["concerns"])
     reviewer_questions: list[str] = []
-
-    if evidence_score < 0.5:
-        concerns.append("Evidence is weak or too sparse for confident approval.")
+    if heuristic["evidence_score"] < 0.5:
         reviewer_questions.append("Can the contributor provide a link, artifact, commit, screenshot, or content excerpt?")
-    if task_match < 0.6:
-        concerns.append("Task alignment is unclear from the current description.")
+    if heuristic["task_match"] < 0.6:
         reviewer_questions.append("Which acceptance criteria does this contribution satisfy?")
     if not contribution_description:
         concerns.append("Contribution description is missing.")
         reviewer_questions.append("What exactly changed or was created?")
 
-    creator_ids = {p["entity_id"] for p in participants if p["role"] in {"creator", "executor"}}
-    reviewer_ids = {p["entity_id"] for p in participants if p["role"] == "reviewer"}
-    if creator_ids & reviewer_ids:
-        concerns.append("A participant appears as both contributor and reviewer; human self-approval must be blocked.")
-        reviewer_questions.append("Is there an independent human reviewer available?")
-
-    risk_score = 0.15 + (0.25 if evidence_score < 0.5 else 0.0) + (0.20 if task_match < 0.6 else 0.0)
-    risk_score = round(min(risk_score, 0.95), 4)
-    avg_score = round((task_match + quality + originality + impact + evidence_score) / 5, 4)
-
-    suggested_cp = round(avg_score * 25 * (1 - min(risk_score, 0.8) * 0.35), 2)
-    suggested_credits = round(avg_score * 100 * (1 - min(risk_score, 0.8) * 0.35), 2)
+    risk_score = unified_rubric["risk_score"]
+    avg_score = unified_rubric["avg_score"]
     recommended_status = "ready_for_human_review" if avg_score >= 0.7 and risk_score <= 0.45 else "request_changes"
+
+    suggested_cp = reward_advisory.get("recommended", {}).get("cp") or heuristic["suggested_cp"]
+    suggested_credits = reward_advisory.get("recommended", {}).get("ai_credits") or heuristic["suggested_credits"]
 
     return {
         "schema_version": CLARION_PACKET_VERSION,
-        "review_packet_type": "clarion_advisory_review",
+        "review_packet_type": "clarion_unified_advisory_review",
         "decision_boundary": "advisory_only_human_final_approval",
         "agent": {
             "id": CLARION_AGENT_ID,
@@ -170,23 +258,33 @@ def build_clarion_review_packet(db: Session, contribution: ContributionEvent) ->
             "content_hash": evidence_meta.get("content_hash"),
             "types": evidence_types(evidence),
             "items": standard_evidence_items,
-            "score": evidence_score,
+            "score": unified_rubric["evidence_score"],
+            "provenance": provenance_from_evidence(evidence),
         },
-        "rubric": {
-            "task_match": task_match,
-            "quality": quality,
-            "originality": originality,
-            "impact": impact,
-            "evidence_score": evidence_score,
-            "risk_score": risk_score,
-            "avg_score": avg_score,
+        "rubric": unified_rubric,
+        "heuristic_rubric": {
+            "task_match": heuristic["task_match"],
+            "quality": heuristic["quality"],
+            "originality": heuristic["originality"],
+            "impact": heuristic["impact"],
+            "evidence_score": heuristic["evidence_score"],
+            "risk_score": heuristic["risk_score"],
+            "avg_score": heuristic["avg_score"],
         },
+        "ai_consensus": consensus,
         "suggested_rewards": {
             "cp": suggested_cp,
             "ai_credits": suggested_credits,
+            "source": "ai_consensus" if consensus else "clarion_heuristic",
         },
         "concerns": concerns,
         "reviewer_questions": reviewer_questions,
+        "integrations": {
+            "reward_advisory": reward_advisory,
+            "expert_cards": expert_cards_from_contribution(db, contribution),
+            "code_attribution": build_code_attribution_context(evidence),
+            "evidence_checks": validate_evidence_full(evidence),
+        },
         "proof_draft": {
             "summary": contribution_description or "Contributor submitted work for review.",
             "evidence": evidence_items,

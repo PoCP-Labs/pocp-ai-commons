@@ -23,6 +23,7 @@ from schemas import (
     AiVerifyIn,
     ApproveIn,
     RejectIn,
+    RequestChangesIn,
     ContributionCreate,
     ContributionGraph,
     ContributionOut,
@@ -42,7 +43,13 @@ from schemas import (
 )
 from services.anti_abuse import check_daily_contribution_limit, require_evidence
 from services.ai_verify_service import ai_verify_service
-from services.contribution import approve_contribution, grant_registration_credits, reject_contribution, run_ai_verification
+from services.contribution import (
+    approve_contribution,
+    grant_registration_credits,
+    reject_contribution,
+    request_contribution_changes,
+    run_ai_verification,
+)
 from services.evidence import POCP_META_KEY, enrich_evidence
 from services.graph import build_contribution_graph
 from services.invocation import record_invocation
@@ -449,6 +456,41 @@ def reject_contribution_endpoint(
 
     try:
         reject_contribution(db, contribution, body.reviewer_id, body.feedback)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    db.commit()
+    return get_contribution(contribution_id, db)
+
+
+@router.post("/contributions/{contribution_id}/request-changes", response_model=ContributionOut)
+def request_changes_contribution_endpoint(
+    contribution_id: str,
+    body: RequestChangesIn,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    contribution = (
+        db.query(ContributionEvent)
+        .options(joinedload(ContributionEvent.participants))
+        .filter(ContributionEvent.id == contribution_id)
+        .first()
+    )
+    if not contribution:
+        raise HTTPException(status_code=404, detail="Contribution not found")
+    if contribution.status != ContributionStatus.ai_verified:
+        raise HTTPException(
+            status_code=400,
+            detail="Request changes is only available after AI verification",
+        )
+    if body.reviewer_id != current_user.entity_id:
+        raise HTTPException(status_code=403, detail="reviewer_id must match the authenticated entity")
+
+    reviewer = db.query(Entity).filter(Entity.id == body.reviewer_id).first()
+    if not reviewer or reviewer.entity_type != EntityType.human:
+        raise HTTPException(status_code=400, detail="Reviewer must be a human entity")
+
+    try:
+        request_contribution_changes(db, contribution, body.reviewer_id, body.feedback)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     db.commit()

@@ -62,6 +62,42 @@ class VerifierRegistryTests(unittest.TestCase):
         names = {p.provider_name for p in providers}
         self.assertIn("lumen-0", names)
         self.assertIn("desui", names)
+        self.assertIn("clarion-0", names)
+
+
+class ClarionUnifiedTests(unittest.TestCase):
+    def test_score_context_for_verifier(self):
+        from services.clarion import score_context_for_verifier
+
+        scored = score_context_for_verifier(
+            {
+                "task": {"title": "Docs", "description": "Write setup guide"},
+                "contribution": {
+                    "description": "Added setup guide for beginners",
+                    "evidence": {"url": "https://example.com/guide"},
+                },
+                "participants": [{"entity_id": "e1", "role": "creator"}],
+            }
+        )
+        self.assertGreater(scored["avg_score"], 0.0)
+        self.assertIn("rationale", scored)
+
+
+class EvidenceGitTests(unittest.TestCase):
+    def test_extract_empty_evidence(self):
+        from services.evidence_git import validate_git_commits
+
+        report = validate_git_commits({})
+        self.assertEqual(report["checked_count"], 0)
+
+
+class PortableReputationTests(unittest.TestCase):
+    def test_validate_evidence_full_shape(self):
+        from services.evidence_validate import validate_evidence_full
+
+        report = validate_evidence_full({"url": "https://example.com"})
+        self.assertIn("urls", report)
+        self.assertIn("git", report)
 
 
 class CodeAttributionBridgeTests(unittest.TestCase):

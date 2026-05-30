@@ -156,7 +156,51 @@ Genesis LLM witness nodes run as named verifier adapters in `MultiVerifierServic
 
 ---
 
-## 11. What We Deliberately Did Not Import
+## 11. Meritocrab — Reputation Audit Trail
+
+Every reputation change from approval, federation import, or code attribution sync is recorded in `reputation_audit_entries`.
+
+| Method | Path |
+|--------|------|
+| GET | `/api/v1/entities/{id}/reputation/audit` |
+
+---
+
+## 12. TrustMyGit — Git Commit Evidence & Portable Reputation
+
+Validate commit SHAs via local git or GitHub API. Export portable off-chain reputation bundles.
+
+| Method | Path |
+|--------|------|
+| GET | `/api/v1/contributions/{id}/evidence-check` | URL + git combined |
+| GET | `/api/v1/entities/{id}/reputation/portable` |
+| GET | `/api/v1/federation/reputation/{portable_id}/portable` |
+
+---
+
+## 13. Unified Clarion-0 Review Packet
+
+Clarion heuristic rubric merges with AI multi-consensus, expert cards, code attribution, and evidence checks in one packet.
+
+| Method | Path |
+|--------|------|
+| GET | `/api/v1/contributions/{id}/clarion-review` |
+
+`ClarionVerifier` also participates in `MultiVerifierService`.
+
+---
+
+## 14. Meritocrab — Request Changes & Webhooks
+
+Human reviewers can send contributions back for revision without full rejection. Optional webhooks fire on approve/reject/request-changes (`config/webhooks.yaml`).
+
+| Method | Path |
+|--------|------|
+| POST | `/api/v1/contributions/{id}/request-changes` |
+
+---
+
+## 15. What We Deliberately Did Not Import
 
 | Project | Reason |
 |---------|--------|
