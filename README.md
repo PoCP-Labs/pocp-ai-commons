@@ -4,6 +4,10 @@
 
 PoCP AI Commons is the first open-source application of the **Proof of Contribution Protocol (PoCP)**.
 
+PoCP's larger ambition is to become the **Contribution Internet for the AI era**.
+
+If the PC Internet connected information, and the Mobile Internet connected people and services, PoCP connects humans, AI agents, skills, tools, data, tasks, reviews, reputation, and AI usage rights through verified contribution.
+
 It is designed to explore a new question for the age of AI:
 
 > If AI becomes a basic productive capability, how can ordinary people gain fair access to it through real contribution?
@@ -11,6 +15,10 @@ It is designed to explore a new question for the age of AI:
 PoCP AI Commons is not just another AI chat platform.
 
 It is a contribution-based AI capability network where humans, agents, skills, models, tools, datasets, workflows, and organizations can participate in tasks, generate contribution records, receive verification, build reputation, and earn AI access.
+
+PoCP is also not a technical assembly of LLM APIs, points, task boards, and graph UI. Its goal is to define native protocol primitives for contribution: Entity, Contribution Event, Evidence Hash, Human-AI Verification State, Contribution Proof Packet, Contribution Graph, Rights Conversion, and Ledger Memory.
+
+See also: [PoCP as the Contribution Internet](./docs/CONTRIBUTION-INTERNET.md), [PoCP Core Technology Stack](./docs/CORE-TECH-STACK.md), [PoCP Native Technology Principles](./docs/NATIVE-TECHNOLOGY-PRINCIPLES.md), and [PoCP Intelligence Capability Layer](./docs/INTELLIGENCE-LAYER.md).
 
 ---
 
@@ -202,27 +210,34 @@ Contribution → Verification → AI Credits → Reputation → Ledger
 
 ## Genesis Statement
 
-Bitcoin proved digital scarcity.
+PoCP starts from a simple belief:
 
-PoCP aims to prove human and intelligent-agent contribution.
-
-Bitcoin asks:
-
-> Who proved work?
+In the age of AI, what deserves to be recorded is not only how assets move, but how value is created.
 
 PoCP asks:
 
 > Who created verified contribution?
 
-In the age of AI, the next great value network may not be built only around scarcity.
+PoCP begins with one living loop:
 
-It may be built around contribution.
+```text
+Contribution
+→ Verification
+→ CP
+→ AI Credits
+→ AI Use
+→ More Contribution
+```
+
+This is not a token-first project.
+
+It begins with contribution, verification, AI access, reputation, and human-agent collaboration.
 
 ---
 
 ## Roadmap
 
-### Phase 0: Genesis
+### Phase 0: Genesis ✓
 
 * Project README
 * Genesis document
@@ -230,18 +245,22 @@ It may be built around contribution.
 * Protocol spec v0.1
 * Open-source repository setup
 
-### Phase 1: MVP
+### Phase 1: Genesis MVP ✓
 
-* User login
-* AI Credits wallet
-* AI Chat
-* Task center
-* Contribution submission
-* AI advisory review
-* Human review
-* Contribution ledger
+* Demo seed and first contribution loop
+* Entity model (Human + Agent + Skill)
+* AI advisory review + human review
+* Wallet, ledger, reputation, contribution graph
 
-### Phase 2: Pilot
+### Phase 2: Sprint Alpha (in progress)
+
+* Dev login and GitHub OAuth
+* AI Credits wallet and AI Chat (Credits burn)
+* OpenAI / DeepSeek / Mock verifiers
+* AI usage logs and minimal anti-abuse
+* Contribution proof and federation APIs
+
+### Phase 3: Pilot
 
 * 30–100 early users
 * students, developers, creators, volunteers
@@ -249,7 +268,7 @@ It may be built around contribution.
 * AI Credits distribution
 * feedback and anti-abuse testing
 
-### Phase 3: Contribution Graph
+### Phase 4: Contribution Graph
 
 * Human + Agent + Skill contribution records
 * entity reputation
@@ -257,7 +276,7 @@ It may be built around contribution.
 * agent performance history
 * contribution graph explorer
 
-### Phase 4: Protocol Expansion
+### Phase 5: Protocol Expansion
 
 * decentralized verification
 * on-chain anchoring
@@ -281,17 +300,45 @@ It may be built around contribution.
 
 ## Development Status
 
-PoCP AI Commons is currently in **Genesis stage**.
+PoCP AI Commons is in the **Genesis MVP → Sprint Alpha** transition.
 
-The first goal is to build a working MVP that proves one loop:
+Genesis established the repo, protocol spec, demo seed, and contribution loop. Sprint Alpha turns that demo into a real usable MVP:
 
 ```text
-A person completes a contribution task
-→ AI gives advisory review
-→ human reviewer confirms
-→ system issues CP and AI Credits
-→ contribution enters the ledger
+Dev Login / GitHub Login
+→ 100 starter AI Credits
+→ AI Chat burns Credits
+→ Contribution submission
+→ AI Verifier advisory review
+→ Human reviewer confirms
+→ CP + AI Credits issued
+→ Ledger + Contribution Graph
 ```
+
+**Sprint Alpha status:** backend loop implemented (auth, wallet, AI chat, verifiers, ledger, proof, federation). Frontend polish, GitHub OAuth in production, and contributor onboarding are in progress.
+
+See [docs/SPRINT_ALPHA.md](./docs/SPRINT_ALPHA.md) for endpoints and local test flow.
+
+## Project Planning
+
+| Document | Purpose |
+|----------|---------|
+| [CURRENT-STAGE-REVIEW.md](./CURRENT-STAGE-REVIEW.md) | Stage review: Genesis MVP → Sprint Alpha |
+| [SPRINT-ALPHA-PLAN.md](./SPRINT-ALPHA-PLAN.md) | Sprint Alpha goals, loop, and P0 features |
+| [NO-TOKEN-FIRST.md](./NO-TOKEN-FIRST.md) | Why PoCP starts with contribution, not tokens |
+| [AI-CREDITS-CP-REPUTATION.md](./AI-CREDITS-CP-REPUTATION.md) | AI Credits, CP, and reputation model |
+| [LUMEN-0-CONTRIBUTION-RECORD.md](./LUMEN-0-CONTRIBUTION-RECORD.md) | Lumen-0 genesis AI collaborator contribution record |
+| [docs/README-ALIGNMENT-NOTES.md](./docs/README-ALIGNMENT-NOTES.md) | README alignment notes for public narrative |
+
+Use GitHub issue templates: `sprint_alpha_task`, `readme_cleanup_task`.
+
+### Current Priorities (P0)
+
+1. Remove crypto/token misreadings from public narrative.
+2. Stabilize the Sprint Alpha loop locally (`docker compose up --build` + smoke test).
+3. Open [Good First Issues](./GOOD_FIRST_ISSUES.md) on GitHub for external contributors.
+4. Apply [Code Contribution Commons](./CODE-CONTRIBUTION-COMMONS.md) so non-coders can participate.
+5. Harden anti-abuse and human-final review messaging across UI and API.
 
 ---
 
@@ -302,6 +349,8 @@ A person completes a contribution task
 | [GENESIS.md](./GENESIS.md) | Why PoCP is a new species for the AI age; genesis Entities: **Lumen-0** (witness) and **DeSui** (validator). **Translations:** [中文](docs/genesis/zh-CN.md) · [Français](docs/genesis/fr.md) · [Deutsch](docs/genesis/de.md) · [العربية](docs/genesis/ar.md) · [Русский](docs/genesis/ru.md) — see [docs/genesis/README.md](docs/genesis/README.md) |
 | [AI-COMMONS.md](./AI-COMMONS.md) | First application: the AI commons network |
 | [PROTOCOL-SPEC-v0.1.md](./PROTOCOL-SPEC-v0.1.md) | Minimal protocol spec for implementation |
+| [docs/INTELLIGENCE-LAYER.md](./docs/INTELLIGENCE-LAYER.md) | PoCP Intelligence Capability Layer — nine contribution-intelligence modules |
+| [docs/FAQ.md](./docs/FAQ.md) | FAQ: token project, AI Credits, human review |
 
 ---
 
@@ -338,6 +387,22 @@ Use GitHub issue templates under `.github/ISSUE_TEMPLATE/` (`code_contribution_t
 
 ---
 
+## Public Site
+
+This repository now includes a zero-build static facade for a public PoCP manifesto site under `docs/`.
+
+| Entry | Purpose |
+|-------|---------|
+| [docs/index.html](./docs/index.html) | Landing page for the public PoCP site |
+| [docs/manifesto.html](./docs/manifesto.html) | Public manifesto page |
+| [docs/whitepaper.html](./docs/whitepaper.html) | Whitepaper-style protocol summary |
+| [docs/quick-start.html](./docs/quick-start.html) | Public quick start guide |
+| [docs/GITHUB-PAGES.md](./docs/GITHUB-PAGES.md) | Publishing notes for GitHub Pages |
+| [docs/DEPLOY-CHECKLIST.md](./docs/DEPLOY-CHECKLIST.md) | Step-by-step deployment checklist for the public site |
+| [.github/workflows/pages.yml](./.github/workflows/pages.yml) | Automatic deployment workflow for GitHub Pages |
+
+---
+
 ## Quick Start (Developers)
 
 ```bash
@@ -363,7 +428,13 @@ Starts **PostgreSQL**, the API (Alembic migrations on boot), and the frontend.
 cd backend && python scripts/smoke_test.py
 ```
 
-See also: [docs/VISION.md](./docs/VISION.md) · [docs/PROTOCOL.md](./docs/PROTOCOL.md) · [docs/SCHEMA.md](./docs/SCHEMA.md) · [docs/DATABASE.md](./docs/DATABASE.md) · [PROTOCOL-SPEC-v0.1.md](./PROTOCOL-SPEC-v0.1.md)
+## Configuration
+
+See [backend/.env.example](./backend/.env.example) for database, OAuth, AI provider, and federation settings.
+
+For the public-site publishing path, see [docs/DEPLOY-CHECKLIST.md](./docs/DEPLOY-CHECKLIST.md).
+
+See also: [docs/VISION.md](./docs/VISION.md) · [docs/LOCAL-SETUP.md](./docs/LOCAL-SETUP.md) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) · [docs/API-SPEC.md](./docs/API-SPEC.md) · [docs/PUBLIC-DEMO.md](./docs/PUBLIC-DEMO.md) · [docs/PROTOCOL.md](./docs/PROTOCOL.md) · [docs/SCHEMA.md](./docs/SCHEMA.md) · [docs/DATABASE.md](./docs/DATABASE.md) · [PROTOCOL-SPEC-v0.1.md](./PROTOCOL-SPEC-v0.1.md)
 
 ---
 

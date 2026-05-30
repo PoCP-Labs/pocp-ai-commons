@@ -31,15 +31,16 @@ def main() -> None:
     login = req(
         "POST",
         "/api/v1/auth/dev-login",
-        {"username": "alice", "email": "alice@pocp.local"},
+        {"username": "rain", "email": "rain@example.com"},
     )
     token = login["access_token"]
-    assert login["entity"]["name"] == "Alice", login["entity"]
-    print("OK Alice dev-login")
+    assert login["entity"]["name"] == "Rain", login["entity"]
+    print("OK Rain dev-login")
 
     me = req("GET", "/api/v1/me", token=token)
     assert me["entity"]["entity_type"] == "human"
     entity_id = me["entity"]["id"]
+    credits_before = me["wallet"]["ai_credits"]
     print(f"OK /me entity={me['entity']['name']}")
 
     chat = req(
@@ -49,7 +50,9 @@ def main() -> None:
         token=token,
     )
     assert chat["credits_spent"] == 5
-    assert chat["remaining_credits"] == 95
+    assert chat["remaining_credits"] == credits_before - 5, (
+        f"expected {credits_before - 5}, got {chat['remaining_credits']}"
+    )
     print("OK ai/chat burns credits")
 
     usage = req("GET", "/api/v1/ai/usage", token=token)
@@ -67,6 +70,11 @@ def main() -> None:
     pocp_commons = next((e for e in orgs if e["name"] == "PoCP AI Commons"), None)
     assert pocp_commons, "Seed organization missing"
 
+    outsider = req(
+        "POST",
+        "/api/v1/auth/dev-login",
+        {"username": "carol", "email": "carol@example.com"},
+    )
     try:
         req(
             "POST",
@@ -76,16 +84,16 @@ def main() -> None:
                 "description": "Should be rejected",
                 "sponsor_id": pocp_commons["id"],
             },
-            token=token,
+            token=outsider["access_token"],
         )
-        raise AssertionError("Alice should not be able to create tasks for Bob-governed organization")
+        raise AssertionError("Outsider should not create tasks for PoCP AI Commons")
     except urllib.error.HTTPError as exc:
         assert exc.code == 403
 
     bob_login = req(
         "POST",
         "/api/v1/auth/dev-login",
-        {"username": "bob", "email": "bob@pocp.local"},
+        {"username": "bob", "email": "bob@example.com"},
     )
     bob_token = bob_login["access_token"]
     bob_entity_id = bob_login["entity"]["id"]
@@ -100,7 +108,7 @@ def main() -> None:
             "description": "Automated loop verification",
             "sponsor_id": pocp_commons["id"],
         },
-        token=bob_token,
+        token=token,
     )
 
     contrib = req(
@@ -171,16 +179,45 @@ def main() -> None:
 
     portable = req("GET", f"/api/v1/entities/{entity_id}/portable")
     assert portable["entity"]["id"] == entity_id
-    assert portable["portable_id"] == "dev:alice@pocp.local"
+    assert portable["portable_id"] == "dev:rain@example.com"
     print(f"OK portable entity {portable['portable_id']}")
+
+    proof = req("GET", f"/api/v1/contributions/{contrib['id']}/proof")
+    assert proof["proof_type"] == "pocp_contribution_proof"
+    assert proof["contribution_event"]["id"] == contrib["id"]
+    assert proof["integrity"]["proof_hash"]
+    assert proof["integrity"]["evidence_hash"] == contrib["evidence"]["_pocp"]["content_hash"]
+    assert proof["verification"]["human_reviews"], "approved contribution should include human review"
+    assert proof["rights_and_reputation"]["credit_transactions"], "approved contribution should include rights issuance"
+    print(f"OK contribution proof {proof['integrity']['proof_hash'][:12]}")
 
     node = req("GET", "/api/v1/federation/node")
     assert node["spec_version"] == "0.1"
+    assert any("/contributions/{id}/proof" in endpoint for endpoint in node["public_endpoints"])
     print(f"OK federation node {node['node_id']}")
 
     assert contrib["evidence"].get("_pocp", {}).get("content_hash"), "evidence should be content-hashed"
 
-    print("OK Sprint Alpha loop: login → chat → auto-verify → approve → ledger → federation")
+    try:
+        imported = req(
+            "POST",
+            "/api/v1/federation/import-proof",
+            {"source_node_id": node["node_id"], "proof": proof},
+        )
+        assert imported["source_contribution_id"] == contrib["id"]
+        assert imported["reputation_applied"] > 0
+        imports = req("GET", "/api/v1/federation/imports")
+        assert any(i["id"] == imported["id"] for i in imports)
+        print(f"OK federation import reputation={imported['reputation_applied']}")
+    except urllib.error.HTTPError as exc:
+        if exc.code == 403:
+            print("SKIP federation import (set POCP_ALLOW_UNTRUSTED_IMPORT=true on server)")
+        elif exc.code == 409:
+            print("OK federation import already present")
+        else:
+            raise
+
+    print("OK Sprint Alpha loop: login → chat → auto-verify → approve → proof → ledger → federation")
 
 
 if __name__ == "__main__":

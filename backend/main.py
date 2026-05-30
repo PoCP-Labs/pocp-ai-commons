@@ -1,4 +1,6 @@
 from contextlib import asynccontextmanager
+import logging
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,7 +14,14 @@ from routers.export import router as export_router
 from routers.federation import router as federation_router
 from genesis import ensure_genesis_entities
 from seed import seed_demo
+from middleware.read_only_mirror import ReadOnlyMirrorMiddleware
+from services.federation_sync import sync_all_trusted_peers
 from services.ledger_chain import backfill_ledger_hashes
+from services.node_mode import is_read_only_mirror, node_mode
+from services.trust_config import load_trusted_nodes
+from services.trust_ledger import record_trust_list_if_changed
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -21,11 +30,29 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         ensure_genesis_entities(db)
-        backfill_ledger_hashes(db)
-        db.commit()
         seed_demo(db)
+        backfill_ledger_hashes(db)
+        record_trust_list_if_changed(db)
+        db.commit()
     finally:
         db.close()
+
+    if os.getenv("POCP_FEDERATION_SYNC_ON_STARTUP", "false").lower() == "true":
+        if load_trusted_nodes():
+            sync_db = SessionLocal()
+            try:
+                summary = sync_all_trusted_peers(sync_db)
+                logger.info(
+                    "Federation startup sync: imported=%s skipped=%s errors=%s",
+                    summary["imported"],
+                    summary["skipped"],
+                    summary["errors"],
+                )
+            except Exception as exc:
+                logger.warning("Federation startup sync failed: %s", exc)
+            finally:
+                sync_db.close()
+
     yield
 
 
@@ -46,6 +73,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(ReadOnlyMirrorMiddleware)
 
 app.include_router(router)
 app.include_router(auth_router)
@@ -63,6 +91,9 @@ def health():
         "service": "pocp-ai-commons",
         "protocol": "entity-centric-pocp",
         "version": "0.3.0",
+        "node_mode": node_mode(),
+        "read_only_mirror": is_read_only_mirror(),
+        "trusted_peer_count": len(load_trusted_nodes()),
         "database": {
             "dialect": database_dialect(),
             "status": db_status,

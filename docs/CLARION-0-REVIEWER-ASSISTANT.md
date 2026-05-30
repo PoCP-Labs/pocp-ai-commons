@@ -48,21 +48,54 @@ Verifier output should be JSON-compatible and should preserve the distinction be
 
 ```json
 {
-  "task_match": 0.0,
-  "quality": 0.0,
-  "originality": 0.0,
-  "impact": 0.0,
-  "evidence_score": 0.0,
-  "risk_score": 0.0,
-  "suggested_cp": 0,
-  "suggested_credits": 0,
-  "rationale": "Brief explanation for the human reviewer.",
+  "schema_version": "0.1",
+  "review_packet_type": "clarion_advisory_review",
+  "decision_boundary": "advisory_only_human_final_approval",
+  "contribution": {
+    "id": "contribution-id",
+    "status": "submitted"
+  },
+  "evidence": {
+    "standard_version": "0.1",
+    "content_hash": "sha256-content-hash",
+    "types": ["url", "commit"],
+    "items": [
+      {
+        "type": "url",
+        "key": "links",
+        "label": "Links",
+        "value": ["https://example.org/work"]
+      }
+    ],
+    "score": 0.0
+  },
+  "rubric": {
+    "task_match": 0.0,
+    "quality": 0.0,
+    "originality": 0.0,
+    "impact": 0.0,
+    "evidence_score": 0.0,
+    "risk_score": 0.0,
+    "avg_score": 0.0
+  },
+  "suggested_rewards": {
+    "cp": 0,
+    "ai_credits": 0
+  },
   "concerns": ["Specific concern or missing evidence."],
   "reviewer_questions": ["Question for the human reviewer to resolve."],
   "proof_draft": {
     "summary": "What was contributed.",
     "participants": ["Who or what participated."],
     "evidence": ["Key evidence items."],
+    "evidence_items": [
+      {
+        "type": "url",
+        "key": "links",
+        "label": "Links",
+        "value": ["https://example.org/work"]
+      }
+    ],
     "recommended_status": "needs_human_review"
   }
 }

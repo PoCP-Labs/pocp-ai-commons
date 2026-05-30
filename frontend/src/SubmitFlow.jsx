@@ -10,6 +10,8 @@ const ROLES = [
   { value: "sponsor", label: "Sponsor (Org)", weight: 0.05 },
 ];
 
+const STEPS = ["invoke", "submit", "verify", "approve", "done"];
+
 export default function SubmitFlow({ api, entities, tasks, currentEntityId, onComplete }) {
   const humans = entities.filter((e) => e.entity_type === "human");
   const agents = entities.filter((e) => e.entity_type === "agent");
@@ -32,6 +34,8 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
   });
 
   const [contributionId, setContributionId] = useState(null);
+  const [approvalResult, setApprovalResult] = useState(null);
+  const [verifyStatus, setVerifyStatus] = useState(null);
 
   async function post(path, body) {
     const token = localStorage.getItem(TOKEN_KEY);
@@ -117,8 +121,9 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
     setMessage(null);
     try {
       await post(`/api/v1/contributions/${contributionId}/auto-verify`, {});
+      setVerifyStatus("ai_verified");
       setStep("approve");
-      setMessage("Server-side AI verification completed.");
+      setMessage("AI witness review completed (advisory only). Awaiting human final approval.");
     } catch (err) {
       setMessage(`Error: ${err.message}`);
     } finally {
@@ -135,11 +140,12 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
     setLoading(true);
     setMessage(null);
     try {
-      await post(`/api/v1/contributions/${contributionId}/approve`, {
+      const approved = await post(`/api/v1/contributions/${contributionId}/approve`, {
         reviewer_id: form.reviewerId,
         feedback: "Approved by human reviewer.",
       });
-      setMessage("Contribution approved! Credits and reputation distributed.");
+      setApprovalResult(approved);
+      setMessage("Contribution approved! CP, Credits, and reputation recorded on ledger.");
       setStep("done");
       onComplete?.();
     } catch (err) {
@@ -149,129 +155,200 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
     }
   }
 
-  const fieldStyle = { display: "block", width: "100%", marginBottom: 12, padding: 8, borderRadius: 6, border: "1px solid #cbd5e1" };
-  const btnStyle = (primary) => ({
-    padding: "8px 16px",
-    borderRadius: 6,
-    border: "none",
-    cursor: loading ? "wait" : "pointer",
-    background: primary ? "#2563eb" : "#e2e8f0",
-    color: primary ? "#fff" : "#334155",
-    fontWeight: 600,
-    marginRight: 8,
-  });
+  const stepIndex = STEPS.indexOf(step);
 
   if (!humans.length || !skills.length) {
-    return <p style={{ color: "#64748b" }}>Need at least one human and one skill entity to run the workflow.</p>;
+    return <p className="empty-state">Need at least one human and one skill entity to run the workflow.</p>;
   }
 
   return (
-    <div style={{ background: "#f8fafc", padding: 20, borderRadius: 8 }}>
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, fontSize: 13 }}>
-        {["invoke", "submit", "verify", "approve", "done"].map((s, i) => (
+    <div className="workflow-panel">
+      <div className="workflow-steps">
+        {STEPS.map((s, i) => (
           <span
             key={s}
-            style={{
-              padding: "4px 10px",
-              borderRadius: 4,
-              background: step === s ? "#2563eb" : step === "done" || ["invoke", "submit", "verify", "approve"].indexOf(step) > i ? "#dbeafe" : "#e2e8f0",
-              color: step === s ? "#fff" : "#475569",
-            }}
+            className={`workflow-step${
+              step === s ? " workflow-step--active" : stepIndex > i || step === "done" ? " workflow-step--done" : ""
+            }`}
           >
             {i + 1}. {s}
           </span>
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-        <label>
+      <div className="form-grid">
+        <label className="field-label">
           Creator (Human)
-          <select value={form.creatorId} onChange={(e) => setForm({ ...form, creatorId: e.target.value })} style={fieldStyle}>
-            {humans.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
+          <select
+            className="field-select"
+            value={form.creatorId}
+            onChange={(e) => setForm({ ...form, creatorId: e.target.value })}
+          >
+            {humans.map((h) => (
+              <option key={h.id} value={h.id}>
+                {h.name}
+              </option>
+            ))}
           </select>
         </label>
-        <label>
+        <label className="field-label">
           Agent
-          <select value={form.agentId} onChange={(e) => setForm({ ...form, agentId: e.target.value })} style={fieldStyle}>
-            {agents.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+          <select
+            className="field-select"
+            value={form.agentId}
+            onChange={(e) => setForm({ ...form, agentId: e.target.value })}
+          >
+            {agents.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
           </select>
         </label>
-        <label>
+        <label className="field-label">
           Skill
-          <select value={form.skillId} onChange={(e) => setForm({ ...form, skillId: e.target.value })} style={fieldStyle}>
-            {skills.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          <select
+            className="field-select"
+            value={form.skillId}
+            onChange={(e) => setForm({ ...form, skillId: e.target.value })}
+          >
+            {skills.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
           </select>
         </label>
-        <label>
+        <label className="field-label">
           Reviewer
-          <select value={form.reviewerId} onChange={(e) => setForm({ ...form, reviewerId: e.target.value })} style={fieldStyle}>
-            {humans.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
+          <select
+            className="field-select"
+            value={form.reviewerId}
+            onChange={(e) => setForm({ ...form, reviewerId: e.target.value })}
+          >
+            {humans.map((h) => (
+              <option key={h.id} value={h.id}>
+                {h.name}
+              </option>
+            ))}
           </select>
         </label>
         {tasks.length > 0 && (
-          <label style={{ gridColumn: "1 / -1" }}>
+          <label className="field-label form-grid__full">
             Task
-            <select value={form.taskId} onChange={(e) => setForm({ ...form, taskId: e.target.value })} style={fieldStyle}>
-              {tasks.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
+            <select
+              className="field-select"
+              value={form.taskId}
+              onChange={(e) => setForm({ ...form, taskId: e.target.value })}
+            >
+              {tasks.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.title}
+                </option>
+              ))}
             </select>
           </label>
         )}
         {step !== "invoke" && (
           <>
-            <label style={{ gridColumn: "1 / -1" }}>
+            <label className="field-label form-grid__full">
               Description
-              <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} style={fieldStyle} placeholder="Contribution description" />
+              <input
+                className="field-input"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="Contribution description"
+              />
             </label>
-            <label style={{ gridColumn: "1 / -1" }}>
-              Content Preview
-              <textarea value={form.contentPreview} onChange={(e) => setForm({ ...form, contentPreview: e.target.value })} style={{ ...fieldStyle, minHeight: 60 }} placeholder="Evidence preview..." />
+            <label className="field-label form-grid__full">
+              Evidence Preview
+              <textarea
+                className="field-textarea"
+                value={form.contentPreview}
+                onChange={(e) => setForm({ ...form, contentPreview: e.target.value })}
+                placeholder="Evidence hash material preview…"
+              />
             </label>
           </>
         )}
       </div>
 
-      <div style={{ marginBottom: 12 }}>
-        <strong>Participant weights:</strong>
-        <span style={{ color: "#64748b", marginLeft: 8 }}>
-          {ROLES.map((r) => `${r.label} ${(r.weight * 100).toFixed(0)}%`).join(" · ")}
-        </span>
-      </div>
+      <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
+        <strong style={{ color: "var(--btc)" }}>Weights:</strong>{" "}
+        {ROLES.map((r) => `${r.label} ${(r.weight * 100).toFixed(0)}%`).join(" · ")}
+      </p>
 
       <div>
         {step === "invoke" && (
-          <button type="button" style={btnStyle(true)} onClick={handleInvoke} disabled={loading}>
+          <button type="button" className="btn btn--primary" onClick={handleInvoke} disabled={loading}>
             1. Record Invocation Chain
           </button>
         )}
         {step === "submit" && (
-          <button type="button" style={btnStyle(true)} onClick={handleSubmit} disabled={loading}>
+          <button type="button" className="btn btn--primary" onClick={handleSubmit} disabled={loading}>
             2. Submit Contribution
           </button>
         )}
         {step === "verify" && (
-          <button type="button" style={btnStyle(true)} onClick={handleVerify} disabled={loading}>
-            3. Run AI Verification
+          <button type="button" className="btn btn--ai" onClick={handleVerify} disabled={loading}>
+            3. AI Witness Review
           </button>
         )}
         {step === "approve" && (
-          <button type="button" style={btnStyle(true)} onClick={handleApprove} disabled={loading || !currentEntityId || currentEntityId === form.creatorId}>
-            4. Human Approve
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={handleApprove}
+            disabled={loading || !currentEntityId || currentEntityId === form.creatorId}
+          >
+            4. Human Final Approval
           </button>
         )}
         {step === "done" && (
-          <button type="button" style={btnStyle(false)} onClick={() => { setStep("invoke"); setContributionId(null); }}>
-            Start New
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => {
+              setStep("invoke");
+              setContributionId(null);
+              setApprovalResult(null);
+              setVerifyStatus(null);
+            }}
+          >
+            Start New Block
           </button>
         )}
       </div>
 
+      {verifyStatus && step !== "invoke" && step !== "submit" && (
+        <div className="alert alert--info" style={{ marginTop: 12 }}>
+          AI verification status: <strong>{verifyStatus}</strong> (advisory — human approval required)
+        </div>
+      )}
+
+      {approvalResult && step === "done" && (
+        <div className="panel" style={{ marginTop: 12, padding: 12 }}>
+          <h3 style={{ fontSize: "0.9rem", margin: "0 0 8px", color: "var(--btc)" }}>Issuance Summary</h3>
+          <p style={{ margin: 0, fontSize: "0.85rem" }}>
+            Status: <strong>{approvalResult.status}</strong>
+          </p>
+          {approvalResult.ai_verifications?.length > 0 && (
+            <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: 8 }}>
+              AI witness scores recorded; human reviewer finalized this block.
+            </p>
+          )}
+        </div>
+      )}
+
       {message && (
-        <p style={{ marginTop: 12, color: message.startsWith("Error") ? "#dc2626" : "#059669" }}>{message}</p>
+        <div className={`alert${message.startsWith("Error") ? " alert--error" : " alert--success"}`} style={{ marginTop: 12 }}>
+          {message}
+        </div>
       )}
       {step === "approve" && (!currentEntityId || currentEntityId === form.creatorId) && (
-        <p style={{ marginTop: 12, color: "#64748b" }}>
-          Approval now requires a separate authenticated human reviewer session.
-        </p>
+        <div className="alert alert--info" style={{ marginTop: 12 }}>
+          Human final approval requires a separate authenticated reviewer session (not the creator).
+        </div>
       )}
     </div>
   );

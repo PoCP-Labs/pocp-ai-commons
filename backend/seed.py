@@ -23,31 +23,31 @@ from services.auth import bind_user_account_to_entity
 from services.invocation import record_invocation
 
 
-def ensure_demo_accounts(db: Session, alice: Entity, bob: Entity) -> None:
+def ensure_demo_accounts(db: Session, rain: Entity, bob: Entity) -> None:
     bind_user_account_to_entity(
         db,
-        entity=alice,
+        entity=rain,
         provider="dev",
-        provider_user_id="alice@pocp.local",
-        username="alice",
-        email="alice@pocp.local",
+        provider_user_id="rain@example.com",
+        username="rain",
+        email="rain@example.com",
     )
     bind_user_account_to_entity(
         db,
         entity=bob,
         provider="dev",
-        provider_user_id="bob@pocp.local",
+        provider_user_id="bob@example.com",
         username="bob",
-        email="bob@pocp.local",
+        email="bob@example.com",
     )
 
 
 def seed_demo(db: Session) -> None:
     ensure_genesis_entities(db)
-    existing_alice = db.query(Entity).filter(Entity.name == "Alice").first()
+    existing_rain = db.query(Entity).filter(Entity.name == "Rain").first()
     existing_bob = db.query(Entity).filter(Entity.name == "Bob").first()
-    if existing_alice and existing_bob:
-        ensure_demo_accounts(db, existing_alice, existing_bob)
+    if existing_rain and existing_bob:
+        ensure_demo_accounts(db, existing_rain, existing_bob)
         db.commit()
         return
 
@@ -56,10 +56,10 @@ def seed_demo(db: Session) -> None:
     if lumen_0 is None or desui is None:
         raise RuntimeError("Genesis entities missing after ensure_genesis_entities")
 
-    alice = Entity(
+    rain = Entity(
         entity_type=EntityType.human,
-        name="Alice",
-        description="Student contributor",
+        name="Rain",
+        description="Platform founder and contributor",
         status=EntityStatus.active,
     )
     bob = Entity(
@@ -87,22 +87,22 @@ def seed_demo(db: Session) -> None:
         status=EntityStatus.active,
     )
 
-    db.add_all([alice, bob, study_agent_entity, r_tutor_entity, pocp_commons])
+    db.add_all([rain, bob, study_agent_entity, r_tutor_entity, pocp_commons])
     db.flush()
 
     lumen_0.creator_id = pocp_commons.id
     desui.creator_id = pocp_commons.id
 
-    grant_registration_credits(db, alice)
+    grant_registration_credits(db, rain)
     grant_registration_credits(db, bob)
-    ensure_demo_accounts(db, alice, bob)
+    ensure_demo_accounts(db, rain, bob)
 
-    study_agent_entity.owner_id = alice.id
-    study_agent_entity.creator_id = alice.id
-    r_tutor_entity.owner_id = alice.id
-    r_tutor_entity.creator_id = alice.id
-    pocp_commons.owner_id = bob.id
-    pocp_commons.creator_id = bob.id
+    study_agent_entity.owner_id = rain.id
+    study_agent_entity.creator_id = rain.id
+    r_tutor_entity.owner_id = rain.id
+    r_tutor_entity.creator_id = rain.id
+    pocp_commons.owner_id = rain.id
+    pocp_commons.creator_id = rain.id
 
     db.add(
         Organization(
@@ -116,7 +116,7 @@ def seed_demo(db: Session) -> None:
         Agent(
             entity_id=study_agent_entity.id,
             config={"role": "study_organizer", "capabilities": ["summarize", "structure"]},
-            maintainer_id=alice.id,
+            maintainer_id=rain.id,
         )
     )
     db.add(
@@ -124,7 +124,7 @@ def seed_demo(db: Session) -> None:
             entity_id=r_tutor_entity.id,
             version="1.0.0",
             prompt_template="Structure R language matrix operations into study notes with examples.",
-            maintainer_id=alice.id,
+            maintainer_id=rain.id,
         )
     )
 
@@ -139,7 +139,7 @@ def seed_demo(db: Session) -> None:
 
     record_invocation(
         db,
-        initiator_id=alice.id,
+        initiator_id=rain.id,
         skill_entity_id=r_tutor_entity.id,
         agent_entity_id=study_agent_entity.id,
         model_provider="deepseek",
@@ -148,7 +148,7 @@ def seed_demo(db: Session) -> None:
 
     contribution = ContributionEvent(
         task_id=task.id,
-        primary_entity_id=alice.id,
+        primary_entity_id=rain.id,
         contribution_type="knowledge",
         description="Structured R matrix study notes with examples and practice questions.",
         evidence={
@@ -163,7 +163,7 @@ def seed_demo(db: Session) -> None:
 
     record_invocation(
         db,
-        initiator_id=alice.id,
+        initiator_id=rain.id,
         skill_entity_id=r_tutor_entity.id,
         agent_entity_id=study_agent_entity.id,
         model_provider="deepseek",
@@ -174,7 +174,7 @@ def seed_demo(db: Session) -> None:
     participants = [
         ContributionParticipant(
             contribution_id=contribution.id,
-            entity_id=alice.id,
+            entity_id=rain.id,
             role=ParticipantRole.creator,
             weight=0.40,
             evidence={"action": "authored and refined notes"},

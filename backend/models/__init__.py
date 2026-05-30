@@ -7,6 +7,7 @@ from models.contribution import (
     HumanReview,
 )
 from models.entity import Entity
+from models.federation import FederatedImport
 from models.invocation import InvocationStep, InvocationTrace
 from models.ledger import LedgerRecord
 from models.organization import Organization
@@ -33,4 +34,5 @@ __all__ = [
     "LedgerRecord",
     "UserAccount",
     "AIUsageLog",
+    "FederatedImport",
 ]

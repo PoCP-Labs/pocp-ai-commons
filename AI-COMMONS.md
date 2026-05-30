@@ -157,7 +157,7 @@ Human ──uses──▶ Agent ──calls──▶ Skill ──invokes──�
 
 Example:
 
-> Alice (Human) uses StudyAgent (Agent) powered by R-Tutor-Skill (Skill) to produce R language exercises. AI Verifier advises. Maintainer approves. Alice earns AI Credits; Agent and Skill gain reputation.
+> Rain (Human) uses StudyAgent (Agent) powered by R-Tutor-Skill (Skill) to produce R language exercises. AI Verifier advises. Maintainer approves. Rain earns AI Credits; Agent and Skill gain reputation.
 
 ---
 

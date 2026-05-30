@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field
 class FederationNodeOut(BaseModel):
     node_id: str
     spec_version: str
+    public_key: str | None = None
+    node_mode: str = "full"
     public_endpoints: list[str] = Field(default_factory=list)
 
 
@@ -13,10 +15,13 @@ class TrustedNode(BaseModel):
     node_id: str
     base_url: str
     public_key: str | None = None
+    trust_weight: float = 0.5
 
 
 class TrustListOut(BaseModel):
     trusted_nodes: list[TrustedNode] = Field(default_factory=list)
+    source: str = "none"
+    trust_list_hash: str | None = None
 
 
 class ImportParticipant(BaseModel):

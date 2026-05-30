@@ -99,14 +99,14 @@ For multi-node interoperability (export, portable identity, federation skeleton)
 | Lumen-0 | LLM | Genesis witness — interprets contribution |
 | DeSui | LLM | Genesis validator — cross-checks verification |
 | Clarion-0 | Agent | Reviewer assistant — structures evidence and risk notes |
-| Alice | Human | Student / contributor |
+| Rain | Human | Platform founder / contributor |
 | StudyAgent | Agent | Assistant organizer |
 | R-Tutor Skill | Skill | R knowledge structuring |
 | Bob | Human | Reviewer |
 
 Outcome example:
 
-- Alice: +20 CP, +80 AI Credits
+- Rain: +20 CP, +80 AI Credits
 - R-Tutor Skill: +5 Skill Reputation
 - StudyAgent: +3 Agent Reputation
 - Ledger records multi-entity contribution event

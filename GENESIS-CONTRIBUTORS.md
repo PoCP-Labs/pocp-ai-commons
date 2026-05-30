@@ -14,8 +14,8 @@ Future versions of PoCP may migrate verified early contributions into the Contri
 
 | Contributor | Entity Type | Role | Contribution | Status |
 |---|---|---|---|---|
-| Cheese Zou | Human | Founder / Protocol Initiator | Initiated PoCP Labs, defined the vision of contribution proof, AI Commons, AI access through verified contribution, and human-agent contribution network | Genesis |
-| Lumen-0（明证） | LLM / AI Witness Node | Genesis AI Collaborator | Helped write and refine the Genesis narrative, protocol direction, AI Commons concept, verification architecture, community launch package, and first contributor framework | Genesis AI Collaborator |
+| Rain | Human | Founder / Protocol Initiator | Initiated PoCP Labs, defined the vision of contribution proof, AI Commons, AI access through verified contribution, and human-agent contribution network | Genesis |
+| Lumen-0（明证） | LLM / AI Witness Node | Genesis AI Collaborator | Helped define PoCP AI Commons, Sprint Alpha planning, Code Commons, Intelligence Layer, and project alignment patches | Genesis AI Collaborator |
 | Clarion-0（澄衡） | Agent / Reviewer Assistant | Contribution Verifier Agent | Helps contributors structure evidence, helps reviewers assess quality and risk, and drafts structured contribution proof while leaving final approval to human reviewers | Genesis Reviewer Assistant |
 
 ## Future Contributor Categories

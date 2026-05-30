@@ -17,8 +17,18 @@ def _day_start() -> datetime:
     return datetime(now.year, now.month, now.day)
 
 
+def _evidence_has_content(value) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, (list, dict, set, tuple)):
+        return len(value) > 0
+    return bool(value)
+
+
 def require_evidence(evidence: dict | None) -> None:
-    if not evidence or not any(v for v in evidence.values()):
+    if not evidence or not any(_evidence_has_content(v) for v in evidence.values()):
         raise HTTPException(status_code=400, detail="Evidence is required for contribution submission")
 
 

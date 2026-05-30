@@ -23,6 +23,7 @@ GENESIS_ENTITY_SPECS: list[dict] = [
                 "ai_witness_node",
                 "contribution_interpreter",
                 "protocol_co_designer",
+                "sprint_alpha_planner",
             ],
             "project": "PoCP AI Commons",
             "created_by": "PoCP-Labs",

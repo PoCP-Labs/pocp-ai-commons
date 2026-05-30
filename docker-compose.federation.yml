@@ -1,0 +1,86 @@
+# Two-node PoCP federation demo
+# Node A (source) : http://localhost:8100
+# Node B (mirror) : http://localhost:8101  — trusts node-a
+
+services:
+  postgres-a:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: pocp
+      POSTGRES_PASSWORD: pocp
+      POSTGRES_DB: pocp_a
+    ports:
+      - "5433:5432"
+    volumes:
+      - pocp_pg_a:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pocp -d pocp_a"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend-a:
+    build: ./backend
+    ports:
+      - "8100:8000"
+    environment:
+      PORT: "8000"
+      DATABASE_URL: postgresql+psycopg://pocp:pocp@postgres-a:5432/pocp_a
+      BACKEND_URL: http://localhost:8100
+      POCP_NODE_ID: node-a
+      POCP_NODE_PRIVATE_KEY: ffbbefd4d5e615574e01bd7a89ce12aa10aa416a0939281938c142a59f5d0e43
+      POCP_NODE_PUBLIC_KEY: 10bf1077744a098c56503c15dd5caef931b764fcaf9a08febc4ed1031e40e67e
+      POCP_WAIT_FOR_DB: "true"
+      ENABLE_DEV_LOGIN: "true"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres-a:
+        condition: service_healthy
+
+  postgres-b:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: pocp
+      POSTGRES_PASSWORD: pocp
+      POSTGRES_DB: pocp_b
+    ports:
+      - "5434:5432"
+    volumes:
+      - pocp_pg_b:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pocp -d pocp_b"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend-b:
+    build: ./backend
+    ports:
+      - "8101:8000"
+    environment:
+      PORT: "8000"
+      DATABASE_URL: postgresql+psycopg://pocp:pocp@postgres-b:5432/pocp_b
+      BACKEND_URL: http://localhost:8101
+      POCP_NODE_ID: node-b
+      POCP_NODE_MODE: read_only_mirror
+      POCP_NODE_PRIVATE_KEY: 1c54bc9c167fc063b4ffa373f4d28f18ec2bb3493711cc805974fe70f8e0035d
+      POCP_NODE_PUBLIC_KEY: 736f142b13c5e4f6a9d77595559ff1531afeb41c21386bf93d7d0bc6006e93ba
+      POCP_TRUSTED_NODES: >-
+        [{"node_id":"node-a","base_url":"http://backend-a:8000","public_key":"10bf1077744a098c56503c15dd5caef931b764fcaf9a08febc4ed1031e40e67e","trust_weight":0.8}]
+      POCP_REQUIRE_IMPORT_SIGNATURE: "true"
+      POCP_VERIFY_REMOTE_LEDGER: "true"
+      POCP_FEDERATION_SYNC_ON_STARTUP: "true"
+      POCP_WAIT_FOR_DB: "true"
+      ENABLE_DEV_LOGIN: "true"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres-b:
+        condition: service_healthy
+      backend-a:
+        condition: service_started
+
+volumes:
+  pocp_pg_a:
+  pocp_pg_b:

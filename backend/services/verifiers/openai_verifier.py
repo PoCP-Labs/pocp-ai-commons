@@ -43,7 +43,7 @@ class OpenAIVerifier(BaseVerifier):
             resp.raise_for_status()
             content = resp.json()["choices"][0]["message"]["content"]
         data = json.loads(content)
-        return normalize_result("openai", self.model, data)
+        return normalize_result(self.provider_name, self.model, data)
 
 
 def build_verifier_prompt(context: dict) -> str:
@@ -101,6 +101,13 @@ def _clamp(value, default=0.0):
         return default
 
 
+def _non_negative_float(value, default=0.0):
+    try:
+        return max(0.0, float(value))
+    except Exception:
+        return default
+
+
 def normalize_result(provider: str, model: str, data: dict) -> VerifierResult:
     return VerifierResult(
         provider=provider,
@@ -111,8 +118,8 @@ def normalize_result(provider: str, model: str, data: dict) -> VerifierResult:
         impact=_clamp(data.get("impact"), 0.5),
         evidence_score=_clamp(data.get("evidence_score"), 0.5),
         risk_score=_clamp(data.get("risk_score"), 0.5),
-        suggested_cp=float(data.get("suggested_cp") or 0),
-        suggested_credits=float(data.get("suggested_credits") or 0),
+        suggested_cp=_non_negative_float(data.get("suggested_cp")),
+        suggested_credits=_non_negative_float(data.get("suggested_credits")),
         rationale=str(data.get("rationale") or "No rationale provided."),
         concerns=list(data.get("concerns") or []),
     )

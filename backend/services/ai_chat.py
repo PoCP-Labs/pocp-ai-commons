@@ -5,9 +5,9 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from models.ai_usage import AIUsageLog
-from models.ledger import LedgerRecord
 from models.wallet import CreditTransaction, CreditType, Wallet
 from services.anti_abuse import check_daily_ai_burn_limit
+from services.ledger_chain import append_ledger_record
 
 AI_CHAT_COST_PER_MESSAGE = float(os.getenv("AI_CHAT_COST_PER_MESSAGE", "5"))
 
@@ -84,19 +84,18 @@ async def chat_and_burn_credits(
         credits_spent=cost,
     )
     db.add(usage)
-    db.add(
-        LedgerRecord(
-            contribution_id=None,
-            event_type="ai_credits_burned",
-            payload={
-                "entity_id": entity_id,
-                "wallet_id": wallet.id,
-                "provider": actual_provider,
-                "model": actual_model,
-                "credits_spent": cost,
-                "remaining_credits": wallet.ai_credits,
-            },
-        )
+    append_ledger_record(
+        db,
+        contribution_id=None,
+        event_type="ai_credits_burned",
+        payload={
+            "entity_id": entity_id,
+            "wallet_id": wallet.id,
+            "provider": actual_provider,
+            "model": actual_model,
+            "credits_spent": cost,
+            "remaining_credits": wallet.ai_credits,
+        },
     )
     db.flush()
     return {

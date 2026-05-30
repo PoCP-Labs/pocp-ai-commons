@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="PoCP mark">
+  <rect width="128" height="128" rx="28" fill="#1d1a17"/>
+  <path d="M31 31h31c18.778 0 34 15.222 34 34S80.778 99 62 99H49V81h12c8.837 0 16-7.163 16-16s-7.163-16-16-16H49v48H31V31Z" fill="#fff7ed"/>
+  <path d="M75 31h22v18H75z" fill="#b45309"/>
+</svg>

@@ -10,18 +10,10 @@ from models.contribution import (
     ParticipantRole,
 )
 from models.entity import Entity, EntityType
-from models.wallet import CreditTransaction, CreditType, ReputationScore, Wallet
+from models.wallet import ReputationScore, Wallet
 from services.ledger_chain import append_ledger_record
 from services.protocol_config import get_rewards_config
-
-
-def _get_or_create_wallet(db: Session, entity_id: str) -> Wallet:
-    wallet = db.query(Wallet).filter(Wallet.entity_id == entity_id).first()
-    if wallet is None:
-        wallet = Wallet(entity_id=entity_id)
-        db.add(wallet)
-        db.flush()
-    return wallet
+from services.rights import issue_contribution_rights, issue_registration_bc
 
 
 def _add_reputation(db: Session, entity_id: str, amount: float, category: str) -> ReputationScore:
@@ -79,34 +71,7 @@ def run_ai_verification(
 
 def grant_registration_credits(db: Session, entity: Entity) -> Wallet | None:
     """Issue starter AI Credits to newly registered human entities."""
-    if entity.entity_type != EntityType.human:
-        return None
-
-    wallet = _get_or_create_wallet(db, entity.id)
-    if wallet.ai_credits > 0 or wallet.cp_balance > 0:
-        return wallet
-
-    starter_credits = float(get_rewards_config()["registration"]["ai_credits"])
-    wallet.ai_credits = starter_credits
-    db.add(
-        CreditTransaction(
-            wallet_id=wallet.id,
-            amount=starter_credits,
-            credit_type=CreditType.ai_credits,
-            reason="Registration grant",
-        )
-    )
-    append_ledger_record(
-        db,
-        contribution_id=None,
-        event_type="registration_grant",
-        payload={
-            "entity_id": entity.id,
-            "ai_credits": starter_credits,
-        },
-    )
-    db.flush()
-    return wallet
+    return issue_registration_bc(db, entity)
 
 
 def approve_contribution(
@@ -130,8 +95,6 @@ def approve_contribution(
 
     rewards: dict = {"credits": [], "reputation": []}
     defaults = get_rewards_config()["contribution_defaults"]
-    human_cp_base = float(defaults["human"]["cp_base"])
-    human_ai_base = float(defaults["human"]["ai_credits_base"])
     skill_rep_base = float(defaults["skill"]["reputation_base"])
     agent_rep_base = float(defaults["agent"]["reputation_base"])
 
@@ -144,33 +107,31 @@ def approve_contribution(
             ParticipantRole.creator,
             ParticipantRole.executor,
         ):
-            wallet = _get_or_create_wallet(db, entity.id)
-            cp_amount = round(human_cp_base * participant.weight / 0.4, 2) if participant.weight else human_cp_base
-            ai_amount = round(human_ai_base * participant.weight / 0.4, 2) if participant.weight else human_ai_base
-
-            wallet.cp_balance += cp_amount
-            wallet.ai_credits += ai_amount
-
-            db.add(
-                CreditTransaction(
-                    wallet_id=wallet.id,
-                    contribution_id=contribution.id,
-                    amount=cp_amount,
-                    credit_type=CreditType.cp,
-                    reason=f"Contribution reward ({participant.role.value})",
-                )
+            grants = issue_contribution_rights(
+                db,
+                contribution=contribution,
+                participant=participant,
+                entity=entity,
             )
-            db.add(
-                CreditTransaction(
-                    wallet_id=wallet.id,
-                    contribution_id=contribution.id,
-                    amount=ai_amount,
-                    credit_type=CreditType.ai_credits,
-                    reason=f"Contribution reward ({participant.role.value})",
-                )
-            )
+            cp_amount = sum(grant.amount for grant in grants if grant.kind == "cp")
+            ai_amount = sum(grant.amount for grant in grants if grant.kind == "bc")
             rewards["credits"].append(
-                {"entity_id": entity.id, "name": entity.name, "cp": cp_amount, "ai_credits": ai_amount}
+                {
+                    "entity_id": entity.id,
+                    "name": entity.name,
+                    "cp": cp_amount,
+                    "ai_credits": ai_amount,
+                    "rights": [
+                        {
+                            "kind": grant.kind,
+                            "version": grant.version,
+                            "amount": grant.amount,
+                            "spendable": grant.spendable,
+                            "transferable": grant.transferable,
+                        }
+                        for grant in grants
+                    ],
+                }
             )
 
         elif entity.entity_type == EntityType.skill:

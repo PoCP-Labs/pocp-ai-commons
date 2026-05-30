@@ -2,6 +2,14 @@
 
 PoCP AI Commons is the first open-source application of the Proof of Contribution Protocol.
 
+Its larger direction is the **Contribution Internet for the AI era**:
+
+```text
+PC Internet      → information becomes connected
+Mobile Internet  → people and services become connected
+PoCP             → contribution relationships become connected and verifiable
+```
+
 Its first goal is to prove one living loop:
 
 ```text
@@ -12,7 +20,7 @@ Contribution → Verification → CP → AI Credits → AI Use → More Contribu
 
 Goal: Define the project and make it understandable.
 
-Status: In progress.
+Status: Complete.
 
 Deliverables:
 
@@ -27,6 +35,8 @@ Deliverables:
 ## Phase 1 — Genesis MVP
 
 Goal: Run the first working contribution loop.
+
+Status: Complete (demo seed, verify → approve loop, ledger, graph).
 
 Core features:
 
@@ -54,6 +64,8 @@ Success condition:
 ## Phase 2 — Sprint Alpha
 
 Goal: Turn the demo into a real usable MVP.
+
+Status: In progress.
 
 Core features:
 
@@ -109,6 +121,8 @@ Metrics:
 
 Goal: Make the intelligent contribution graph visible.
 
+This is the moment where PoCP begins to look less like a single app and more like a network. The product should show how humans, Agents, Skills, tools, reviewers, sponsors, and contributions connect.
+
 Core features:
 
 - Entity pages
@@ -161,6 +175,8 @@ Principle:
 ## Phase 7 — Protocol Expansion
 
 Goal: Make PoCP usable beyond the first application.
+
+At this phase, PoCP should become a protocol layer other communities can use to record and verify contribution relationships.
 
 Possible directions:
 

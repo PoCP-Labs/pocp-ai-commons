@@ -10,6 +10,8 @@ from models.ledger import LedgerRecord
 from models.wallet import ReputationScore, Wallet
 from schemas import EntityOut, LedgerOut
 from services.ledger_chain import verify_ledger_chain
+from services.ledger_anchor import build_ledger_anchor
+from services.proof import build_contribution_proof_packet
 from services.protocol_config import get_rewards_config
 
 router = APIRouter(prefix="/api/v1", tags=["export"])
@@ -36,9 +38,45 @@ class PortableEntityOut(BaseModel):
     reputation: list[dict] = Field(default_factory=list)
 
 
+class ContributionProofOut(BaseModel):
+    spec_version: str
+    proof_type: str
+    proof_schema: str
+    proof_id: str
+    generated_at: datetime
+    protocol_layers: list[str]
+    contribution_event: dict
+    entity_identity: dict
+    evidence: dict
+    verification: dict
+    contribution_graph: dict
+    rights_and_reputation: dict
+    ledger_audit: dict
+    integrity: dict
+    federation: dict | None = None
+
+
+class LedgerAnchorOut(BaseModel):
+    spec_version: str
+    anchor_type: str
+    node_id: str
+    anchored_at: str
+    record_count: int
+    merkle_root: str
+    ledger_valid: bool
+    ledger_record_count: int
+    tip_hash: str | None = None
+    federation: dict | None = None
+
+
 @router.get("/ledger/verify", response_model=LedgerVerifyOut)
 def verify_ledger(db: Session = Depends(get_db)):
     return verify_ledger_chain(db)
+
+
+@router.get("/ledger/anchor", response_model=LedgerAnchorOut)
+def get_ledger_anchor(db: Session = Depends(get_db)):
+    return build_ledger_anchor(db)
 
 
 @router.get("/ledger/export", response_model=LedgerExportOut)
@@ -88,3 +126,11 @@ def get_portable_entity(entity_id: str, db: Session = Depends(get_db)):
             for r in reputation
         ],
     )
+
+
+@router.get("/contributions/{contribution_id}/proof", response_model=ContributionProofOut)
+def get_contribution_proof(contribution_id: str, db: Session = Depends(get_db)):
+    packet = build_contribution_proof_packet(db, contribution_id)
+    if packet is None:
+        raise HTTPException(status_code=404, detail="Contribution not found")
+    return packet

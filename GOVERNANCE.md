@@ -1,6 +1,6 @@
 # Governance
 
-PoCP AI Commons is currently in Genesis stage.
+PoCP AI Commons is in the **Genesis MVP → Sprint Alpha** transition.
 
 Governance should be simple, transparent, and contribution-oriented.
 
@@ -88,7 +88,7 @@ If a reviewer has a direct conflict, they should disclose it and allow another r
 
 ## Current Maintainer Model
 
-During Genesis stage:
+During Sprint Alpha:
 
 - Founder / Protocol Initiator guides direction.
 - Maintainers review code and docs.

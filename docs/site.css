@@ -313,6 +313,32 @@ code {
   line-height: 1.75;
 }
 
+.error-shell {
+  min-height: calc(100vh - 80px);
+  display: grid;
+  place-items: center;
+}
+
+.error-card {
+  width: min(720px, 100%);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  padding: 32px 24px;
+}
+
+.error-code {
+  margin-bottom: 12px;
+  color: var(--accent-strong);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 @media (max-width: 960px) {
   .hero-grid,
   .two-up,

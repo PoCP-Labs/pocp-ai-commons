@@ -1,0 +1,7 @@
+# Example trust list for Node B (mirror). Copy to trusted_nodes.yaml or use POCP_TRUSTED_NODES env.
+spec_version: "0.1"
+trusted_nodes:
+  - node_id: node-a
+    base_url: http://backend-a:8000
+    public_key: "10bf1077744a098c56503c15dd5caef931b764fcaf9a08febc4ed1031e40e67e"
+    trust_weight: 0.8

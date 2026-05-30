@@ -1,0 +1,4 @@
+spec_version: "0.1"
+# Trusted peer nodes for federation import/sync.
+# Changes require PR review — env POCP_TRUSTED_NODES overrides this file at runtime.
+trusted_nodes: []

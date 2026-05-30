@@ -1,0 +1,29 @@
+name: Federation Mirror
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    if: ${{ vars.POCP_MIRROR_ENABLED != 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Mirror trusted nodes into local mirror
+        env:
+          POCP_MIRROR_SOURCES: ${{ secrets.POCP_MIRROR_SOURCES }}
+          POCP_MIRROR_TARGET: ${{ secrets.POCP_MIRROR_TARGET }}
+        run: |
+          if [ -z "$POCP_MIRROR_SOURCES" ] || [ -z "$POCP_MIRROR_TARGET" ]; then
+            echo "POCP_MIRROR_SOURCES or POCP_MIRROR_TARGET not set; skipping."
+            exit 0
+          fi
+          cd backend/scripts
+          python federation_sync.py

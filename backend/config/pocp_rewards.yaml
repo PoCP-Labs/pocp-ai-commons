@@ -1,11 +1,25 @@
 spec_version: "0.1"
 registration:
   ai_credits: 100
+rights:
+  bc:
+    version: "bc_v0_1"
+    spendable: true
+    transferable: false
+    description: "AI Credits spendable on protocol AI services"
+  cp:
+    version: "cp_v0_1"
+    spendable: false
+    transferable: false
+    description: "Non-spendable contribution proof"
 contribution_defaults:
   human:
     cp_base: 20
     ai_credits_base: 80
+    reputation_base: 10
   skill:
     reputation_base: 5
   agent:
     reputation_base: 3
+federation:
+  default_trust_weight: 0.5

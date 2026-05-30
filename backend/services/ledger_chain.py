@@ -33,6 +33,7 @@ def compute_record_hash(
 def _last_ledger_record(db: Session) -> LedgerRecord | None:
     return (
         db.query(LedgerRecord)
+        .filter(LedgerRecord.record_hash.isnot(None))
         .order_by(LedgerRecord.created_at.desc(), LedgerRecord.id.desc())
         .first()
     )

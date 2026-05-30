@@ -1,9 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import ContributionGraphView from "./ContributionGraph";
+import EntityDetail from "./EntityDetail";
 import SubmitFlow from "./SubmitFlow";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const TOKEN_KEY = "pocp_token";
+
+const LOOP_STEPS = [
+  "Contribute",
+  "Verify",
+  "CP",
+  "AI Credits",
+  "AI Use",
+  "More Contribution",
+];
 
 function getToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -29,31 +39,23 @@ async function fetchJson(path, options = {}) {
   return res.json();
 }
 
-const ENTITY_COLORS = {
-  human: "#2563eb",
-  agent: "#7c3aed",
-  skill: "#059669",
-  organization: "#d97706",
-  llm: "#64748b",
-};
-
 const GENESIS_IDS = new Set(["pocp-entity-lumen-0", "pocp-entity-desui"]);
 
 function EntityBadge({ type }) {
+  const safe = type || "llm";
+  return <span className={`entity-badge entity-badge--${safe}`}>{safe}</span>;
+}
+
+function truncateHash(value, len = 12) {
+  if (!value || typeof value !== "string") return "—";
+  return value.length <= len ? value : `${value.slice(0, len)}…`;
+}
+
+function AdvisoryBanner() {
   return (
-    <span
-      style={{
-        background: ENTITY_COLORS[type] || "#64748b",
-        color: "#fff",
-        padding: "2px 8px",
-        borderRadius: 4,
-        fontSize: 12,
-        fontWeight: 600,
-        textTransform: "uppercase",
-      }}
-    >
-      {type}
-    </span>
+    <div className="alert alert--info" style={{ marginBottom: "1rem" }}>
+      <strong>AI is advisory only.</strong> Human reviewers make final decisions on contributions, CP, and AI Credits.
+    </div>
   );
 }
 
@@ -73,6 +75,9 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tab, setTab] = useState("dashboard");
+  const [apiVersion, setApiVersion] = useState("—");
+  const [aiUsage, setAiUsage] = useState([]);
+  const [selectedEntityId, setSelectedEntityId] = useState(null);
 
   const loadProfile = useCallback(async () => {
     if (!getToken()) {
@@ -124,7 +129,28 @@ export default function App() {
     }
     load();
     loadProfile();
+    fetch(`${API}/health`)
+      .then((r) => r.json())
+      .then((h) => setApiVersion(h.version || "—"))
+      .catch(() => setApiVersion("offline"));
   }, [load, loadProfile]);
+
+  const loadAiUsage = useCallback(async () => {
+    if (!getToken()) {
+      setAiUsage([]);
+      return;
+    }
+    try {
+      const usage = await fetchJson("/api/v1/ai/usage");
+      setAiUsage(Array.isArray(usage) ? usage : []);
+    } catch {
+      setAiUsage([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab === "chat" && profile) loadAiUsage();
+  }, [tab, profile, loadAiUsage, chatReply]);
 
   const devLogin = async () => {
     setAuthLoading(true);
@@ -177,81 +203,142 @@ export default function App() {
   };
 
   const entityMap = Object.fromEntries(entities.map((e) => [e.id, e]));
+  const walletMap = Object.fromEntries(wallets.map((w) => [w.entity_id, w]));
+  const reputationByEntity = reputation.reduce((acc, r) => {
+    if (!acc[r.entity_id]) acc[r.entity_id] = [];
+    acc[r.entity_id].push(r);
+    return acc;
+  }, {});
+  const selectedEntity = selectedEntityId ? entityMap[selectedEntityId] : null;
   const contribution = contributions[0];
+  const latestLedger = ledger[0];
 
-  const tabStyle = (name) => ({
-    padding: "8px 16px",
-    border: "none",
-    borderBottom: tab === name ? "2px solid #2563eb" : "2px solid transparent",
-    background: "none",
-    cursor: "pointer",
-    fontWeight: tab === name ? 600 : 400,
-    color: tab === name ? "#2563eb" : "#64748b",
-  });
+  const tabs = [
+    { id: "dashboard", label: "Network" },
+    { id: "entities", label: "Entities" },
+    { id: "account", label: "Wallet" },
+    { id: "chat", label: "AI Node" },
+    { id: "workflow", label: "Contribute" },
+    { id: "graph", label: "Graph" },
+  ];
 
   return (
-    <main style={{ fontFamily: "system-ui, sans-serif", maxWidth: 1000, margin: "0 auto", padding: "2rem" }}>
-      <header style={{ marginBottom: "1.5rem" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+    <div className="app-shell">
+      <div className="network-bar">
+        <div className="network-bar__item">
+          <span className={`network-bar__dot${error ? " network-bar__dot--warn" : ""}`} />
+          <span>
+            Network: <span className="network-bar__value">PoCP Commons</span>
+          </span>
+        </div>
+        <div className="network-bar__item">
+          Blocks: <span className="network-bar__value">{ledger.length}</span>
+        </div>
+        <div className="network-bar__item">
+          Entities: <span className="network-bar__value">{entities.length}</span>
+        </div>
+        <div className="network-bar__item">
+          Contributions: <span className="network-bar__value">{contributions.length}</span>
+        </div>
+        <div className="network-bar__item">
+          Protocol: <span className="network-bar__ai">v{apiVersion}</span>
+        </div>
+        <div className="network-bar__item">
+          AI Witness: <span className="network-bar__ai">Advisory Only</span>
+        </div>
+      </div>
+
+      <header className="site-header">
+        <div className="brand">
+          <div className="brand__mark">P</div>
           <div>
-            <h1 style={{ margin: 0 }}>PoCP AI Commons</h1>
-            <p style={{ color: "#475569", marginTop: 8 }}>
-              Entity-Centric Proof of Contribution Protocol — Sprint Alpha
+            <h1 className="brand__title">
+              PoCP <span>AI Commons</span>
+            </h1>
+            <p className="brand__tagline">
+              Contribution OS · Entity-centric Proof of Contribution · Sprint Alpha
             </p>
           </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            {profile ? (
-              <>
-                <span style={{ fontSize: 14, color: "#334155" }}>
-                  {profile.user.username} · {profile.wallet.ai_credits} AI Credits
-                </span>
-                <button type="button" onClick={logout} style={{ padding: "6px 12px", cursor: "pointer" }}>
-                  Logout
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={devLogin}
-                disabled={authLoading}
-                style={{ padding: "8px 16px", background: "#2563eb", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}
-              >
-                {authLoading ? "Logging in…" : "Dev Login"}
+        </div>
+        <div className="auth-panel">
+          {profile ? (
+            <>
+              <div className="wallet-chip">
+                {profile.user.username} · <strong>{profile.wallet.ai_credits}</strong> AI Credits ·{" "}
+                <strong style={{ color: "var(--btc)" }}>{profile.wallet.cp_balance}</strong> CP
+              </div>
+              <button type="button" className="btn btn--ghost" onClick={logout}>
+                Disconnect
               </button>
-            )}
-          </div>
+            </>
+          ) : (
+            <>
+              <a href={`${API}/api/v1/auth/github/login`} className="btn btn--ghost" style={{ textDecoration: "none" }}>
+                GitHub Login
+              </a>
+              <button type="button" className="btn btn--primary" onClick={devLogin} disabled={authLoading}>
+                {authLoading ? "Connecting…" : "Dev Login"}
+              </button>
+            </>
+          )}
         </div>
       </header>
 
-      <nav style={{ display: "flex", gap: 4, marginBottom: "1.5rem", borderBottom: "1px solid #e2e8f0", flexWrap: "wrap" }}>
-        <button type="button" style={tabStyle("dashboard")} onClick={() => setTab("dashboard")}>Dashboard</button>
-        <button type="button" style={tabStyle("account")} onClick={() => setTab("account")}>Account</button>
-        <button type="button" style={tabStyle("chat")} onClick={() => setTab("chat")}>AI Chat</button>
-        <button type="button" style={tabStyle("workflow")} onClick={() => setTab("workflow")}>Submit Workflow</button>
-        <button type="button" style={tabStyle("graph")} onClick={() => setTab("graph")}>Contribution Graph</button>
+      <div className="loop-strip">
+        {LOOP_STEPS.map((step, i) => (
+          <span key={step}>
+            <span className={`loop-strip__step${i <= 2 ? " loop-strip__step--active" : ""}`}>{step}</span>
+            {i < LOOP_STEPS.length - 1 && <span className="loop-strip__arrow"> → </span>}
+          </span>
+        ))}
+      </div>
+
+      <nav className="nav-tabs">
+        {tabs.map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            className={`nav-tab${tab === id ? " nav-tab--active" : ""}`}
+            onClick={() => setTab(id)}
+          >
+            {label}
+          </button>
+        ))}
       </nav>
 
       {error && (
-        <p style={{ color: "#dc2626", marginBottom: 16 }}>
-          {error.includes("fetch") ? `API unavailable (${error}). Start backend: docker compose up backend` : error}
-        </p>
+        <div className="alert alert--error">
+          {error.includes("fetch")
+            ? `Node unreachable (${error}). Start backend: cd backend && python -m uvicorn main:app --port 8000`
+            : error}
+        </div>
       )}
 
       {tab === "account" && (
-        <section>
-          <h2>Profile & Wallet</h2>
+        <section className="panel">
+          <h2 className="panel__title">Entity Wallet</h2>
+          <p className="panel__subtitle">Human Entity · CP balance · AI Credits usage rights</p>
           {!profile ? (
-            <p style={{ color: "#64748b" }}>Dev Login to create a Human Entity, Wallet, and 100 starter AI Credits.</p>
+            <p className="empty-state">Dev Login to create a Human Entity, Wallet, and 100 starter AI Credits.</p>
           ) : (
-            <div style={{ display: "grid", gap: 12 }}>
-              <div style={{ padding: 16, background: "#f8fafc", borderRadius: 8 }}>
+            <div className="profile-grid">
+              <div className="profile-card">
                 <strong>{profile.entity.name}</strong>
-                <div style={{ color: "#64748b", fontSize: 14, marginTop: 4 }}>{profile.user.email}</div>
-                <div style={{ marginTop: 8 }}><EntityBadge type={profile.entity.entity_type} /></div>
+                <div className="profile-card__email">{profile.user.email}</div>
+                <div style={{ marginTop: 8 }}>
+                  <EntityBadge type={profile.entity.entity_type} />
+                </div>
               </div>
-              <div style={{ padding: 16, background: "#f0fdf4", borderRadius: 8 }}>
-                <div><strong>{profile.wallet.cp_balance}</strong> CP</div>
-                <div><strong>{profile.wallet.ai_credits}</strong> AI Credits remaining</div>
+              <div className="profile-card profile-card--wallet">
+                <div className="profile-card__balance">
+                  <strong>{profile.wallet.cp_balance}</strong> CP
+                </div>
+                <div className="profile-card__balance">
+                  <span className="ai-credits">
+                    <strong>{profile.wallet.ai_credits}</strong>
+                  </span>{" "}
+                  AI Credits remaining
+                </div>
               </div>
             </div>
           )}
@@ -259,36 +346,60 @@ export default function App() {
       )}
 
       {tab === "chat" && (
-        <section>
-          <h2>AI Chat</h2>
-          <p style={{ color: "#64748b", marginBottom: 16 }}>
-            Each message burns 5 AI Credits (mock provider when no API key is configured).
+        <section className="panel">
+          <AdvisoryBanner />
+          <h2 className="panel__title section-heading--ai">AI Node</h2>
+          <p className="panel__subtitle">
+            Each message burns 5 AI Credits · Mock provider when no API key configured · AI is witness, not ruler
           </p>
           {!profile ? (
-            <p style={{ color: "#64748b" }}>Dev Login first to use AI Chat.</p>
+            <p className="empty-state">Dev Login first to access the AI node.</p>
           ) : (
             <>
               <textarea
+                className="field-textarea"
                 value={chatMessage}
                 onChange={(e) => setChatMessage(e.target.value)}
                 rows={4}
-                placeholder="Ask PoCP AI Commons…"
-                style={{ width: "100%", padding: 12, borderRadius: 8, border: "1px solid #e2e8f0", marginBottom: 8 }}
+                placeholder="Query the contribution network…"
               />
-              <button
-                type="button"
-                onClick={sendChat}
-                disabled={chatLoading || !chatMessage.trim()}
-                style={{ padding: "8px 16px", background: "#059669", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}
-              >
-                {chatLoading ? "Sending…" : "Send (5 credits)"}
-              </button>
+              <div style={{ marginTop: 12 }}>
+                <button
+                  type="button"
+                  className="btn btn--ai"
+                  onClick={sendChat}
+                  disabled={chatLoading || !chatMessage.trim()}
+                >
+                  {chatLoading ? "Transmitting…" : "Send · 5 Credits"}
+                </button>
+              </div>
               {chatReply && (
-                <div style={{ marginTop: 16, padding: 16, background: "#f1f5f9", borderRadius: 8 }}>
-                  <div style={{ fontSize: 13, color: "#64748b", marginBottom: 8 }}>
-                    {chatReply.provider}/{chatReply.model} · spent {chatReply.credits_spent} · remaining {chatReply.remaining_credits}
+                <div className="chat-reply">
+                  <div className="chat-reply__meta">
+                    {chatReply.provider}/{chatReply.model} · spent {chatReply.credits_spent} · remaining{" "}
+                    {chatReply.remaining_credits}
                   </div>
-                  <div>{chatReply.reply}</div>
+                  <div className="chat-reply__body">{chatReply.reply}</div>
+                </div>
+              )}
+              {aiUsage.length > 0 && (
+                <div style={{ marginTop: 20 }}>
+                  <h3 style={{ fontSize: "0.85rem", marginBottom: 8, color: "var(--ai)" }}>Usage History</h3>
+                  {aiUsage.slice(0, 10).map((u) => (
+                    <div key={u.id} className="mini-card mini-card--credits">
+                      <span style={{ color: "var(--text-dim)", fontFamily: "var(--mono)", fontSize: "0.72rem" }}>
+                        {u.provider}/{u.model}
+                      </span>
+                      {" · "}
+                      <span style={{ color: "var(--ai)" }}>-{u.credits_spent} Credits</span>
+                      {(u.prompt || u.prompt_preview) && (
+                        <div style={{ fontSize: "0.8rem", marginTop: 4, color: "var(--text-muted)" }}>
+                          {(u.prompt || u.prompt_preview).slice(0, 80)}
+                          {(u.prompt || u.prompt_preview).length > 80 ? "…" : ""}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
             </>
@@ -297,20 +408,62 @@ export default function App() {
       )}
 
       {tab === "workflow" && (
-        <section style={{ marginBottom: "2rem" }}>
-          <h2>Multi-Entity Contribution Workflow</h2>
-          <p style={{ color: "#64748b", marginBottom: 16 }}>
-            Invoke → Submit → AI Verify → Human Approve → Credits + Reputation
+        <section className="panel">
+          <AdvisoryBanner />
+          <h2 className="panel__title">Contribution Pipeline</h2>
+          <p className="panel__subtitle">
+            Invoke → Submit → AI Witness Review → Human Final Approval → Credits + Reputation
           </p>
-          <SubmitFlow api={API} entities={entities} tasks={tasks} currentEntityId={profile?.entity?.id || null} onComplete={load} />
+          <SubmitFlow
+            api={API}
+            entities={entities}
+            tasks={tasks}
+            currentEntityId={profile?.entity?.id || null}
+            onComplete={load}
+          />
         </section>
       )}
 
+      {tab === "entities" && (
+        <>
+          {selectedEntity ? (
+            <EntityDetail
+              entity={selectedEntity}
+              wallet={walletMap[selectedEntity.id]}
+              reputationRows={reputationByEntity[selectedEntity.id] || []}
+              contributions={contributions}
+              entityMap={entityMap}
+              onBack={() => setSelectedEntityId(null)}
+            />
+          ) : (
+            <section className="panel">
+              <h2 className="panel__title">Entity Registry</h2>
+              <p className="panel__subtitle">Click an entity for wallet, reputation, and contributions</p>
+              {entities.map((e) => (
+                <button
+                  key={e.id}
+                  type="button"
+                  className="entity-row"
+                  style={{ width: "100%", textAlign: "left", cursor: "pointer", border: "1px solid var(--border-subtle)" }}
+                  onClick={() => setSelectedEntityId(e.id)}
+                >
+                  <EntityBadge type={e.entity_type} />
+                  <span className="entity-row__name">{e.name}</span>
+                  {GENESIS_IDS.has(e.id) && <span className="genesis-tag">GENESIS</span>}
+                  {e.entity_type === "llm" && <span className="witness-tag">AI WITNESS</span>}
+                  <span className="entity-row__desc">{e.description}</span>
+                </button>
+              ))}
+            </section>
+          )}
+        </>
+      )}
+
       {tab === "graph" && (
-        <section>
-          <h2>Intelligence Contribution Graph</h2>
-          <p style={{ color: "#64748b" }}>
-            {graph.nodes.length} nodes · {graph.edges.length} edges (includes invocation chains)
+        <section className="panel">
+          <h2 className="panel__title section-heading--ai">Contribution Graph</h2>
+          <p className="panel__subtitle">
+            {graph.nodes.length} nodes · {graph.edges.length} edges · Human + Agent + Skill invocation chains
           </p>
           <ContributionGraphView graph={graph} entityMap={entityMap} />
         </section>
@@ -318,83 +471,115 @@ export default function App() {
 
       {tab === "dashboard" && (
         <>
-          <section style={{ marginBottom: "2rem" }}>
-            <h2>Entities</h2>
-            <div style={{ display: "grid", gap: 12 }}>
-              {entities.map((e) => (
-                <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, background: "#f8fafc", borderRadius: 8, flexWrap: "wrap" }}>
-                  <EntityBadge type={e.entity_type} />
-                  <strong>{e.name}</strong>
-                  {GENESIS_IDS.has(e.id) && (
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#7c3aed", background: "#ede9fe", padding: "2px 8px", borderRadius: 4 }}>
-                      GENESIS
-                    </span>
-                  )}
-                  <span style={{ color: "#64748b", fontSize: 14 }}>{e.description}</span>
-                  {e.metadata?.mission && (
-                    <span style={{ color: "#94a3b8", fontSize: 12, width: "100%" }}>{e.metadata.mission}</span>
-                  )}
-                </div>
-              ))}
+          <div className="stats-grid">
+            <div className="stat-block">
+              <div className="stat-block__label">Entities</div>
+              <div className="stat-block__value">{entities.length}</div>
             </div>
+            <div className="stat-block">
+              <div className="stat-block__label">Contributions</div>
+              <div className="stat-block__value stat-block__value--btc">{contributions.length}</div>
+            </div>
+            <div className="stat-block stat-block--ai">
+              <div className="stat-block__label">Graph Edges</div>
+              <div className="stat-block__value stat-block__value--ai">{graph.edges.length}</div>
+            </div>
+            <div className="stat-block stat-block--ai">
+              <div className="stat-block__label">Ledger Blocks</div>
+              <div className="stat-block__value stat-block__value--ai">{ledger.length}</div>
+            </div>
+          </div>
+
+          <section className="panel">
+            <h2 className="panel__title">Registered Entities</h2>
+            <p className="panel__subtitle">Humans · Agents · Skills · LLMs · Organizations</p>
+            {entities.map((e) => (
+              <div
+                key={e.id}
+                className="entity-row"
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  setSelectedEntityId(e.id);
+                  setTab("entities");
+                }}
+                onKeyDown={(ev) => {
+                  if (ev.key === "Enter") {
+                    setSelectedEntityId(e.id);
+                    setTab("entities");
+                  }
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                <EntityBadge type={e.entity_type} />
+                <span className="entity-row__name">{e.name}</span>
+                {GENESIS_IDS.has(e.id) && <span className="genesis-tag">GENESIS</span>}
+                {e.entity_type === "llm" && <span className="witness-tag">AI WITNESS</span>}
+                <span className="entity-row__desc">{e.description}</span>
+                {e.metadata?.mission && <span className="entity-row__mission">{e.metadata.mission}</span>}
+              </div>
+            ))}
           </section>
 
           {invocations.length > 0 && (
-            <section style={{ marginBottom: "2rem" }}>
-              <h2>Invocation Chains</h2>
+            <section className="panel">
+              <h2 className="panel__title section-heading--ai">Invocation Chains</h2>
               {invocations.slice(0, 3).map((inv) => (
-                <div key={inv.id} style={{ padding: 12, background: "#f8fafc", borderRadius: 8, marginBottom: 8, fontSize: 14 }}>
+                <div key={inv.id} className="chain-row">
                   <strong>{entityMap[inv.initiator_id]?.name}</strong>
                   {inv.steps.map((s, i) => (
-                    <span key={s.id} style={{ color: "#64748b" }}>
-                      {i === 0 ? " " : " → "}
-                      <span style={{ color: "#334155" }}>{s.action}</span>
-                      {" → "}
+                    <span key={s.id}>
+                      {i === 0 ? " " : <span className="chain-arrow"> → </span>}
+                      <span className="chain-action">{s.action}</span>
+                      <span className="chain-arrow"> → </span>
                       <strong>{entityMap[s.target_entity_id]?.name || (s.action === "invokes_llm" ? inv.model_provider : "?")}</strong>
                     </span>
                   ))}
-                  {inv.model_provider && (
-                    <span style={{ color: "#94a3b8" }}> → {inv.model_provider}</span>
-                  )}
+                  {inv.model_provider && <span className="chain-arrow"> → {inv.model_provider}</span>}
                 </div>
               ))}
             </section>
           )}
 
           {contribution && (
-            <section style={{ marginBottom: "2rem" }}>
-              <h2>Latest Contribution</h2>
-              <p style={{ color: "#64748b" }}>{contribution.description}</p>
-              <p>Status: <strong>{contribution.status}</strong></p>
+            <section className="panel">
+              <h2 className="panel__title">Latest Contribution Block</h2>
+              <p className="panel__subtitle">{contribution.description}</p>
+              <p>
+                Status: <strong style={{ color: "var(--btc)" }}>{contribution.status}</strong>
+              </p>
               {contribution.ai_verifications?.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 14, margin: "0 0 8px" }}>AI verifications</h3>
+                <div style={{ margin: "1rem 0" }}>
+                  <h3 style={{ fontSize: "0.85rem", margin: "0 0 0.5rem", color: "var(--ai)" }}>AI Witness Reviews</h3>
                   {contribution.ai_verifications.map((v) => (
-                    <div key={v.id} style={{ padding: 10, background: "#f1f5f9", borderRadius: 6, marginBottom: 6, fontSize: 13 }}>
-                      <strong>{v.model_provider}</strong> — score {v.score} ({v.passed ? "pass" : "fail"})
-                      <div style={{ color: "#64748b", marginTop: 4 }}>{v.feedback}</div>
+                    <div key={v.id} className={`verify-card verify-card--${v.passed ? "pass" : "fail"}`}>
+                      <span className="verify-card__provider">{v.model_provider}</span> — score {v.score} (
+                      {v.passed ? "advisory pass" : "advisory fail"})
+                      <div style={{ color: "var(--text-muted)", marginTop: 4 }}>{v.feedback}</div>
                     </div>
                   ))}
                 </div>
               )}
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <table className="data-table">
                 <thead>
-                  <tr style={{ textAlign: "left", borderBottom: "2px solid #e2e8f0" }}>
-                    <th style={{ padding: 8 }}>Entity</th>
-                    <th style={{ padding: 8 }}>Type</th>
-                    <th style={{ padding: 8 }}>Role</th>
-                    <th style={{ padding: 8 }}>Weight</th>
+                  <tr>
+                    <th>Entity</th>
+                    <th>Type</th>
+                    <th>Role</th>
+                    <th>Weight</th>
                   </tr>
                 </thead>
                 <tbody>
                   {contribution.participants.map((p) => {
                     const entity = entityMap[p.entity_id];
                     return (
-                      <tr key={p.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                        <td style={{ padding: 8 }}>{entity?.name || p.entity_id}</td>
-                        <td style={{ padding: 8 }}><EntityBadge type={entity?.entity_type} /></td>
-                        <td style={{ padding: 8 }}>{p.role}</td>
-                        <td style={{ padding: 8 }}>{(p.weight * 100).toFixed(0)}%</td>
+                      <tr key={p.id}>
+                        <td>{entity?.name || p.entity_id}</td>
+                        <td>
+                          <EntityBadge type={entity?.entity_type} />
+                        </td>
+                        <td>{p.role}</td>
+                        <td>{(p.weight * 100).toFixed(0)}%</td>
                       </tr>
                     );
                   })}
@@ -403,41 +588,57 @@ export default function App() {
             </section>
           )}
 
-          <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-            <div>
-              <h2>AI Credits & CP</h2>
+          <div className="two-col">
+            <section className="panel">
+              <h2 className="panel__title">CP & AI Credits</h2>
               {wallets.map((w) => {
                 const entity = entityMap[w.entity_id];
                 return (
-                  <div key={w.id} style={{ padding: 12, background: "#f0fdf4", borderRadius: 8, marginBottom: 8 }}>
-                    <strong>{entity?.name}</strong>: {w.cp_balance} CP, {w.ai_credits} AI Credits
+                  <div key={w.id} className="mini-card mini-card--credits">
+                    <strong>{entity?.name}</strong>:{" "}
+                    <span style={{ color: "var(--btc)" }}>{w.cp_balance} CP</span>,{" "}
+                    <span style={{ color: "var(--ai)" }}>{w.ai_credits} Credits</span>
                   </div>
                 );
               })}
-            </div>
-            <div>
-              <h2>Reputation</h2>
+            </section>
+            <section className="panel">
+              <h2 className="panel__title">Reputation</h2>
               {reputation.map((r) => {
                 const entity = entityMap[r.entity_id];
                 return (
-                  <div key={r.id} style={{ padding: 12, background: "#faf5ff", borderRadius: 8, marginBottom: 8 }}>
+                  <div key={r.id} className="mini-card mini-card--rep">
                     <strong>{entity?.name}</strong> ({r.category}): +{r.score}
                   </div>
                 );
               })}
-            </div>
-          </section>
+            </section>
+          </div>
 
-          {ledger.length > 0 && (
-            <section style={{ marginTop: "2rem" }}>
-              <h2>Ledger</h2>
-              <pre style={{ background: "#1e293b", color: "#e2e8f0", padding: 16, borderRadius: 8, overflow: "auto", fontSize: 13 }}>
-                {JSON.stringify(ledger[0].payload, null, 2)}
-              </pre>
+          {latestLedger && (
+            <section className="panel">
+              <h2 className="panel__title">Latest Ledger Block</h2>
+              <div className="ledger-block">
+                <div className="ledger-block__header">
+                  <div className="ledger-block__field">
+                    <span>Height</span>
+                    <strong>{ledger.length}</strong>
+                  </div>
+                  <div className="ledger-block__field">
+                    <span>Event</span>
+                    <strong>{latestLedger.event_type}</strong>
+                  </div>
+                  <div className="ledger-block__field">
+                    <span>Hash</span>
+                    <strong>{truncateHash(latestLedger.record_hash || latestLedger.id, 16)}</strong>
+                  </div>
+                </div>
+                <pre className="ledger-block__body">{JSON.stringify(latestLedger.payload, null, 2)}</pre>
+              </div>
             </section>
           )}
         </>
       )}
-    </main>
+    </div>
   );
 }

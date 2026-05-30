@@ -1,0 +1,48 @@
+name: Ledger Anchor
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      node_url:
+        description: "PoCP node base URL (overrides secret)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  anchor:
+    runs-on: ubuntu-latest
+    if: ${{ vars.POCP_ANCHOR_ENABLED != 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch anchor from node
+        env:
+          POCP_ANCHOR_NODE_URL: ${{ inputs.node_url || secrets.POCP_ANCHOR_NODE_URL }}
+        run: |
+          if [ -z "$POCP_ANCHOR_NODE_URL" ]; then
+            echo "POCP_ANCHOR_NODE_URL not set; skipping."
+            exit 0
+          fi
+          cd backend
+          python scripts/fetch_anchor.py "$POCP_ANCHOR_NODE_URL" ../anchors
+
+      - name: Commit anchor file
+        run: |
+          git config user.name "pocp-anchor-bot"
+          git config user.email "anchor-bot@users.noreply.github.com"
+          git add anchors/
+          if git diff --staged --quiet; then
+            echo "No anchor changes."
+            exit 0
+          fi
+          git commit -m "chore(anchors): daily ledger anchor $(date -u +%Y-%m-%d)"
+          git push

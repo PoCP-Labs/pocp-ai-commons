@@ -20,6 +20,7 @@ Login → Human Entity → Wallet → AI Chat burns Credits → Contribution →
 - DeepSeek verifier
 - Mock verifier fallback
 - multi-verifier consensus endpoint
+- Clarion-0 reviewer assistant endpoint
 - minimal anti-abuse helpers
 
 ## New endpoints
@@ -31,8 +32,18 @@ POST /api/v1/auth/dev-login
 GET  /api/v1/me
 POST /api/v1/ai/chat
 GET  /api/v1/ai/usage
+GET  /api/v1/contributions/{contribution_id}/clarion-review
 POST /api/v1/contributions/{contribution_id}/auto-verify
 ```
+
+Clarion-0 review packet:
+
+```bash
+curl http://127.0.0.1:8000/api/v1/contributions/<CONTRIBUTION_ID>/clarion-review \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+Clarion-0 returns advisory review support only: summary, rubric scores, concerns, reviewer questions, suggested rewards, and a proof draft. It does not approve or reject contributions.
 
 ## Local test flow
 
@@ -47,7 +58,7 @@ Dev login:
 ```bash
 curl -X POST http://127.0.0.1:8000/api/v1/auth/dev-login \
   -H "Content-Type: application/json" \
-  -d '{"username":"alice-dev","email":"alice@example.com"}'
+  -d '{"username":"rain-dev","email":"rain@example.com"}'
 ```
 
 Copy the token, then:

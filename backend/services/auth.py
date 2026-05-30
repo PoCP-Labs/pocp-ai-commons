@@ -8,9 +8,10 @@ from sqlalchemy.orm import Session
 
 from models.entity import Entity, EntityStatus, EntityType
 from models.user_account import UserAccount
-from models.wallet import CreditTransaction, CreditType, Wallet
+from models.wallet import Wallet
 from services.ledger_chain import append_ledger_record
 from services.protocol_config import get_rewards_config
+from services.rights import get_or_create_wallet, issue_right
 
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-only-change-me")
 JWT_ALGORITHM = "HS256"
@@ -35,15 +36,6 @@ def decode_access_token(token: str) -> dict[str, Any]:
         raise ValueError("Invalid token") from exc
 
 
-def _get_or_create_wallet(db: Session, entity_id: str) -> Wallet:
-    wallet = db.query(Wallet).filter(Wallet.entity_id == entity_id).first()
-    if wallet is None:
-        wallet = Wallet(entity_id=entity_id)
-        db.add(wallet)
-        db.flush()
-    return wallet
-
-
 def _entity_metadata(provider: str, provider_user_id: str, username: str) -> dict:
     external_ids: dict[str, str] = {}
     if provider == "github":
@@ -65,7 +57,7 @@ def ensure_human_entity_for_user(db: Session, user: UserAccount) -> tuple[Entity
                 **(entity.metadata_ or {}),
                 **_entity_metadata(user.provider, user.provider_user_id, user.username),
             }
-            wallet = _get_or_create_wallet(db, entity.id)
+            wallet = get_or_create_wallet(db, entity.id)
             return entity, wallet
 
     entity = Entity(
@@ -81,17 +73,15 @@ def ensure_human_entity_for_user(db: Session, user: UserAccount) -> tuple[Entity
     db.flush()
     user.entity_id = entity.id
 
-    wallet = _get_or_create_wallet(db, entity.id)
+    wallet = get_or_create_wallet(db, entity.id)
     starter_credits = float(get_rewards_config()["registration"]["ai_credits"])
     if wallet.ai_credits <= 0 and wallet.cp_balance <= 0:
-        wallet.ai_credits = starter_credits
-        db.add(
-            CreditTransaction(
-                wallet_id=wallet.id,
-                amount=starter_credits,
-                credit_type=CreditType.ai_credits,
-                reason="Registration grant",
-            )
+        grant = issue_right(
+            db,
+            entity_id=entity.id,
+            kind="bc",
+            amount=starter_credits,
+            reason="Registration grant",
         )
         append_ledger_record(
             db,
@@ -101,6 +91,15 @@ def ensure_human_entity_for_user(db: Session, user: UserAccount) -> tuple[Entity
                 "entity_id": entity.id,
                 "user_account_id": user.id,
                 "ai_credits": starter_credits,
+                "rights": [
+                    {
+                        "kind": grant.kind,
+                        "version": grant.version,
+                        "amount": grant.amount,
+                        "spendable": grant.spendable,
+                        "transferable": grant.transferable,
+                    }
+                ],
                 "reason": "starter_ai_credits",
             },
         )
@@ -183,7 +182,7 @@ def bind_user_account_to_entity(
         **(entity.metadata_ or {}),
         **_entity_metadata(provider, provider_user_id, username),
     }
-    wallet = _get_or_create_wallet(db, entity.id)
+    wallet = get_or_create_wallet(db, entity.id)
     db.flush()
     return user, entity, wallet
 

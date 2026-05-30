@@ -21,6 +21,32 @@ Entity registers → receives starter AI Credits
 
 **Out of scope:** Tokens, on-chain anchoring, decentralized governance, public marketplace, unlimited free AI.
 
+### 1.1 Native Technology Principle
+
+PoCP is not a bundle of unrelated technologies.
+
+It may use web APIs, databases, LLMs, hashes, ledgers, and graph views, but V0.1 implementation must serve PoCP-native primitives:
+
+```text
+Entity
+Contribution Event
+Contribution Participant
+Evidence Hash
+Human-AI Verification State
+Contribution Proof Packet
+Contribution Graph
+Contribution-to-Rights Conversion
+Ledger Memory
+```
+
+The goal is not to assemble:
+
+```text
+LLM API + task board + points + graph UI
+```
+
+The goal is to make contribution itself a portable, verifiable protocol object.
+
 ---
 
 ## 2. Core Objects
@@ -222,7 +248,9 @@ Base path: `/api/v1`
 | GET | `/ledger` | List ledger records |
 | GET | `/ledger/export` | Export ledger (asc, optional `since`) |
 | GET | `/ledger/verify` | Verify hash chain integrity |
+| GET | `/ledger/anchor` | Merkle root anchor (+ optional node signature) |
 | GET | `/entities/{id}/portable` | Portable entity + reputation export |
+| GET | `/contributions/{id}/proof` | Portable contribution proof packet |
 | GET | `/graph` | Contribution graph (nodes + edges) |
 
 ### Write
@@ -241,13 +269,16 @@ Base path: `/api/v1`
 |--------|------|-------------|
 | GET | `/health` | Service status |
 
-### Federation (v0.1 skeleton)
+### Federation (v0.2)
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/federation/node` | Node identity and public endpoints |
 | GET | `/federation/trust` | Trusted peer nodes |
-| POST | `/federation/import` | Import signed event (501 until v0.2) |
+| GET | `/federation/imports` | List imported federated contributions |
+| POST | `/federation/import` | Import event by portable payload (reputation only) |
+| GET | `/federation/reputation` | Federated reputation by `portable_id` |
+| POST | `/federation/import-proof` | Import from contribution proof packet |
 
 See [docs/FEDERATION-v0.1.md](./docs/FEDERATION-v0.1.md).
 
@@ -259,7 +290,7 @@ See [docs/FEDERATION-v0.1.md](./docs/FEDERATION-v0.1.md).
 # 1. Register human
 curl -X POST http://localhost:8000/api/v1/entities \
   -H "Content-Type: application/json" \
-  -d '{"entity_type":"human","name":"Alice"}'
+  -d '{"entity_type":"human","name":"Rain"}'
 
 # 2. Create task
 curl -X POST http://localhost:8000/api/v1/tasks \
@@ -271,11 +302,11 @@ curl -X POST http://localhost:8000/api/v1/contributions \
   -H "Content-Type: application/json" \
   -d '{
     "task_id":"<task-uuid>",
-    "primary_entity_id":"<alice-uuid>",
+    "primary_entity_id":"<rain-uuid>",
     "contribution_type":"knowledge",
     "description":"R exercises for beginners",
     "evidence":{"url":"https://example.com/r-exercises"},
-    "participants":[{"entity_id":"<alice-uuid>","role":"creator","weight":1.0}]
+    "participants":[{"entity_id":"<rain-uuid>","role":"creator","weight":1.0}]
   }'
 
 # 4. AI verify (advisory)
@@ -354,7 +385,25 @@ curl -X POST http://localhost:8000/api/v1/contributions/<contrib-id>/approve \
 
 ---
 
-## 12. Versioning
+## 12. Current Implementation Focus
+
+The current implementation focus is **Sprint Alpha**:
+
+- real identity entry;
+- AI Credits wallet;
+- AI Chat with Credits burn;
+- contribution submission;
+- AI advisory verification;
+- human final review;
+- CP and AI Credits issuance;
+- ledger and contribution graph;
+- minimal anti-abuse.
+
+Genesis entities **Lumen-0** (witness) and **DeSui** (validator) participate in advisory verification; humans retain final approval.
+
+---
+
+## 13. Versioning
 
 | Version | Status | Notes |
 |---------|--------|-------|

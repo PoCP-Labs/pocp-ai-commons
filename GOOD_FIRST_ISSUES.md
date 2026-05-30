@@ -4,7 +4,7 @@ Welcome to PoCP AI Commons.
 
 This file lists beginner-friendly contribution ideas for Genesis Contributors.
 
-If you want to help, pick one item, open an issue, comment that you want to work on it, and submit a PR.
+If you want to help, pick one item from the [open issues](https://github.com/PoCP-Labs/pocp-ai-commons/issues), comment that you want to work on it, and submit a PR.
 
 ## Documentation
 

@@ -2,9 +2,15 @@
 
 > **PoCP is AI-era contribution proof infrastructure** — not an AI subscription platform, but a network that records who created what value, verifies it, and distributes AI capability, reputation, and opportunity accordingly.
 
+Another way to say this:
+
+> **PoCP is the Contribution Internet for the AI era.**
+
+The PC Internet connected information. The Mobile Internet connected people and services. PoCP connects humans, AI agents, skills, tools, data, tasks, reviews, reputation, and usage rights through verified contribution.
+
 When AI drives the marginal cost of knowledge, code, and content toward zero, what becomes scarce is not capability alone, but **trusted contribution, responsibility, judgment, collaboration, and reputation**. PoCP builds a verifiable ledger and allocation mechanism for these.
 
-See also: [PROTOCOL.md](./PROTOCOL.md) · [SCHEMA.md](./SCHEMA.md)
+See also: [CONTRIBUTION-INTERNET.md](./CONTRIBUTION-INTERNET.md) · [PROTOCOL.md](./PROTOCOL.md) · [SCHEMA.md](./SCHEMA.md)
 
 ---
 
@@ -156,4 +162,4 @@ This graph powers recommendation, allocation, governance, and trust across the A
 
 ## One Line
 
-> If Bitcoin proved *"I consumed hashpower"*, PoCP proves *"I created contribution"* — and in the AI era, civilization may depend as much on verified public value as on who holds currency.
+> In the age of AI, what deserves to be recorded is not only how assets move, but how value is created — and civilization may depend as much on verified public contribution as on who holds currency.
