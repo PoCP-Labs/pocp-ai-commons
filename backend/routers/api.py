@@ -270,6 +270,7 @@ def submit_contribution(
             human_experts_cited=body.provenance.human_experts_cited,
             review_depth=body.provenance.review_depth,
             notes=body.provenance.notes,
+            verification_claims=body.provenance.verification_claims,
         )
 
     if os.getenv("POCP_VALIDATE_EVIDENCE_URLS", "false").lower() == "true":

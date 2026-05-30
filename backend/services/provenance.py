@@ -37,6 +37,7 @@ class ProvenanceDeclaration(BaseModel):
     review_depth: str | None = None
     envelope_version: str = OCTP_ENVELOPE_VERSION
     notes: str | None = None
+    verification_claims: list[dict[str, Any]] = Field(default_factory=list)
 
 
 def build_provenance_envelope(
@@ -47,6 +48,7 @@ def build_provenance_envelope(
     human_experts_cited: list[str] | None = None,
     review_depth: str | None = None,
     notes: str | None = None,
+    verification_claims: list[dict[str, Any]] | None = None,
     extra: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     declaration = ProvenanceDeclaration(
@@ -56,6 +58,7 @@ def build_provenance_envelope(
         declared_by_entity_id=declared_by_entity_id,
         review_depth=review_depth,
         notes=notes,
+        verification_claims=verification_claims or [],
     )
     envelope = declaration.model_dump(exclude_none=True)
     if extra:
@@ -90,6 +93,7 @@ def attach_provenance_to_evidence(
     human_experts_cited: list[str] | None = None,
     review_depth: str | None = None,
     notes: str | None = None,
+    verification_claims: list[dict[str, Any]] | None = None,
 ) -> dict:
     """Attach OCTP-compatible provenance under evidence._pocp.provenance."""
     updated = dict(evidence)
@@ -102,6 +106,7 @@ def attach_provenance_to_evidence(
             human_experts_cited=human_experts_cited,
             review_depth=review_depth,
             notes=notes,
+            verification_claims=verification_claims,
         )
     )
     updated[POCP_META_KEY] = meta

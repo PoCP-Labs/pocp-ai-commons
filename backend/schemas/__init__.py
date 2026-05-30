@@ -156,6 +156,7 @@ class ProvenanceIn(BaseModel):
     human_experts_cited: list[str] = Field(default_factory=list)
     review_depth: str | None = None
     notes: str | None = None
+    verification_claims: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class ContributionCreate(BaseModel):

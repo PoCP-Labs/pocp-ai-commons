@@ -9,6 +9,7 @@ from routers.auth import require_current_user
 from schemas import AgentFeedbackIn, AgentFeedbackOut, AgentReputationSummary
 from services.agent_receipt import build_agent_receipt, load_trace_for_receipt, verify_agent_receipt
 from services.agent_reputation import AgentReputationError, get_agent_reputation_summary, give_agent_feedback, list_agent_clients
+from services.attribution_merkle import build_attribution_merkle_proof, verify_attribution_merkle_proof
 from services.code_attribution_bridge import build_code_attribution_context
 from services.evidence_validate import validate_evidence_full
 from services.expert_cards import expert_cards_from_contribution
@@ -17,6 +18,7 @@ from services.portable_reputation import (
     build_portable_reputation_by_portable_id,
 )
 from services.reputation_audit import list_reputation_audit
+from services.review_queue import list_human_review_queue
 from services.reward_advisory import build_reward_advisory
 
 router = APIRouter(prefix="/api/v1", tags=["integrations"])
@@ -32,6 +34,40 @@ def _load_contribution(db: Session, contribution_id: str) -> ContributionEvent:
     if not contribution:
         raise HTTPException(status_code=404, detail="Contribution not found")
     return contribution
+
+
+@router.get("/reviews/queue")
+def human_review_queue(limit: int = 20, db: Session = Depends(get_db)):
+    return {
+        "compat": "meritocrab-review-queue-v0",
+        "count": limit,
+        "items": list_human_review_queue(db, limit=limit),
+    }
+
+
+@router.get("/contributions/{contribution_id}/attribution-proof")
+def contribution_attribution_proof(contribution_id: str, db: Session = Depends(get_db)):
+    contribution = _load_contribution(db, contribution_id)
+    return build_attribution_merkle_proof(contribution.evidence)
+
+
+@router.post("/contributions/{contribution_id}/attribution-proof/verify")
+def verify_contribution_attribution_proof(
+    contribution_id: str,
+    body: dict,
+    db: Session = Depends(get_db),
+):
+    contribution = _load_contribution(db, contribution_id)
+    proof = build_attribution_merkle_proof(contribution.evidence)
+    builder_slug = body.get("builder_slug")
+    if not builder_slug:
+        raise HTTPException(status_code=400, detail="builder_slug is required")
+    return {
+        "contribution_id": contribution_id,
+        "builder_slug": builder_slug,
+        "valid": verify_attribution_merkle_proof(proof, builder_slug),
+        "merkle_root": proof.get("merkle_root"),
+    }
 
 
 @router.get("/contributions/{contribution_id}/experts")

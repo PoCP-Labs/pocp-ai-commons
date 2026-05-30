@@ -210,6 +210,43 @@ Human reviewers can send contributions back for revision without full rejection.
 
 ---
 
+## 16. contributor-attribution — Merkle Attribution Proof
+
+Builder impact shares are hashed into a Merkle tree for verifiable attribution without trusting the analysis server.
+
+| Method | Path |
+|--------|------|
+| GET | `/api/v1/contributions/{id}/attribution-proof` |
+| POST | `/api/v1/contributions/{id}/attribution-proof/verify` |
+
+Proof layer: `attribution_merkle_proof`
+
+---
+
+## 17. OCTP — Verification Claims
+
+Provenance envelopes now accept `verification_claims` (e.g. `self_reviewed`, `ci_passed`, `peer_reviewed`).
+
+---
+
+## 18. Meritocrab — Human Review Queue
+
+Contributions in `ai_verified` status appear in a review queue for human final approval.
+
+| Method | Path |
+|--------|------|
+| GET | `/api/v1/reviews/queue` |
+
+---
+
+## 19. Frontend Integration Surfaces
+
+- **EntityDetail**: portable reputation, audit trail, agent feedback summary
+- **ContributionInsights**: Clarion unified packet, reward advisory, Merkle root, approve/reject/request-changes actions
+- **SubmitFlow**: OCTP provenance + verification claims on submit
+
+---
+
 ## Router
 
 All integration endpoints live under `backend/routers/integrations.py` with tag `integrations`.
