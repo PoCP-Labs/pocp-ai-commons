@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import ContributionGraphView from "./ContributionGraph";
 import SkillDetail from "./SkillDetail";
+import AIChat from "./AIChat";
 import SubmitFlow from "./SubmitFlow";
 import UserMenu from "./auth/UserMenu";
 import { useAuth, publicGet } from "./auth";
@@ -101,6 +102,7 @@ export default function App() {
 
       <nav style={{ display: "flex", gap: 4, marginBottom: "1.5rem", borderBottom: "1px solid #e2e8f0" }}>
         <button type="button" style={tabStyle("dashboard")} onClick={() => setTab("dashboard")}>Dashboard</button>
+        <button type="button" style={tabStyle("chat")} onClick={() => setTab("chat")}>AI Chat</button>
         <button type="button" style={tabStyle("workflow")} onClick={() => setTab("workflow")}>Submit Workflow</button>
         <button type="button" style={tabStyle("graph")} onClick={() => setTab("graph")}>Contribution Graph</button>
       </nav>
@@ -118,6 +120,35 @@ export default function App() {
             Invoke → Submit → AI Verify → Human Approve → Credits + Reputation
           </p>
           <SubmitFlow entities={entities} tasks={tasks} onComplete={load} user={user} />
+        </section>
+      )}
+
+      {tab === "chat" && (
+        <section>
+          <h2>AI Chat</h2>
+          <p style={{ color: "#64748b", marginBottom: 16 }}>
+            Messages consume AI Credits from your wallet.
+            {user && (
+              <span> Logged in as <strong>{user.name || user.email}</strong>.</span>
+            )}
+          </p>
+          {!user ? (
+            <div
+              style={{
+                padding: "3rem",
+                textAlign: "center",
+                color: "#64748b",
+                background: "#f8fafc",
+                borderRadius: 8,
+              }}
+            >
+              <p>Please log in to use AI Chat.</p>
+            </div>
+          ) : (
+            <div style={{ height: "calc(100vh - 280px)", minHeight: 400 }}>
+              <AIChat user={user} entityId={user.entity_id} />
+            </div>
+          )}
         </section>
       )}
 

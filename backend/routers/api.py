@@ -368,3 +368,74 @@ def create_skill(body: SkillCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(skill)
     return skill
+
+@router.post("/chat", response_model=ChatResponse)
+def chat(body: ChatRequest, db: Session = Depends(get_db)):
+    """Send a message to the AI. Consumes AI Credits from the entity's wallet."""
+    from services.contribution import spend_ai_credits
+
+    entity = db.query(Entity).filter(Entity.id == body.entity_id).first()
+    if not entity:
+        raise HTTPException(status_code=404, detail="Entity not found")
+
+    # Calculate cost based on message complexity
+    msg_len = len(body.message)
+    cost = max(1.0, round(msg_len / 500, 2))
+    cost = min(cost, 50.0)  # Cap at 50 credits per message
+
+    # Spend credits
+    try:
+        spend_result = spend_ai_credits(
+            db,
+            entity_id=body.entity_id,
+            amount=cost,
+            reason=f"AI chat: {body.message[:60]}",
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=402, detail=str(e))
+
+    # Generate simulated AI reply
+    # In production this would call an actual LLM
+    ai_prefix = f"[{body.model_provider}]"
+    reply = f"{ai_prefix} I received your message about: \"{body.message[:100]}\"\n\n"
+    reply += "This is a simulated AI response. In production, this would invoke "
+    reply += f"the {body.model_provider} model through the AI Commons integration.\n\n"
+    reply += f"📊 Credits spent: {cost} | Remaining: {spend_result['remaining']}"
+
+    return ChatResponse(
+        reply=reply,
+        credits_used=cost,
+        credits_remaining=spend_result["remaining"],
+        transaction_id=spend_result["transaction_id"],
+    )
+
+
+@router.get("/chat/history", response_model=list[dict])
+def list_chat_history(entity_id: str = "", limit: int = 20, db: Session = Depends(get_db)):
+    """List recent credit transactions as chat history."""
+    from models.wallet import CreditTransaction
+
+    query = db.query(CreditTransaction).join(
+        Wallet, CreditTransaction.wallet_id == Wallet.id
+    )
+
+    if entity_id:
+        query = query.filter(Wallet.entity_id == entity_id)
+
+    transactions = (
+        query
+        .filter(CreditTransaction.credit_type == CreditType.ai_credits)
+        .order_by(CreditTransaction.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        {
+            "id": t.id,
+            "amount": t.amount,
+            "reason": t.reason,
+            "created_at": t.created_at.isoformat(),
+        }
+        for t in transactions
+    ]
