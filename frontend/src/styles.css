@@ -73,7 +73,7 @@ body::before {
   padding: 0 1.25rem 3rem;
 }
 
-/* ── Network status bar (Bitcoin-style) ── */
+/* 鈹€鈹€ Network status bar (Bitcoin-style) 鈹€鈹€ */
 .network-bar {
   display: flex;
   flex-wrap: wrap;
@@ -123,7 +123,7 @@ body::before {
   50% { opacity: 0.5; }
 }
 
-/* ── Header ── */
+/* 鈹€鈹€ Header 鈹€鈹€ */
 .site-header {
   display: flex;
   justify-content: space-between;
@@ -193,7 +193,7 @@ body::before {
   color: var(--ai);
 }
 
-/* ── Contribution loop strip ── */
+/* 鈹€鈹€ Contribution loop strip 鈹€鈹€ */
 .loop-strip {
   display: flex;
   flex-wrap: wrap;
@@ -223,7 +223,7 @@ body::before {
   opacity: 0.6;
 }
 
-/* ── Navigation ── */
+/* 鈹€鈹€ Navigation 鈹€鈹€ */
 .nav-tabs {
   display: flex;
   gap: 0.25rem;
@@ -260,7 +260,7 @@ body::before {
   box-shadow: 0 2px 12px var(--btc-glow);
 }
 
-/* ── Buttons ── */
+/* 鈹€鈹€ Buttons 鈹€鈹€ */
 .btn {
   padding: 0.55rem 1.1rem;
   border: none;
@@ -319,7 +319,7 @@ body::before {
   border-top: 1px solid var(--border-subtle);
 }
 
-/* ── Panels & cards ── */
+/* 鈹€鈹€ Panels & cards 鈹€鈹€ */
 .panel {
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
@@ -363,7 +363,7 @@ body::before {
   background: var(--ai);
 }
 
-/* ── Stats grid (block explorer style) ── */
+/* 鈹€鈹€ Stats grid (block explorer style) 鈹€鈹€ */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -407,7 +407,7 @@ body::before {
   color: var(--ai);
 }
 
-/* ── Entity badges ── */
+/* 鈹€鈹€ Entity badges 鈹€鈹€ */
 .entity-badge {
   display: inline-block;
   padding: 0.15rem 0.5rem;
@@ -472,7 +472,7 @@ body::before {
   border-radius: 4px;
 }
 
-/* ── Entity list ── */
+/* 鈹€鈹€ Entity list 鈹€鈹€ */
 .entity-row {
   display: flex;
   align-items: center;
@@ -508,7 +508,7 @@ body::before {
   font-family: var(--mono);
 }
 
-/* ── Tables ── */
+/* 鈹€鈹€ Tables 鈹€鈹€ */
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -535,7 +535,7 @@ body::before {
   background: rgba(255, 255, 255, 0.02);
 }
 
-/* ── Ledger block (Bitcoin block style) ── */
+/* 鈹€鈹€ Ledger block (Bitcoin block style) 鈹€鈹€ */
 .ledger-block {
   background: var(--bg-deep);
   border: 1px solid var(--border);
@@ -617,7 +617,7 @@ body::before {
   border-top: 1px solid var(--border-subtle);
 }
 
-/* ── Forms ── */
+/* 鈹€鈹€ Forms 鈹€鈹€ */
 .field-label {
   display: block;
   margin-bottom: 0.75rem;
@@ -672,7 +672,7 @@ body::before {
   }
 }
 
-/* ── Chat ── */
+/* 鈹€鈹€ Chat 鈹€鈹€ */
 .chat-reply {
   margin-top: 1rem;
   padding: 1rem;
@@ -694,7 +694,7 @@ body::before {
   color: var(--text);
 }
 
-/* ── Verification cards ── */
+/* 鈹€鈹€ Verification cards 鈹€鈹€ */
 .verify-card {
   padding: 0.75rem 1rem;
   background: var(--bg-card);
@@ -718,7 +718,7 @@ body::before {
   font-size: 0.8rem;
 }
 
-/* ── Wallet / reputation mini cards ── */
+/* 鈹€鈹€ Wallet / reputation mini cards 鈹€鈹€ */
 .mini-card {
   padding: 0.75rem 1rem;
   background: var(--bg-card);
@@ -748,7 +748,7 @@ body::before {
   }
 }
 
-/* ── Invocation chain ── */
+/* 鈹€鈹€ Invocation chain 鈹€鈹€ */
 .chain-row {
   padding: 0.75rem 1rem;
   background: var(--bg-card);
@@ -772,7 +772,7 @@ body::before {
   color: var(--ai);
 }
 
-/* ── Workflow steps ── */
+/* 鈹€鈹€ Workflow steps 鈹€鈹€ */
 .workflow-panel {
   background: var(--bg-panel);
   border: 1px solid var(--border);
@@ -811,7 +811,7 @@ body::before {
   box-shadow: 0 0 12px var(--btc-glow);
 }
 
-/* ── Graph container ── */
+/* 鈹€鈹€ Graph container 鈹€鈹€ */
 .graph-frame {
   overflow: auto;
   border: 1px solid var(--border);
@@ -824,7 +824,7 @@ body::before {
   margin: 0 0 0.75rem;
 }
 
-/* ── Alerts ── */
+/* 鈹€鈹€ Alerts 鈹€鈹€ */
 .alert {
   padding: 0.75rem 1rem;
   border-radius: var(--radius);
@@ -914,4 +914,18 @@ body::before {
   width: 10px;
   height: 10px;
   border-radius: 2px;
+}
+
+.graph-edge path {
+  vector-effect: non-scaling-stroke;
+}
+
+.graph-edge__track {
+  animation: graph-edge-march 2.4s linear infinite;
+}
+
+@keyframes graph-edge-march {
+  to {
+    stroke-dashoffset: -16;
+  }
 }

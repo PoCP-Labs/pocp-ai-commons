@@ -4,9 +4,15 @@ const ENTITY_COLORS = {
   human: "#60a5fa",
   agent: "#a78bfa",
   skill: "#34d399",
+  tool: "#facc15",
+  dataset: "#2dd4bf",
+  workflow: "#fb923c",
   contribution: "#fbbf24",
+  ledger: "#94a3b8",
   organization: "#f7931a",
   llm: "#22d3ee",
+  community: "#fb7185",
+  federation_import: "#c084fc",
 };
 
 const RELATION_COLORS = {
@@ -21,12 +27,59 @@ const RELATION_COLORS = {
   executor: "#a78bfa",
   skill_provider: "#34d399",
   reviewer: "#fbbf24",
+  verifier: "#22d3ee",
+  witness: "#22d3ee",
   sponsor: "#f7931a",
   founded: "#f7931a",
-  sponsors: "#f7931a",
+  learned_from: "#fb7185",
+  uses_pattern_from: "#fb7185",
+  trusts_peer: "#fb7185",
+  federated_with: "#fb7185",
+  hosts: "#f7931a",
+  exported_contribution: "#c084fc",
+  imported_to: "#c084fc",
+  received_import: "#c084fc",
+  final_review: "#fbbf24",
+  witnesses: "#22d3ee",
+  recorded_in: "#94a3b8",
+  provides_tool: "#64748b",
+  provides_data: "#64748b",
 };
 
-const LAYOUT_COLUMNS = ["human", "agent", "skill", "contribution", "llm", "organization"];
+const LAYOUT_COLUMNS = [
+  "human",
+  "agent",
+  "skill",
+  "tool",
+  "dataset",
+  "workflow",
+  "contribution",
+  "ledger",
+  "federation_import",
+  "llm",
+  "organization",
+  "community",
+];
+
+function edgePath(x1, y1, x2, y2) {
+  return `M ${x1} ${y1} L ${x2} ${y2}`;
+}
+
+function reverseEdgePath(x1, y1, x2, y2) {
+  return `M ${x2} ${y2} L ${x1} ${y1}`;
+}
+
+function edgeTravelSeconds(x1, y1, x2, y2) {
+  const dist = Math.hypot(x2 - x1, y2 - y1);
+  return Math.max(1.6, dist / 48);
+}
+
+function pulseDotCount(x1, y1, x2, y2) {
+  const dist = Math.hypot(x2 - x1, y2 - y1);
+  if (dist < 120) return 2;
+  if (dist < 220) return 3;
+  return 4;
+}
 
 function layoutNodes(nodes) {
   const byType = {};
@@ -83,7 +136,12 @@ function buildEntityNodes(entities, graph) {
 export default function ContributionGraphView({ graph, entities = [] }) {
   const { entityNodes, hubNodes, visibleEdges, positions, width, height, connectedIds } = useMemo(() => {
     const entityNodes = buildEntityNodes(entities, graph);
-    const hubNodes = (graph?.nodes || []).filter((n) => n.entity_type === "contribution");
+    const hubNodes = (graph?.nodes || []).filter(
+      (n) =>
+        n.entity_type === "contribution" ||
+        n.entity_type === "federation_import" ||
+        n.entity_type === "ledger"
+    );
     const visibleEdges = (graph?.edges || []).filter((e) => !["owns", "created"].includes(e.relation));
 
     const connectedIds = new Set();
@@ -119,8 +177,11 @@ export default function ContributionGraphView({ graph, entities = [] }) {
   return (
     <div className="graph-frame">
       <p className="panel__subtitle graph-frame__subtitle">
-        {entityCount} entities · {hubCount} contribution hub{hubCount === 1 ? "" : "s"} · {visibleEdges.length}{" "}
-        edge{visibleEdges.length === 1 ? "" : "s"} · matches Entity registry
+        Contribution neural network — {entityCount} entities · {hubCount} hub{hubCount === 1 ? "" : "s"}
+        {graph?.ledger_node_count != null && graph.ledger_node_count > 0
+          ? ` · ${graph.ledger_node_count} ledger`
+          : ""}{" "}
+        · {visibleEdges.length} relation{visibleEdges.length === 1 ? "" : "s"}
       </p>
       <div className="graph-legend">
         {Object.entries(ENTITY_COLORS).map(([type, color]) => (
@@ -135,9 +196,13 @@ export default function ContributionGraphView({ graph, entities = [] }) {
       </div>
       <svg width={width} height={height} style={{ display: "block" }}>
         <defs>
-          <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#22d3ee" opacity="0.7" />
-          </marker>
+          <filter id="graph-pulse-dot" x="-200%" y="-200%" width="500%" height="500%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
           {Object.entries(ENTITY_COLORS).map(([type, color]) => (
             <filter key={type} id={`glow-${type}`} x="-50%" y="-50%" width="200%" height="200%">
               <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor={color} floodOpacity="0.5" />
@@ -160,23 +225,64 @@ export default function ContributionGraphView({ graph, entities = [] }) {
           const x2 = to.x;
           const y2 = to.y + 26;
           const color = RELATION_COLORS[edge.relation] || "#5c6573";
+          const pathD = edgePath(x1, y1, x2, y2);
+          const reversePathD = reverseEdgePath(x1, y1, x2, y2);
+          const travelSec = edgeTravelSeconds(x1, y1, x2, y2);
+          const reverseTravelSec = travelSec * 1.35;
+          const dotCount = pulseDotCount(x1, y1, x2, y2);
+          const marchDelay = (i * 0.18) % 2.4;
           const midX = (x1 + x2) / 2;
           const midY = (y1 + y2) / 2 - 12;
           const label = edge.relation.replace(/_/g, " ");
+          const edgeKey = `${edge.source}-${edge.target}-${edge.relation}-${i}`;
 
           return (
-            <g key={`${edge.source}-${edge.target}-${edge.relation}-${i}`}>
-              <line
-                x1={x1}
-                y1={y1}
-                x2={x2}
-                y2={y2}
+            <g key={edgeKey} className="graph-edge">
+              <path
+                className="graph-edge__track"
+                d={pathD}
+                fill="none"
                 stroke={color}
-                strokeWidth={1.5}
-                strokeOpacity={0.7}
-                markerEnd="url(#arrow)"
+                strokeWidth={0.75}
+                strokeOpacity={0.28}
+                strokeDasharray="3 5"
+                strokeLinecap="round"
+                style={{ animationDelay: `${marchDelay}s` }}
               />
-              <text x={midX} y={midY} textAnchor="middle" fontSize={9} fill="#8b95a5" fontFamily="JetBrains Mono, monospace">
+              {Array.from({ length: dotCount }, (_, di) => {
+                const begin = (travelSec / dotCount) * di;
+                return (
+                  <circle
+                    key={`${edgeKey}-dot-${di}`}
+                    r={2}
+                    fill={color}
+                    opacity={0.92}
+                    filter="url(#graph-pulse-dot)"
+                  >
+                    <animateMotion
+                      dur={`${travelSec}s`}
+                      begin={`${begin}s`}
+                      repeatCount="indefinite"
+                      path={pathD}
+                    />
+                  </circle>
+                );
+              })}
+              <circle
+                key={`${edgeKey}-dot-reverse`}
+                r={1.4}
+                fill={color}
+                opacity={0.45}
+                filter="url(#graph-pulse-dot)"
+              >
+                <animateMotion
+                  dur={`${reverseTravelSec}s`}
+                  begin={`${travelSec * 0.45}s`}
+                  repeatCount="indefinite"
+                  path={reversePathD}
+                />
+              </circle>
+              <text x={midX} y={midY} textAnchor="middle" fontSize={8} fill="#6b7585" fontFamily="JetBrains Mono, monospace">
                 {label}
               </text>
             </g>
@@ -231,10 +337,14 @@ export default function ContributionGraphView({ graph, entities = [] }) {
         {hubNodes.map((node) => {
           const pos = positions[node.id];
           if (!pos) return null;
-          const color = ENTITY_COLORS.contribution;
+          const color = ENTITY_COLORS[node.entity_type] || ENTITY_COLORS.contribution;
 
           return (
-            <g key={node.id} transform={`translate(${pos.x}, ${pos.y})`} filter="url(#glow-contribution)">
+            <g
+              key={node.id}
+              transform={`translate(${pos.x}, ${pos.y})`}
+              filter={`url(#glow-${node.entity_type === "federation_import" ? "federation_import" : node.entity_type === "ledger" ? "ledger" : "contribution"})`}
+            >
               <rect width={108} height={52} rx={8} fill="#111820" stroke={color} strokeWidth={1.5} />
               <rect width={108} height={3} rx={8} fill={color} opacity={0.9} />
               <text
@@ -257,7 +367,11 @@ export default function ContributionGraphView({ graph, entities = [] }) {
                 fontFamily="JetBrains Mono, monospace"
                 letterSpacing="0.08em"
               >
-                CONTRIBUTION
+                {node.entity_type === "federation_import"
+                  ? "FED IMPORT"
+                  : node.entity_type === "ledger"
+                    ? "LEDGER"
+                    : "CONTRIBUTION"}
               </text>
             </g>
           );
