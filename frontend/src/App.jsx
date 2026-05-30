@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import ContributionGraphView from "./ContributionGraph";
+import SkillDetail from "./SkillDetail";
 import SubmitFlow from "./SubmitFlow";
 import UserMenu from "./auth/UserMenu";
 import { useAuth, publicGet } from "./auth";
@@ -42,6 +43,7 @@ export default function App() {
   const [graph, setGraph] = useState({ nodes: [], edges: [] });
   const [error, setError] = useState(null);
   const [tab, setTab] = useState("dashboard");
+  const [selectedSkillId, setSelectedSkillId] = useState(null);
 
   const load = useCallback(() => {
     setError(null);
@@ -134,15 +136,87 @@ export default function App() {
           <section style={{ marginBottom: "2rem" }}>
             <h2>Entities</h2>
             <div style={{ display: "grid", gap: 12 }}>
-              {entities.map((e) => (
-                <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, background: "#f8fafc", borderRadius: 8 }}>
-                  <EntityBadge type={e.entity_type} />
-                  <strong>{e.name}</strong>
-                  <span style={{ color: "#64748b", fontSize: 14 }}>{e.description}</span>
-                </div>
-              ))}
+              {entities.map((e) => {
+                const isClickable = e.entity_type === "skill";
+                return (
+                  <div
+                    key={e.id}
+                    onClick={() => isClickable && setSelectedSkillId(e.id)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: 12,
+                      background: "#f8fafc",
+                      borderRadius: 8,
+                      cursor: isClickable ? "pointer" : "default",
+                      transition: "background 0.15s",
+                    }}
+                    onMouseEnter={(ev) => {
+                      if (isClickable) ev.currentTarget.style.background = "#e2e8f0";
+                    }}
+                    onMouseLeave={(ev) => {
+                      if (isClickable) ev.currentTarget.style.background = "#f8fafc";
+                    }}
+                    role={isClickable ? "button" : undefined}
+                    tabIndex={isClickable ? 0 : undefined}
+                    onKeyDown={(ev) => {
+                      if (isClickable && (ev.key === "Enter" || ev.key === " ")) {
+                        ev.preventDefault();
+                        setSelectedSkillId(e.id);
+                      }
+                    }}
+                  >
+                    <EntityBadge type={e.entity_type} />
+                    <strong>{e.name}</strong>
+                    <span style={{ color: "#64748b", fontSize: 14 }}>{e.description}</span>
+                    {e.entity_type === "skill" && (
+                      <span style={{ marginLeft: "auto", fontSize: 12, color: "#059669" }}>
+                        View details →
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </section>
+
+          {selectedSkillId && (
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.3)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "flex-start",
+                paddingTop: "3rem",
+                zIndex: 100,
+                overflow: "auto",
+              }}
+              onClick={(ev) => {
+                if (ev.target === ev.currentTarget) setSelectedSkillId(null);
+              }}
+            >
+              <div
+                style={{
+                  background: "#fff",
+                  borderRadius: 12,
+                  padding: "2rem",
+                  width: "90%",
+                  maxWidth: 700,
+                  maxHeight: "85vh",
+                  overflow: "auto",
+                  boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+                }}
+              >
+                <SkillDetail
+                  skillId={selectedSkillId}
+                  onBack={() => setSelectedSkillId(null)}
+                />
+              </div>
+            </div>
+          )}
 
           {invocations.length > 0 && (
             <section style={{ marginBottom: "2rem" }}>
