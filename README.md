@@ -377,6 +377,7 @@ Broad participation in building PoCP — not only programmers. Requirements, iss
 |----------|---------|
 | [CODE-CONTRIBUTION-COMMONS.md](./CODE-CONTRIBUTION-COMMONS.md) | Framework: Code Contribution Commons and the multi-role contribution chain |
 | [docs/CODE-CONTRIBUTION-REGISTRY.md](./docs/CODE-CONTRIBUTION-REGISTRY.md) | Code path → builder registry, scan/sync, reputation bootstrap |
+| [docs/EXTERNAL-INTEGRATIONS.md](./docs/EXTERNAL-INTEGRATIONS.md) | OCTP provenance, agent receipts, ERC-8004 feedback, HTTP verifiers |
 | [GENESIS-CODE-CONTRIBUTORS.md](./GENESIS-CODE-CONTRIBUTORS.md) | Genesis Code Contributors and early code-commons memory |
 | [DEV-TASKS.md](./DEV-TASKS.md) | Dev task taxonomy and how work enters the network |
 | [ISSUE-WRITING-GUIDE.md](./ISSUE-WRITING-GUIDE.md) | Writing issues and specs others can execute |

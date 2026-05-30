@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from schemas.federation import TrustedNode
 from services.federation_import import import_from_proof_packet
-from services.federation_peers import probe_peer
+from services.federation_peers import fetch_proof, probe_peer
 from services.trust_config import load_trusted_nodes
 
 

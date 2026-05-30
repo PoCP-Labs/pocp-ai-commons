@@ -1,0 +1,9 @@
+# External verifier plugins (Meritocrab / GARL-style HTTP adapters).
+# Set enabled: true and configure url to register additional advisory verifiers.
+
+external_verifiers:
+  - name: example
+    enabled: false
+    url: https://example.com/api/verify
+    api_key_env: POCP_VERIFIER_EXAMPLE_API_KEY
+    timeout_seconds: 60

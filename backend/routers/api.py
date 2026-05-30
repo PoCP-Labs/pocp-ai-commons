@@ -44,6 +44,8 @@ from services.contribution import approve_contribution, grant_registration_credi
 from services.evidence import enrich_evidence
 from services.graph import build_contribution_graph
 from services.invocation import record_invocation
+from services.provenance import attach_provenance_to_evidence
+from services.org_foundation import can_sponsor_as_organization
 
 router = APIRouter(prefix="/api/v1", tags=["pocp"])
 
@@ -54,8 +56,9 @@ def _assert_task_sponsor_allowed(db: Session, sponsor_id: str | None, current_us
 
     sponsor = db.query(Entity).filter(Entity.id == sponsor_id).first()
     if sponsor and sponsor.entity_type == EntityType.organization:
-        org = db.query(Organization).filter(Organization.entity_id == sponsor_id).first()
-        if org and org.governance_proxy_id == current_user.entity_id:
+        if current_user.entity_id and can_sponsor_as_organization(
+            db, sponsor_id, current_user.entity_id
+        ):
             return
 
     raise HTTPException(status_code=403, detail="You cannot create tasks for this sponsor")
@@ -201,12 +204,24 @@ def submit_contribution(
     require_evidence(body.evidence)
     check_daily_contribution_limit(db, current_user.entity_id)
 
+    evidence = enrich_evidence(body.evidence)
+    if body.provenance is not None:
+        evidence = attach_provenance_to_evidence(
+            evidence,
+            declared_by_entity_id=current_user.entity_id,
+            creation_mode=body.provenance.creation_mode,  # type: ignore[arg-type]
+            ai_tools_used=body.provenance.ai_tools_used,
+            human_experts_cited=body.provenance.human_experts_cited,
+            review_depth=body.provenance.review_depth,
+            notes=body.provenance.notes,
+        )
+
     contribution = ContributionEvent(
         task_id=body.task_id,
         primary_entity_id=current_user.entity_id,
         contribution_type=body.contribution_type,
         description=body.description,
-        evidence=enrich_evidence(body.evidence),
+        evidence=evidence,
         status=ContributionStatus.submitted,
     )
     db.add(contribution)

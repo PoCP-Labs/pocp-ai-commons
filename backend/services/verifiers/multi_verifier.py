@@ -1,21 +1,17 @@
 import json
-import os
 from statistics import median
 
 from sqlalchemy.orm import Session
 
 from models.contribution import AiVerifierResult, ContributionEvent, ContributionStatus
-from services.verifiers.deepseek_verifier import DeepSeekVerifier
+from services.provenance import provenance_from_evidence
+from services.verifier_registry import load_verifier_providers
 from services.verifiers.mock_verifier import MockVerifier
-from services.verifiers.openai_verifier import OpenAIVerifier
 
 
 class MultiVerifierService:
     def __init__(self):
-        if os.getenv("ENABLE_MOCK_VERIFIER", "true").lower() == "true":
-            self.providers = [MockVerifier()]
-        else:
-            self.providers = [OpenAIVerifier(), DeepSeekVerifier(), MockVerifier()]
+        self.providers = load_verifier_providers()
 
     async def verify_contribution(self, db: Session, contribution: ContributionEvent) -> dict:
         task = contribution.task
@@ -32,6 +28,7 @@ class MultiVerifierService:
                 "evidence": contribution.evidence,
                 "content_hash": (contribution.evidence or {}).get("_pocp", {}).get("content_hash"),
                 "primary_entity_id": contribution.primary_entity_id,
+                "provenance": provenance_from_evidence(contribution.evidence),
             },
             "participants": [
                 {

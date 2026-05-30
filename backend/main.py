@@ -13,6 +13,7 @@ from routers.verification import router as verification_router
 from routers.export import router as export_router
 from routers.federation import router as federation_router
 from routers.code_attribution import router as code_attribution_router
+from routers.integrations import router as integrations_router
 from genesis import ensure_genesis_entities
 from seed import seed_demo
 from middleware.read_only_mirror import ReadOnlyMirrorMiddleware
@@ -87,6 +88,7 @@ app.include_router(verification_router)
 app.include_router(export_router)
 app.include_router(federation_router)
 app.include_router(code_attribution_router)
+app.include_router(integrations_router)
 
 
 @app.get("/health")

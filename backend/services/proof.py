@@ -22,6 +22,7 @@ from models.ledger import LedgerRecord
 from models.wallet import CreditTransaction, ReputationScore, Wallet
 from services.evidence import POCP_META_KEY, evidence_types, hash_evidence, standardize_evidence_items
 from services.federation_crypto import get_node_public_key_hex, sign_message
+from services.provenance import provenance_from_evidence
 
 POCP_PROOF_SPEC_VERSION = "0.1"
 POCP_PROOF_TYPE = "pocp_contribution_proof"
@@ -33,6 +34,7 @@ PROOF_LAYER_COVERAGE = [
     "contribution_event",
     "contribution_participant",
     "evidence_hash",
+    "provenance_envelope",
     "human_ai_verification_state",
     "contribution_graph",
     "contribution_to_rights_conversion",
@@ -208,6 +210,7 @@ def build_contribution_proof_packet(db: Session, contribution_id: str) -> dict |
             "spec_version": evidence_meta.get("spec_version"),
             "evidence_standard": evidence_meta.get("evidence_standard"),
             "evidence_types": evidence_meta.get("evidence_types") or evidence_types(evidence),
+            "provenance": provenance_from_evidence(evidence),
             "items": _evidence_items(evidence),
             "raw": evidence,
         },

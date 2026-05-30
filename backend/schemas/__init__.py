@@ -150,6 +150,14 @@ class ParticipantIn(BaseModel):
     evidence: dict[str, Any] = Field(default_factory=dict)
 
 
+class ProvenanceIn(BaseModel):
+    creation_mode: str = "unknown"
+    ai_tools_used: list[str] = Field(default_factory=list)
+    human_experts_cited: list[str] = Field(default_factory=list)
+    review_depth: str | None = None
+    notes: str | None = None
+
+
 class ContributionCreate(BaseModel):
     task_id: str
     primary_entity_id: str
@@ -157,6 +165,7 @@ class ContributionCreate(BaseModel):
     description: str | None = None
     evidence: dict[str, Any] = Field(default_factory=dict)
     participants: list[ParticipantIn] = Field(default_factory=list)
+    provenance: ProvenanceIn | None = None
 
 
 class AiVerifyIn(BaseModel):
@@ -251,3 +260,37 @@ class InvocationCreate(BaseModel):
     model_provider: str = "deepseek"
     task_id: str | None = None
     contribution_id: str | None = None
+
+
+class AgentFeedbackIn(BaseModel):
+    score: float = Field(ge=0.0, le=100.0)
+    comment: str | None = None
+    contribution_id: str | None = None
+    tag1: str | None = None
+    tag2: str | None = None
+
+
+class AgentFeedbackOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    agent_entity_id: str
+    reviewer_entity_id: str
+    contribution_id: str | None = None
+    score: float
+    value_dec: float
+    comment: str | None = None
+    tag1: str | None = None
+    tag2: str | None = None
+    created_at: datetime
+
+
+class AgentReputationSummary(BaseModel):
+    agent_entity_id: str
+    agent_name: str
+    feedback_count: int
+    average_score: float
+    average_value_dec: float
+    unique_reviewers: int
+    recent_feedback: list[dict[str, Any]] = Field(default_factory=list)
+    registry_compat: str
