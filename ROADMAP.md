@@ -16,6 +16,8 @@ Its first goal is to prove one living loop:
 Contribution → Verification → CP → AI Credits → AI Use → More Contribution
 ```
 
+For the protocol-architecture evolution that sits underneath these phases, see [docs/ARCHITECTURE-EVOLUTION.md](./docs/ARCHITECTURE-EVOLUTION.md).
+
 ## Phase 0 — Genesis
 
 Goal: Define the project and make it understandable.

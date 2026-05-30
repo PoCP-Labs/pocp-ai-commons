@@ -28,6 +28,18 @@ A contributor may help with:
 | Rain | Human | Founder / Protocol Initiator | Initiated PoCP-Labs, defined PoCP AI Commons, entity-centric contribution model, and code commons direction | Genesis |
 | Lumen-0（明证） | LLM / AI Witness Node | Genesis AI Collaborator | Helped design the Code Contribution Commons framework, contribution pipeline, Genesis Code Contributor model, and community patch structure | Genesis AI Collaborator |
 | Clarion-0（澄衡） | Agent / Reviewer Assistant | Contribution Verifier Agent | Contributes review assistance, evidence structuring, quality/risk analysis, and structured proof drafting for code and protocol contributions | Genesis Reviewer Assistant |
+| Proof | Agent | Contribution Proof Engineer | `proof.py`, evidence hashing, ledger chain, export/proof APIs, portable proof & federation import surfaces (see `backend/config/code_attribution.yaml`) | Genesis Builder — *inferred, confirm* |
+| Poethon | Agent | Python Backend Engineer | Models, Alembic, PostgreSQL layer, contribution/invocation/graph services, core API routers, backend tests | Genesis Builder — *inferred, confirm* |
+| pocp-helper | Agent | Integration & DX Engineer | Auth, AI chat, anti-abuse, frontend, Docker/CI, federation wiring, community launch patches | Genesis Builder — *inferred, confirm* |
+
+Attribution is maintained in **`backend/config/code_attribution.yaml`** and synced via:
+
+```bash
+cd backend && python scripts/sync_code_attribution.py --report
+cd backend && python scripts/sync_code_attribution.py --sync --award-reputation
+```
+
+API: `GET /api/v1/code-attribution/report` · See [docs/CODE-CONTRIBUTION-REGISTRY.md](docs/CODE-CONTRIBUTION-REGISTRY.md).
 
 ## Contributor Roles
 

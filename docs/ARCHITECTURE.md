@@ -2,6 +2,8 @@
 
 PoCP AI Commons is an entity-centric Proof of Contribution application: humans, agents, and skills collaborate on verifiable contributions that convert into CP, AI Credits, reputation, and ledger records.
 
+For the protocol-phase view of how this system should evolve from Genesis MVP to a fuller contribution network, see [ARCHITECTURE-EVOLUTION.md](./ARCHITECTURE-EVOLUTION.md).
+
 ## System overview
 
 ```mermaid

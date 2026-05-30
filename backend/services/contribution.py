@@ -1,5 +1,7 @@
 """Contribution approval and reward distribution."""
 
+import json
+
 from sqlalchemy.orm import Session
 
 from models.contribution import (
@@ -37,13 +39,17 @@ def run_ai_verification(
     score: float = 0.85,
     feedback: str = "Content is well-structured and accurate.",
     required_passing_count: int = 1,
+    details: dict | None = None,
 ) -> AiVerifierResult:
     passed = score >= 0.7
+    stored_feedback = feedback
+    if details is not None:
+        stored_feedback = json.dumps({"feedback": feedback, "details": details}, ensure_ascii=False)
     result = AiVerifierResult(
         contribution_id=contribution.id,
         model_provider=model_provider,
         score=score,
-        feedback=feedback,
+        feedback=stored_feedback,
         passed=passed,
     )
     db.add(result)

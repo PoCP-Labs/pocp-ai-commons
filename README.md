@@ -376,6 +376,7 @@ Broad participation in building PoCP — not only programmers. Requirements, iss
 | Document | Purpose |
 |----------|---------|
 | [CODE-CONTRIBUTION-COMMONS.md](./CODE-CONTRIBUTION-COMMONS.md) | Framework: Code Contribution Commons and the multi-role contribution chain |
+| [docs/CODE-CONTRIBUTION-REGISTRY.md](./docs/CODE-CONTRIBUTION-REGISTRY.md) | Code path → builder registry, scan/sync, reputation bootstrap |
 | [GENESIS-CODE-CONTRIBUTORS.md](./GENESIS-CODE-CONTRIBUTORS.md) | Genesis Code Contributors and early code-commons memory |
 | [DEV-TASKS.md](./DEV-TASKS.md) | Dev task taxonomy and how work enters the network |
 | [ISSUE-WRITING-GUIDE.md](./ISSUE-WRITING-GUIDE.md) | Writing issues and specs others can execute |
@@ -422,6 +423,8 @@ Starts **PostgreSQL**, the API (Alembic migrations on boot), and the frontend.
 
 **Database:** PostgreSQL is the default for Docker and long-term development. SQLite is optional for local-only work. See [docs/DATABASE.md](./docs/DATABASE.md).
 
+**Public internet:** See [docs/PUBLIC-DEPLOY.md](./docs/PUBLIC-DEPLOY.md) for HTTPS deployment with `docker-compose.prod.yml` and Caddy.
+
 **Smoke test:**
 
 ```bash
@@ -434,7 +437,7 @@ See [backend/.env.example](./backend/.env.example) for database, OAuth, AI provi
 
 For the public-site publishing path, see [docs/DEPLOY-CHECKLIST.md](./docs/DEPLOY-CHECKLIST.md).
 
-See also: [docs/VISION.md](./docs/VISION.md) · [docs/LOCAL-SETUP.md](./docs/LOCAL-SETUP.md) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) · [docs/API-SPEC.md](./docs/API-SPEC.md) · [docs/PUBLIC-DEMO.md](./docs/PUBLIC-DEMO.md) · [docs/PROTOCOL.md](./docs/PROTOCOL.md) · [docs/SCHEMA.md](./docs/SCHEMA.md) · [docs/DATABASE.md](./docs/DATABASE.md) · [PROTOCOL-SPEC-v0.1.md](./PROTOCOL-SPEC-v0.1.md)
+See also: [docs/VISION.md](./docs/VISION.md) · [docs/OPENNESS-AND-ANTI-MONOPOLY.md](./docs/OPENNESS-AND-ANTI-MONOPOLY.md) · [docs/LOCAL-SETUP.md](./docs/LOCAL-SETUP.md) · [docs/PUBLIC-DEPLOY.md](./docs/PUBLIC-DEPLOY.md) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) · [docs/API-SPEC.md](./docs/API-SPEC.md) · [docs/PUBLIC-DEMO.md](./docs/PUBLIC-DEMO.md) · [docs/PROTOCOL.md](./docs/PROTOCOL.md) · [docs/SCHEMA.md](./docs/SCHEMA.md) · [docs/DATABASE.md](./docs/DATABASE.md) · [PROTOCOL-SPEC-v0.1.md](./PROTOCOL-SPEC-v0.1.md)
 
 ---
 

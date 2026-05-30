@@ -12,6 +12,7 @@ from routers.ai_chat import router as ai_chat_router
 from routers.verification import router as verification_router
 from routers.export import router as export_router
 from routers.federation import router as federation_router
+from routers.code_attribution import router as code_attribution_router
 from genesis import ensure_genesis_entities
 from seed import seed_demo
 from middleware.read_only_mirror import ReadOnlyMirrorMiddleware
@@ -34,6 +35,10 @@ async def lifespan(app: FastAPI):
         backfill_ledger_hashes(db)
         record_trust_list_if_changed(db)
         db.commit()
+        logger.info("Startup seed complete")
+    except Exception:
+        logger.exception("Startup seed failed")
+        raise
     finally:
         db.close()
 
@@ -81,6 +86,7 @@ app.include_router(ai_chat_router)
 app.include_router(verification_router)
 app.include_router(export_router)
 app.include_router(federation_router)
+app.include_router(code_attribution_router)
 
 
 @app.get("/health")

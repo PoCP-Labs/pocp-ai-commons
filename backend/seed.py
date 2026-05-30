@@ -18,7 +18,8 @@ from services.contribution import (
     grant_registration_credits,
     run_ai_verification,
 )
-from genesis import DESUI_ID, LUMEN_0_ID, ensure_genesis_entities
+from genesis import DESUI_ID, LUMEN_0_ID, RAIN_ID, ensure_genesis_entities
+from services.entity_dedup import merge_rain_duplicates
 from services.auth import bind_user_account_to_entity
 from services.invocation import record_invocation
 
@@ -44,9 +45,12 @@ def ensure_demo_accounts(db: Session, rain: Entity, bob: Entity) -> None:
 
 def seed_demo(db: Session) -> None:
     ensure_genesis_entities(db)
-    existing_rain = db.query(Entity).filter(Entity.name == "Rain").first()
+    merge_rain_duplicates(db)
+    existing_rain = db.get(Entity, RAIN_ID)
     existing_bob = db.query(Entity).filter(Entity.name == "Bob").first()
-    if existing_rain and existing_bob:
+    has_demo_contribution = db.query(ContributionEvent).count() > 0
+    # Skip full re-seed only when demo humans AND at least one contribution exist.
+    if existing_rain and existing_bob and has_demo_contribution:
         ensure_demo_accounts(db, existing_rain, existing_bob)
         db.commit()
         return
@@ -56,12 +60,19 @@ def seed_demo(db: Session) -> None:
     if lumen_0 is None or desui is None:
         raise RuntimeError("Genesis entities missing after ensure_genesis_entities")
 
-    rain = Entity(
-        entity_type=EntityType.human,
-        name="Rain",
-        description="Platform founder and contributor",
-        status=EntityStatus.active,
-    )
+    rain = db.get(Entity, RAIN_ID)
+    if rain is None:
+        rain = Entity(
+            id=RAIN_ID,
+            entity_type=EntityType.human,
+            name="Rain",
+            description="Platform founder and contributor",
+            status=EntityStatus.active,
+        )
+        db.add(rain)
+    else:
+        rain.description = "Platform founder and contributor"
+        rain.status = EntityStatus.active
     bob = Entity(
         entity_type=EntityType.human,
         name="Bob",
@@ -87,7 +98,7 @@ def seed_demo(db: Session) -> None:
         status=EntityStatus.active,
     )
 
-    db.add_all([rain, bob, study_agent_entity, r_tutor_entity, pocp_commons])
+    db.add_all([bob, study_agent_entity, r_tutor_entity, pocp_commons])
     db.flush()
 
     lumen_0.creator_id = pocp_commons.id
@@ -136,15 +147,6 @@ def seed_demo(db: Session) -> None:
     )
     db.add(task)
     db.flush()
-
-    record_invocation(
-        db,
-        initiator_id=rain.id,
-        skill_entity_id=r_tutor_entity.id,
-        agent_entity_id=study_agent_entity.id,
-        model_provider="deepseek",
-        task_id=task.id,
-    )
 
     contribution = ContributionEvent(
         task_id=task.id,

@@ -39,6 +39,7 @@ from schemas import (
     WalletOut,
 )
 from services.anti_abuse import check_daily_contribution_limit, require_evidence
+from services.ai_verify_service import ai_verify_service
 from services.contribution import approve_contribution, grant_registration_credits, run_ai_verification
 from services.evidence import enrich_evidence
 from services.graph import build_contribution_graph
@@ -241,7 +242,7 @@ def submit_contribution(
 
 
 @router.post("/contributions/{contribution_id}/verify", response_model=ContributionOut)
-def verify_contribution(
+async def verify_contribution(
     contribution_id: str,
     body: AiVerifyIn,
     db: Session = Depends(get_db),
@@ -253,7 +254,12 @@ def verify_contribution(
             detail="Manual verify is disabled; use /api/v1/contributions/{id}/auto-verify",
         )
 
-    contribution = db.query(ContributionEvent).filter(ContributionEvent.id == contribution_id).first()
+    contribution = (
+        db.query(ContributionEvent)
+        .options(joinedload(ContributionEvent.task), joinedload(ContributionEvent.participants))
+        .filter(ContributionEvent.id == contribution_id)
+        .first()
+    )
     if not contribution:
         raise HTTPException(status_code=404, detail="Contribution not found")
     if contribution.primary_entity_id != current_user.entity_id:
@@ -266,14 +272,42 @@ def verify_contribution(
             detail="Contribution already passed AI verification; proceed to human approval",
         )
 
-    run_ai_verification(
-        db,
-        contribution,
-        model_provider=body.model_provider,
-        score=body.score,
-        feedback=body.feedback,
-        required_passing_count=body.required_passing_count,
-    )
+    if body.score > 0:
+        run_ai_verification(
+            db,
+            contribution,
+            model_provider=body.model_provider,
+            score=body.score,
+            feedback=body.feedback,
+            required_passing_count=body.required_passing_count,
+        )
+    else:
+        task = contribution.task
+        rubric = await ai_verify_service(
+            task_title=getattr(task, "title", None),
+            task_description=getattr(task, "description", None),
+            contribution_description=contribution.description,
+            evidence=contribution.evidence,
+            participants=[
+                {
+                    "entity_id": p.entity_id,
+                    "role": p.role.value,
+                    "weight": p.weight,
+                    "evidence": p.evidence,
+                }
+                for p in contribution.participants
+            ],
+            provider=body.model_provider,
+        )
+        run_ai_verification(
+            db,
+            contribution,
+            model_provider=rubric.provider,
+            score=rubric.score,
+            feedback=rubric.feedback,
+            required_passing_count=body.required_passing_count,
+            details=rubric.model_dump(),
+        )
     db.commit()
     return get_contribution(contribution_id, db)
 

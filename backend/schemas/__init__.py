@@ -191,6 +191,8 @@ class GraphEdge(BaseModel):
 class ContributionGraph(BaseModel):
     nodes: list[GraphNode]
     edges: list[GraphEdge]
+    entity_count: int = 0
+    contribution_node_count: int = 0
 
 
 class OrganizationOut(BaseModel):

@@ -43,3 +43,9 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) and [GOOD_FIRST_ISSUES.md](../GOOD_FIR
 ## How do I run locally?
 
 See [LOCAL-SETUP.md](./LOCAL-SETUP.md).
+
+## Can someone fork PoCP and run a private instance?
+
+**Yes** — the project uses the [MIT License](../LICENSE). Anyone may download, modify, and deploy privately or publicly.
+
+That does **not** let them own the protocol, other nodes’ ledgers, or federation trust. See [OPENNESS-AND-ANTI-MONOPOLY.md](./OPENNESS-AND-ANTI-MONOPOLY.md).

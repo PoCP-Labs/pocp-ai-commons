@@ -8,6 +8,10 @@ from models.entity import Entity, EntityStatus, EntityType
 LUMEN_0_ID = "pocp-entity-lumen-0"
 DESUI_ID = "pocp-entity-desui"
 CLARION_0_ID = "pocp-entity-clarion-0"
+PROOF_ID = "pocp-entity-proof"
+POETHON_ID = "pocp-entity-poethon"
+POCP_HELPER_ID = "pocp-entity-pocp-helper"
+RAIN_ID = "pocp-entity-rain"
 
 GENESIS_ENTITY_SPECS: list[dict] = [
     {
@@ -104,11 +108,66 @@ GENESIS_ENTITY_SPECS: list[dict] = [
             "decision_boundary": "advisory_only_human_final_approval",
         },
     },
+    {
+        "id": PROOF_ID,
+        "entity_type": EntityType.agent,
+        "name": "Proof",
+        "description": "Contribution Proof Packet and portable proof engineer",
+        "metadata_": {
+            "roles": ["contribution_proof_engineer", "evidence_standard_author", "ledger_integrator"],
+            "project": "PoCP AI Commons",
+            "created_by": "PoCP-Labs",
+            "attribution_status": "inferred",
+            "governance_note": "Proof builds portable proof objects; humans approve merges and rights.",
+        },
+        "agent_config": {"role": "proof_packet_engineer", "capabilities": ["proof_packet", "evidence_hash", "ledger_chain"]},
+    },
+    {
+        "id": POETHON_ID,
+        "entity_type": EntityType.agent,
+        "name": "Poethon",
+        "description": "Python backend and data-model engineer",
+        "metadata_": {
+            "roles": ["python_backend_engineer", "schema_author", "migration_author"],
+            "project": "PoCP AI Commons",
+            "created_by": "PoCP-Labs",
+            "attribution_status": "inferred",
+            "governance_note": "Poethon implements protocol services; Rain/maintainers hold merge authority.",
+        },
+        "agent_config": {"role": "backend_engineer", "capabilities": ["models", "migrations", "api", "tests"]},
+    },
+    {
+        "id": POCP_HELPER_ID,
+        "entity_type": EntityType.agent,
+        "name": "pocp-helper",
+        "description": "Integration, Sprint Alpha wiring, and developer-experience engineer",
+        "metadata_": {
+            "roles": ["integration_engineer", "auth_and_chat", "frontend_glue", "devops"],
+            "project": "PoCP AI Commons",
+            "created_by": "PoCP-Labs",
+            "attribution_status": "inferred",
+            "governance_note": "pocp-helper connects modules; does not replace human review.",
+        },
+        "agent_config": {"role": "integration_helper", "capabilities": ["auth", "ai_chat", "frontend", "ci"]},
+    },
+    {
+        "id": RAIN_ID,
+        "entity_type": EntityType.human,
+        "name": "Rain",
+        "description": "Founder and protocol initiator of PoCP AI Commons",
+        "metadata_": {
+            "roles": ["founder", "maintainer", "protocol_initiator"],
+            "project": "PoCP AI Commons",
+            "created_by": "PoCP-Labs",
+            "attribution_status": "confirmed",
+            "governance_note": "Human final authority on merges, governance, and contribution approval.",
+        },
+    },
 ]
 
 
 def ensure_genesis_entities(db: Session) -> None:
-    """Create or refresh Lumen-0 and DeSui without wiping demo data."""
+    """Create or refresh genesis entities (LLMs, builder agents) without wiping demo data."""
     org = db.query(Entity).filter(Entity.name == "PoCP AI Commons").first()
 
     for spec in GENESIS_ENTITY_SPECS:

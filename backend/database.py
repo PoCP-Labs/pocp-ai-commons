@@ -9,6 +9,8 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 logger = logging.getLogger(__name__)
 
 SQLITE_BASELINE_REVISION = "72f32ab86a41"
+SQLITE_LEDGER_HASH_REVISION = "a1b2c3d4e5f6"
+SQLITE_HEAD_STRUCTURAL_REVISION = "b2c3d4e5f6a7"
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
@@ -105,14 +107,15 @@ def run_migrations() -> None:
 
     if is_sqlite():
         if _needs_sqlite_bootstrap():
-            baseline_revision = _sqlite_bootstrap_revision()
-            command.stamp(cfg, baseline_revision)
-            logger.info("Bootstrapped legacy SQLite Alembic state to %s", baseline_revision)
+            detected_revision = _sqlite_detect_revision()
+            command.stamp(cfg, detected_revision)
+            logger.info("Bootstrapped legacy SQLite Alembic state to %s", detected_revision)
         elif _sqlite_needs_revision_reconcile():
-            command.stamp(cfg, SQLITE_BASELINE_REVISION)
+            detected_revision = _sqlite_detect_revision()
+            command.stamp(cfg, detected_revision)
             logger.info(
                 "Reconciled SQLite Alembic state from schema drift to %s",
-                SQLITE_BASELINE_REVISION,
+                detected_revision,
             )
 
     command.upgrade(cfg, "head")
@@ -134,18 +137,25 @@ def _needs_sqlite_bootstrap() -> bool:
     return len(version_rows) == 0
 
 
-def _sqlite_bootstrap_revision() -> str:
+def _sqlite_detect_revision() -> str:
     inspector = inspect(engine)
+    table_names = set(inspector.get_table_names())
+    if "federated_imports" in table_names:
+        return SQLITE_HEAD_STRUCTURAL_REVISION
+
+    if "ledger_records" not in table_names:
+        return SQLITE_BASELINE_REVISION
+
     ledger_columns = {column["name"] for column in inspector.get_columns("ledger_records")}
     if {"prev_hash", "record_hash"}.issubset(ledger_columns):
-        return "head"
+        return SQLITE_LEDGER_HASH_REVISION
     return SQLITE_BASELINE_REVISION
 
 
 def _sqlite_needs_revision_reconcile() -> bool:
     inspector = inspect(engine)
     table_names = set(inspector.get_table_names())
-    if "alembic_version" not in table_names or "ledger_records" not in table_names:
+    if "alembic_version" not in table_names:
         return False
 
     with engine.connect() as conn:
@@ -155,11 +165,8 @@ def _sqlite_needs_revision_reconcile() -> bool:
         return False
 
     current_revision = version_rows[0][0]
-    if current_revision != "a1b2c3d4e5f6":
-        return False
-
-    ledger_columns = {column["name"] for column in inspector.get_columns("ledger_records")}
-    return not {"prev_hash", "record_hash"}.issubset(ledger_columns)
+    detected_revision = _sqlite_detect_revision()
+    return current_revision != detected_revision
 
 
 def _verify_sqlite_schema() -> None:

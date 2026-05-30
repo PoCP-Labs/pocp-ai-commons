@@ -14,6 +14,8 @@ docker compose up --build
 
 Starts PostgreSQL, applies Alembic migrations, seeds genesis entities and the demo scenario.
 
+**Production / public internet:** [docs/PUBLIC-DEPLOY.md](../docs/PUBLIC-DEPLOY.md) and `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`.
+
 ## Run locally
 
 ```bash

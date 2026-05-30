@@ -1,0 +1,22 @@
+# Example Caddy reverse proxy for PoCP AI Commons (production).
+#
+# 1. Install Caddy on the host (https://caddyserver.com/docs/install)
+# 2. Copy and edit:
+#      cp deploy/Caddyfile.example /etc/caddy/Caddyfile
+# 3. Point DNS A records for api.* and app.* to this server.
+# 4. Start stack: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# 5. Reload Caddy: sudo systemctl reload caddy
+#
+# Caddy obtains TLS certificates automatically when ports 80/443 are open.
+
+{
+	email admin@your-domain.com
+}
+
+api.your-domain.com {
+	reverse_proxy localhost:8000
+}
+
+app.your-domain.com {
+	reverse_proxy localhost:3000
+}

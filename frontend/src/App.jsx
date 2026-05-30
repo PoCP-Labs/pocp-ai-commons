@@ -51,6 +51,121 @@ function truncateHash(value, len = 12) {
   return value.length <= len ? value : `${value.slice(0, len)}…`;
 }
 
+const LEDGER_EVENT_LABELS = {
+  contribution_approved: "Contribution approved",
+  registration_grant: "Starter AI Credits granted",
+  ai_credits_burned: "AI Credits used",
+  trust_list_updated: "Trusted federation nodes updated",
+  federation_import: "Contribution imported from peer node",
+};
+
+function describeLedgerPayload(eventType, payload) {
+  if (!payload || typeof payload !== "object") {
+    return [{ label: "Details", value: "No payload recorded." }];
+  }
+
+  switch (eventType) {
+    case "trust_list_updated":
+      return [
+        { label: "Summary", value: LEDGER_EVENT_LABELS.trust_list_updated },
+        {
+          label: "Trusted nodes",
+          value:
+            payload.node_count === 0
+              ? "None configured yet (single-node / Genesis stage)"
+              : `${payload.node_count} node(s)`,
+        },
+        { label: "Config source", value: payload.source || "unknown" },
+        { label: "List fingerprint", value: truncateHash(payload.trust_list_hash, 20) },
+        ...(payload.previous_hash
+          ? [{ label: "Previous list", value: truncateHash(payload.previous_hash, 20) }]
+          : []),
+      ];
+    case "contribution_approved":
+      return [
+        { label: "Summary", value: LEDGER_EVENT_LABELS.contribution_approved },
+        ...(payload.cp != null ? [{ label: "CP awarded", value: String(payload.cp) }] : []),
+        ...(payload.ai_credits != null
+          ? [{ label: "AI Credits awarded", value: String(payload.ai_credits) }]
+          : []),
+        ...(payload.contribution_id
+          ? [{ label: "Contribution", value: truncateHash(payload.contribution_id, 20) }]
+          : []),
+      ];
+    case "registration_grant":
+      return [
+        { label: "Summary", value: LEDGER_EVENT_LABELS.registration_grant },
+        ...(payload.ai_credits != null
+          ? [{ label: "AI Credits", value: String(payload.ai_credits) }]
+          : []),
+      ];
+    case "ai_credits_burned":
+      return [
+        { label: "Summary", value: LEDGER_EVENT_LABELS.ai_credits_burned },
+        ...(payload.amount != null ? [{ label: "Amount", value: String(payload.amount) }] : []),
+        ...(payload.balance_after != null
+          ? [{ label: "Balance after", value: String(payload.balance_after) }]
+          : []),
+      ];
+    case "federation_import":
+      return [
+        { label: "Summary", value: LEDGER_EVENT_LABELS.federation_import },
+        ...(payload.source_node_id ? [{ label: "From node", value: payload.source_node_id }] : []),
+        ...(payload.portable_id ? [{ label: "Contributor", value: payload.portable_id }] : []),
+      ];
+    default:
+      return [{ label: "Event data", value: "See raw record below for audit details." }];
+  }
+}
+
+function LedgerBlockPanel({ record, height }) {
+  const [showRaw, setShowRaw] = useState(false);
+  const eventLabel = LEDGER_EVENT_LABELS[record.event_type] || record.event_type;
+  const summary = describeLedgerPayload(record.event_type, record.payload);
+
+  return (
+    <section className="panel">
+      <h2 className="panel__title">Latest Ledger Record</h2>
+      <p className="panel__hint">
+        This is a contribution ledger entry — not application source code. Records are append-only and
+        verifiable via the API.
+      </p>
+      <div className="ledger-block">
+        <div className="ledger-block__header">
+          <div className="ledger-block__field">
+            <span>Height</span>
+            <strong>{height}</strong>
+          </div>
+          <div className="ledger-block__field">
+            <span>Event</span>
+            <strong title={record.event_type}>{eventLabel}</strong>
+          </div>
+          <div className="ledger-block__field">
+            <span>Hash</span>
+            <strong>{truncateHash(record.record_hash || record.id, 16)}</strong>
+          </div>
+        </div>
+        <dl className="ledger-block__summary">
+          {summary.map(({ label, value }) => (
+            <div key={label} className="ledger-block__row">
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+        </dl>
+        <div className="ledger-block__toggle">
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => setShowRaw((v) => !v)}>
+            {showRaw ? "Hide raw audit data" : "Show raw audit data (JSON)"}
+          </button>
+        </div>
+        {showRaw && (
+          <pre className="ledger-block__body">{JSON.stringify(record.payload, null, 2)}</pre>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function AdvisoryBanner() {
   return (
     <div className="alert alert--info" style={{ marginBottom: "1rem" }}>
@@ -93,29 +208,34 @@ export default function App() {
     }
   }, []);
 
-  const load = useCallback(() => {
+  const load = useCallback(async () => {
     setError(null);
-    return Promise.all([
-      fetchJson("/api/v1/entities"),
-      fetchJson("/api/v1/tasks"),
-      fetchJson("/api/v1/contributions"),
-      fetchJson("/api/v1/invocations"),
-      fetchJson("/api/v1/wallets"),
-      fetchJson("/api/v1/reputation"),
-      fetchJson("/api/v1/ledger"),
-      fetchJson("/api/v1/graph"),
-    ])
-      .then(([e, t, c, inv, w, r, l, g]) => {
-        setEntities(e);
-        setTasks(t);
-        setContributions(c);
-        setInvocations(inv);
-        setWallets(w);
-        setReputation(r);
-        setLedger(l);
-        setGraph(g);
-      })
-      .catch((err) => setError(err.message));
+    try {
+      const [e, t, c, inv, w, r, l, g] = await Promise.all([
+        fetchJson("/api/v1/entities"),
+        fetchJson("/api/v1/tasks"),
+        fetchJson("/api/v1/contributions"),
+        fetchJson("/api/v1/invocations"),
+        fetchJson("/api/v1/wallets"),
+        fetchJson("/api/v1/reputation"),
+        fetchJson("/api/v1/ledger"),
+        fetchJson("/api/v1/graph"),
+      ]);
+      setEntities(e);
+      setTasks(t);
+      setContributions(c);
+      setInvocations(inv);
+      setWallets(w);
+      setReputation(r);
+      setLedger(l);
+      setGraph(g);
+    } catch (err) {
+      const msg = err?.message || String(err);
+      setError(msg);
+      if (msg.includes("fetch") || msg.includes("Failed") || msg.includes("NetworkError")) {
+        setApiVersion("offline");
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -462,10 +582,7 @@ export default function App() {
       {tab === "graph" && (
         <section className="panel">
           <h2 className="panel__title section-heading--ai">Contribution Graph</h2>
-          <p className="panel__subtitle">
-            {graph.nodes.length} nodes · {graph.edges.length} edges · Human + Agent + Skill invocation chains
-          </p>
-          <ContributionGraphView graph={graph} entityMap={entityMap} />
+          <ContributionGraphView graph={graph} entities={entities} />
         </section>
       )}
 
@@ -482,7 +599,9 @@ export default function App() {
             </div>
             <div className="stat-block stat-block--ai">
               <div className="stat-block__label">Graph Edges</div>
-              <div className="stat-block__value stat-block__value--ai">{graph.edges.length}</div>
+              <div className="stat-block__value stat-block__value--ai">
+                {graph.edges?.length ?? 0}
+              </div>
             </div>
             <div className="stat-block stat-block--ai">
               <div className="stat-block__label">Ledger Blocks</div>
@@ -615,28 +734,7 @@ export default function App() {
             </section>
           </div>
 
-          {latestLedger && (
-            <section className="panel">
-              <h2 className="panel__title">Latest Ledger Block</h2>
-              <div className="ledger-block">
-                <div className="ledger-block__header">
-                  <div className="ledger-block__field">
-                    <span>Height</span>
-                    <strong>{ledger.length}</strong>
-                  </div>
-                  <div className="ledger-block__field">
-                    <span>Event</span>
-                    <strong>{latestLedger.event_type}</strong>
-                  </div>
-                  <div className="ledger-block__field">
-                    <span>Hash</span>
-                    <strong>{truncateHash(latestLedger.record_hash || latestLedger.id, 16)}</strong>
-                  </div>
-                </div>
-                <pre className="ledger-block__body">{JSON.stringify(latestLedger.payload, null, 2)}</pre>
-              </div>
-            </section>
-          )}
+          {latestLedger && <LedgerBlockPanel record={latestLedger} height={ledger.length} />}
         </>
       )}
     </div>

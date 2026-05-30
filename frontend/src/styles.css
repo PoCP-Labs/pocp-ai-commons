@@ -552,6 +552,48 @@ body::before {
   color: var(--btc);
 }
 
+.ledger-block__summary {
+  margin: 0;
+  padding: 0.75rem 1rem;
+}
+
+.ledger-block__row {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: 0.75rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.82rem;
+}
+
+.ledger-block__row:last-child {
+  border-bottom: none;
+}
+
+.ledger-block__row dt {
+  margin: 0;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.ledger-block__row dd {
+  margin: 0;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.ledger-block__toggle {
+  padding: 0.5rem 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.panel__hint {
+  margin: -0.25rem 0 0.75rem;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+
 .ledger-block__body {
   margin: 0;
   padding: 1rem;
@@ -561,6 +603,7 @@ body::before {
   color: var(--green);
   overflow: auto;
   max-height: 280px;
+  border-top: 1px solid var(--border-subtle);
 }
 
 /* ── Forms ── */
@@ -764,6 +807,10 @@ body::before {
   border-radius: var(--radius-lg);
   background: var(--bg-deep);
   box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.4);
+}
+
+.graph-frame__subtitle {
+  margin: 0 0 0.75rem;
 }
 
 /* ── Alerts ── */

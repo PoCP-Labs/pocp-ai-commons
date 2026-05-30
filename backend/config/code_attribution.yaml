@@ -1,0 +1,243 @@
+# Code attribution registry v0.1
+# Maps repository paths to Genesis Builder entities.
+# status: confirmed (maintainer) | inferred (module analysis; pending human confirm)
+#
+# Workflow: PR merge / git trailer → scripts/sync_code_attribution.py → ledger + reputation
+
+spec_version: "0.1"
+
+builders:
+  proof:
+    entity_id: pocp-entity-proof
+    display_name: Proof
+    entity_type: agent
+    roles:
+      - contribution_proof_engineer
+      - evidence_standard_author
+      - portable_proof_api
+    status: inferred
+    summary: >
+      Contribution Proof Packet, evidence hashing, ledger chain integration,
+      export/proof APIs, and portable proof federation import surfaces.
+
+  poethon:
+    entity_id: pocp-entity-poethon
+    display_name: Poethon
+    entity_type: agent
+    roles:
+      - python_backend_engineer
+      - data_model_author
+      - migration_author
+    status: inferred
+    summary: >
+      Core Python backend, SQLAlchemy models, Alembic migrations, PostgreSQL layer,
+      contribution/invocation/graph services, and API routers.
+
+  pocp-helper:
+    entity_id: pocp-entity-pocp-helper
+    display_name: pocp-helper
+    entity_type: agent
+    roles:
+      - integration_engineer
+      - sprint_alpha_wiring
+      - devops_and_frontend_glue
+    status: inferred
+    summary: >
+      Auth, AI chat, anti-abuse, verification wiring, frontend dashboard,
+      Docker/CI, community launch patches, and cross-module integration.
+
+  lumen-0:
+    entity_id: pocp-entity-lumen-0
+    display_name: Lumen-0
+    entity_type: llm
+    roles:
+      - genesis_ai_collaborator
+      - protocol_planner
+    status: confirmed
+    summary: Protocol vision, Sprint Alpha planning, alignment patches, genesis narrative.
+
+  desui:
+    entity_id: pocp-entity-desui
+    display_name: DeSui
+    entity_type: llm
+    roles:
+      - genesis_ai_validator
+    status: confirmed
+    summary: Adversarial verification design and dual-AI witness loop in demo seed.
+
+  clarion-0:
+    entity_id: pocp-entity-clarion-0
+    display_name: Clarion-0
+    entity_type: agent
+    roles:
+      - reviewer_assistant
+    status: confirmed
+    summary: Human review assistance, evidence structuring, clarion-review API.
+
+  rain:
+    entity_id: pocp-entity-rain
+    display_name: Rain
+    entity_type: human
+    roles:
+      - founder
+      - maintainer
+      - protocol_initiator
+    status: confirmed
+    summary: >
+      Founded PoCP AI Commons and PoCP Labs vision; initiated the repository,
+      governance, protocol direction, and human-final merge authority. Receives
+      residual attribution for project-wide files not assigned to builder agents.
+
+# Files matching no path_rule are attributed to residual_builder (founder/maintainer).
+attribution_policy:
+  residual_builder: rain
+  residual_note: founder_maintainer_residual
+
+path_rules:
+  - builder: proof
+    patterns:
+      - backend/services/proof.py
+      - backend/services/evidence.py
+      - backend/services/ledger_chain.py
+      - backend/services/ledger_anchor.py
+      - backend/services/entity_portable.py
+      - backend/routers/export.py
+      - backend/services/federation_import.py
+      - docs/CONTRIBUTION-PROOF-PACKET-v0.1.md
+      - docs/PORTABLE-PROOF-FEDERATION.md
+      - docs/EVIDENCE-STANDARD-v0.1.md
+      - backend/alembic/versions/a1b2c3d4e5f6_ledger_hash_chain.py
+
+  - builder: poethon
+    patterns:
+      - backend/database.py
+      - backend/db_types.py
+      - backend/alembic/
+      - backend/models/
+      - backend/seed.py
+      - backend/services/contribution.py
+      - backend/services/invocation.py
+      - backend/services/graph.py
+      - backend/services/protocol_config.py
+      - backend/services/rights.py
+      - backend/routers/api.py
+      - backend/schemas/
+      - backend/tests/
+      - docs/SCHEMA.md
+      - docs/DATABASE.md
+
+  - builder: pocp-helper
+    patterns:
+      - backend/services/auth.py
+      - backend/services/anti_abuse.py
+      - backend/services/ai_chat.py
+      - backend/services/clarion.py
+      - backend/services/verifiers/
+      - backend/routers/auth.py
+      - backend/routers/ai_chat.py
+      - backend/routers/verification.py
+      - backend/main.py
+      - backend/scripts/smoke_test.py
+      - frontend/
+      - docker-compose.yml
+      - docker-compose.prod.yml
+      - docker-compose.federation.yml
+      - deploy/
+      - .github/workflows/
+      - .github/ISSUE_TEMPLATE/
+      - CODE-CONTRIBUTION-COMMONS.md
+      - DEV-TASKS.md
+      - ISSUE-WRITING-GUIDE.md
+      - AI-ASSISTED-CODING-GUIDE.md
+      - REVIEW-GUIDE.md
+      - docs/CODE-COMMONS-LAUNCH.md
+      - docs/LOCAL-SETUP.md
+      - docs/PUBLIC-DEMO.md
+      - SPRINT-ALPHA-PLAN.md
+      - CURRENT-STAGE-REVIEW.md
+      - backend/services/federation_sync.py
+      - backend/services/federation_crypto.py
+      - backend/services/federation_peers.py
+      - backend/services/federation_reputation.py
+      - backend/services/trust_config.py
+      - backend/services/trust_ledger.py
+      - backend/services/node_mode.py
+      - backend/middleware/
+      - backend/routers/federation.py
+      - backend/scripts/federation_sync.py
+      - backend/scripts/anchor_ledger.py
+      - backend/scripts/mirror_trusted_node.py
+      - docs/FEDERATION-v0.1.md
+      - docs/FEDERATION-HARDENING.md
+      - docs/FEDERATION-DEMO.md
+
+  - builder: clarion-0
+    patterns:
+      - backend/services/clarion.py
+      - docs/CLARION-0-REVIEWER-ASSISTANT.md
+      - docs/HUMAN-REVIEW-GUIDE.md
+
+  - builder: desui
+    patterns:
+      - backend/seed.py
+      - backend/services/verifiers/
+
+  - builder: lumen-0
+    patterns:
+      - GENESIS.md
+      - docs/genesis/
+      - docs/VISION.md
+      - docs/CONTRIBUTION-INTERNET.md
+      - docs/CORE-TECH-STACK.md
+      - docs/NATIVE-TECHNOLOGY-PRINCIPLES.md
+      - LUMEN-0-CONTRIBUTION-RECORD.md
+      - docs/LUMEN-0-ENTITY.json
+
+  - builder: rain
+    patterns:
+      - README.md
+      - LICENSE
+      - GENESIS-CODE-CONTRIBUTORS.md
+      - GENESIS-CONTRIBUTORS.md
+      - PROTOCOL-SPEC-v0.1.md
+      - AI-COMMONS.md
+      - ROADMAP.md
+      - GOVERNANCE.md
+      - CONTRIBUTING.md
+      - CODE_OF_CONDUCT.md
+      - FIRST-CALL-FOR-CONTRIBUTORS.md
+      - GOOD_FIRST_ISSUES.md
+      - NO-TOKEN-FIRST.md
+      - AI-CREDITS-CP-REPUTATION.md
+      - anchors/
+      - scripts/
+      - backend/config/code_attribution.yaml
+      - backend/config/pocp_rewards.yaml
+      - backend/genesis.py
+      - backend/services/code_attribution.py
+      - backend/routers/code_attribution.py
+      - backend/scripts/sync_code_attribution.py
+      - docs/ARCHITECTURE.md
+      - docs/PROTOCOL.md
+      - docs/FAQ.md
+      - docs/API-SPEC.md
+      - docs/SPRINT_ALPHA.md
+      - docs/PUBLIC-DEPLOY.md
+      - docs/OPENNESS-AND-ANTI-MONOPOLY.md
+      - docs/BC-CP-MECHANISM.md
+      - docs/CODE-CONTRIBUTION-REGISTRY.md
+      - docs/GITHUB-PAGES.md
+      - docs/DEPLOY-CHECKLIST.md
+      - docs/COMMUNITY-LAUNCH-PLAN.md
+      - docs/site.css
+      - docs/index.html
+      - docs/manifesto.html
+      - docs/whitepaper.html
+      - docs/quick-start.html
+      - docs/404.html
+      - docs/pocp-mark.svg
+
+reward_policy:
+  registry_reputation_per_file: 0.5
+  registry_reputation_cap_per_builder: 200
+  ledger_event_type: code_attribution_sync

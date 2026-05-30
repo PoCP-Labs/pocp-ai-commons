@@ -1,0 +1,34 @@
+# Production overrides — use with base compose:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Requires a project-root .env (copy from deploy/.env.production.example)
+# and backend/.env (copy from backend/.env.example, set secrets + public URLs).
+
+services:
+  postgres:
+    ports: !override []
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in project-root .env}
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://pocp:${POSTGRES_PASSWORD}@postgres:5432/pocp
+      POCP_WAIT_FOR_DB: "true"
+    volumes: !override []
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: ${VITE_API_URL:?Set VITE_API_URL in project-root .env}
+    ports: !override
+      - "3000:80"
+    environment: !override []
+    volumes: !override []

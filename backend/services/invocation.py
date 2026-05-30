@@ -75,16 +75,6 @@ def record_invocation(
         )
         order += 1
 
-    steps.append(
-        InvocationStep(
-            trace_id=trace.id,
-            step_order=order,
-            source_entity_id=skill_entity_id,
-            target_entity_id=skill_entity_id,
-            action="invokes_llm",
-        )
-    )
-
     for s in steps:
         db.add(s)
 

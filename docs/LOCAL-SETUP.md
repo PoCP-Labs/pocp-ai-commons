@@ -83,8 +83,13 @@ Stop-Process -Id <PID> -Force
 
 **Docker not running:** Use Option A (SQLite) or start Docker Desktop first.
 
+## Public deployment
+
+To expose the full stack on the internet (HTTPS, production Compose, Caddy), see [PUBLIC-DEPLOY.md](./PUBLIC-DEPLOY.md).
+
 ## Next steps
 
+- [Public Deploy](./PUBLIC-DEPLOY.md)
 - [API Spec](./API-SPEC.md)
 - [Architecture](./ARCHITECTURE.md)
 - [Sprint Alpha](./SPRINT_ALPHA.md)

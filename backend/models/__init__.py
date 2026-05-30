@@ -1,5 +1,6 @@
 from models.agent import Agent
 from models.ai_usage import AIUsageLog
+from models.code_attribution import CodeAttributionRecord
 from models.contribution import (
     AiVerifierResult,
     ContributionEvent,
@@ -35,4 +36,5 @@ __all__ = [
     "UserAccount",
     "AIUsageLog",
     "FederatedImport",
+    "CodeAttributionRecord",
 ]
