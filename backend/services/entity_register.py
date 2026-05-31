@@ -22,7 +22,7 @@ def _parse_entity_type(entity_type: str) -> EntityType:
 def _base_metadata(entity_type: str, extra: dict[str, Any] | None) -> dict[str, Any]:
     meta = dict(extra or {})
     meta.setdefault("registered_via", "entity_register")
-    meta.setdefault("ontology_version", "0.1")
+    meta.setdefault("ontology_version", "0.3")
     meta.setdefault("entity_type_confirmed", entity_type)
     return meta
 
@@ -147,6 +147,160 @@ def register_workflow(
         creator_id=maintainer_id,
         status=EntityStatus.active if activate else EntityStatus.pending,
         metadata=metadata,
+    )
+
+
+def register_compute_node(
+    db: Session,
+    *,
+    name: str,
+    description: str | None,
+    maintainer_id: str,
+    region: str = "unknown",
+    hardware: dict[str, Any] | None = None,
+    capabilities: list[str] | None = None,
+    verification_methods: list[str] | None = None,
+    activate: bool = True,
+    entity_id: str | None = None,
+) -> Entity:
+    metadata = {
+        "compute_profile": {
+            "region": region,
+            "hardware": hardware or {},
+            "capabilities": capabilities or [],
+            "verification_methods": verification_methods or ["log"],
+        },
+        "region": region,
+        "hardware": hardware or {},
+        "capabilities": capabilities or [],
+        "verification_methods": verification_methods or ["log"],
+    }
+    return register_entity(
+        db,
+        entity_type="compute_node",
+        name=name,
+        description=description,
+        owner_id=maintainer_id,
+        creator_id=maintainer_id,
+        status=EntityStatus.active if activate else EntityStatus.pending,
+        metadata=metadata,
+        entity_id=entity_id,
+    )
+
+
+def register_verifier_node(
+    db: Session,
+    *,
+    name: str,
+    description: str | None,
+    maintainer_id: str,
+    verifier_kinds: list[str] | None = None,
+    service_endpoints: dict[str, str] | None = None,
+    trust_level: str = "standard",
+    activate: bool = True,
+    entity_id: str | None = None,
+) -> Entity:
+    metadata = {
+        "verifier_kinds": verifier_kinds or ["ai_review"],
+        "service_endpoints": service_endpoints or {},
+        "trust_level": trust_level,
+    }
+    return register_entity(
+        db,
+        entity_type="verifier_node",
+        name=name,
+        description=description,
+        owner_id=maintainer_id,
+        creator_id=maintainer_id,
+        status=EntityStatus.active if activate else EntityStatus.pending,
+        metadata=metadata,
+        entity_id=entity_id,
+    )
+
+
+def register_reviewer_node(
+    db: Session,
+    *,
+    name: str,
+    description: str | None,
+    maintainer_id: str,
+    review_policy: str = "human_review",
+    queue_capacity: int = 50,
+    supported_task_types: list[str] | None = None,
+    activate: bool = True,
+    entity_id: str | None = None,
+) -> Entity:
+    metadata = {
+        "review_policy": review_policy,
+        "queue_capacity": queue_capacity,
+        "supported_task_types": supported_task_types or ["general"],
+    }
+    return register_entity(
+        db,
+        entity_type="reviewer_node",
+        name=name,
+        description=description,
+        owner_id=maintainer_id,
+        creator_id=maintainer_id,
+        status=EntityStatus.active if activate else EntityStatus.pending,
+        metadata=metadata,
+        entity_id=entity_id,
+    )
+
+
+def register_sponsor_entity(
+    db: Session,
+    *,
+    name: str,
+    description: str | None,
+    maintainer_id: str,
+    sponsor_policy: str = "task_bounty",
+    accepted_units: list[str] | None = None,
+    activate: bool = True,
+    entity_id: str | None = None,
+) -> Entity:
+    metadata = {
+        "sponsor_policy": sponsor_policy,
+        "accepted_units": accepted_units or ["AIC"],
+        "pool_balance": 0.0,
+    }
+    return register_entity(
+        db,
+        entity_type="sponsor",
+        name=name,
+        description=description,
+        owner_id=maintainer_id,
+        creator_id=maintainer_id,
+        status=EntityStatus.active if activate else EntityStatus.pending,
+        metadata=metadata,
+        entity_id=entity_id,
+    )
+
+
+def register_protocol_treasury(
+    db: Session,
+    *,
+    name: str = "PoCP Protocol Treasury",
+    description: str | None = None,
+    governance_entity_id: str | None = None,
+    fee_schedule: dict[str, Any] | None = None,
+    entity_id: str | None = None,
+) -> Entity:
+    metadata = {
+        "treasury_policy": "protocol_reserve",
+        "fee_schedule": fee_schedule or {},
+        "governance_entity_id": governance_entity_id,
+    }
+    return register_entity(
+        db,
+        entity_type="protocol_treasury",
+        name=name,
+        description=description or "Protocol-level treasury for fees and reserves.",
+        owner_id=None,
+        creator_id=governance_entity_id,
+        status=EntityStatus.active,
+        metadata=metadata,
+        entity_id=entity_id,
     )
 
 

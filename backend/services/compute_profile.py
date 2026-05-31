@@ -28,6 +28,7 @@ VALID_CAPABILITIES = frozenset(
         "witness",
         "mcp_host",
         "agent_runtime",
+        "training",
     }
 )
 VALID_STATUSES = frozenset({"active", "idle", "offline"})

@@ -71,7 +71,9 @@ def main() -> None:
     assert pocp_commons, "Seed organization missing"
 
     ontology = req("GET", "/api/v1/entities/ontology")
-    assert len(ontology["entity_types"]) == 9
+    assert ontology.get("spec_version") == "0.3", ontology.get("spec_version")
+    assert len(ontology["entity_types"]) == 14
+    assert "compute_node" in ontology["entity_types"]
     assert "witness" in ontology["participant_roles"]
     assert "llm_inference" in ontology.get("compute_capabilities", [])
     print("OK entity ontology")

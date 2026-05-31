@@ -1,27 +1,23 @@
 ---
 name: Settlement Layer Task
-about: Add or improve settlement, staking, slashing, treasury, or sponsor pools
+about: Add or improve settlement logic
 title: "[Settlement] "
-labels: "settlement-layer"
+labels: "settlement"
 assignees: ""
 ---
 
 ## Goal
 
-What settlement capability should be added?
+## Area
 
-## Settlement area
-
-- [ ] reward distribution
-- [ ] multi-entity settlement
-- [ ] stake
-- [ ] slashing
-- [ ] treasury
-- [ ] sponsor pool
-- [ ] dispute / appeal
+- [ ] SettlementRecord
+- [ ] Reward distribution
+- [ ] Sponsor pool
+- [ ] Treasury
+- [ ] Dispute
+- [ ] Slashing
 
 ## Acceptance criteria
 
-- [ ] 
 - [ ] 
 - [ ]

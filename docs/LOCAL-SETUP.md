@@ -33,6 +33,37 @@ npm run dev
 
 Open http://localhost:3000 · API docs http://localhost:8000/docs
 
+## Option C — Phase A one-command (recommended for acceptance)
+
+Validates the **demonstrable public loop** (smoke + optional federation):
+
+```powershell
+# Windows — single node (:8000)
+.\scripts\run-phase-a.ps1
+
+# Windows — federation (node-a :8100, node-b :8101)
+.\scripts\run-phase-a.ps1 -Federation
+```
+
+```bash
+# Linux / macOS — single node
+./scripts/run-phase-a.sh
+
+# Federation
+./scripts/run-phase-a.sh --federation
+```
+
+Acceptance only (stack already running):
+
+```bash
+python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8000
+python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8100 --federation http://127.0.0.1:8101
+```
+
+See [ROADMAP-THREE-PHASES.md](./ROADMAP-THREE-PHASES.md) for Phase A/B/C exit criteria.
+
+**Proof deep-link (UI):** open `http://localhost:3000/?proof=<contribution_id>` to verify a contribution proof without running the full submit flow.
+
 ## Option B — Docker Compose (PostgreSQL)
 
 ```bash
@@ -117,7 +148,8 @@ For a **30–100 user pilot** after staging works, see [PILOT-LAUNCH-CHECKLIST.m
 
 ## Next steps
 
-- [Public Deploy](./PUBLIC-DEPLOY.md)
+- [Three-Phase Roadmap (Phase A/B/C)](./docs/ROADMAP-THREE-PHASES.md) — **primary execution path**
+- [Public Deploy](./docs/PUBLIC-DEPLOY.md)
 - [Pilot Launch Checklist](./PILOT-LAUNCH-CHECKLIST.md)
 - [API Spec](./API-SPEC.md)
 - [Architecture](./ARCHITECTURE.md)

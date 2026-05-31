@@ -11,7 +11,21 @@ Through CP, AI Credits, Compute Credits, and future protocol tokens, PoCP measur
 
 **PoCP AI Commons** is the first open-source application scenario of this network — the first practical loop of the **Proof of Contribution Protocol (PoCP)**.
 
-It is designed to explore a new question for the age of AI:
+## PoCP AI Commons
+
+PoCP AI Commons is the first application scenario of PoCP Neural Commons Network.
+
+It starts with the first living loop:
+
+```text
+Contribution → Verification → CP → AI Credits → AI Use → More Contribution
+```
+
+The network target expands this into capability matching, neural routing, invocation, settlement, and reputation — see [Neural Commons Architecture](#neural-commons-architecture) below.
+
+**Execution path:** we ship in three phases — **Phase A** (demonstrable public loop, ~80% done) → **Phase B** (operable distributed network) → **Phase C** (contribution internet). See [docs/ROADMAP-THREE-PHASES.md](./docs/ROADMAP-THREE-PHASES.md).
+
+---
 
 > If AI becomes a basic productive capability, how can ordinary people gain fair access to it through real contribution?
 
@@ -150,6 +164,31 @@ See [NO-TOKEN-FIRST.md](./NO-TOKEN-FIRST.md).
 
 Target architecture for the distributed intelligence and compute network (PoCP AI Commons remains the first application):
 
+### Master plan & execution
+
+| Document | Purpose |
+|----------|---------|
+| [NEURAL-COMMONS-MASTER-PLAN.md](./NEURAL-COMMONS-MASTER-PLAN.md) | Master plan and network layers |
+| [NEURAL-COMMONS-ROADMAP.md](./NEURAL-COMMONS-ROADMAP.md) | Roadmap and milestones |
+| [NEURAL-COMMONS-PR-PLAN.md](./NEURAL-COMMONS-PR-PLAN.md) | Suggested PR breakdown |
+| [README-NEURAL-COMMONS.md](./README-NEURAL-COMMONS.md) | Neural Commons README companion |
+
+### Architecture modules (9 layers)
+
+| Document | Purpose |
+|----------|---------|
+| [01 — Entity Registry](./docs/architecture/01-ENTITY-REGISTRY.md) | Entity registry and identity |
+| [02 — Capability Registry](./docs/architecture/02-CAPABILITY-REGISTRY.md) | Capability registration and discovery |
+| [03 — Neural Routing](./docs/architecture/03-NEURAL-ROUTING.md) | Neural routing and matching |
+| [04 — Invocation Ledger](./docs/architecture/04-INVOCATION-LEDGER.md) | Invocation ledger and receipts |
+| [05 — Verification & Proof](./docs/architecture/05-VERIFICATION-PROOF.md) | Verification and proof packets |
+| [06 — Token Measurement](./docs/architecture/06-TOKEN-MEASUREMENT.md) | CP, AI Credits, Compute Credits accounting |
+| [07 — Settlement Layer](./docs/architecture/07-SETTLEMENT-LAYER.md) | Settlement and attribution |
+| [08 — Reputation & Governance](./docs/architecture/08-REPUTATION-GOVERNANCE.md) | Reputation and governance |
+| [09 — Neural Graph](./docs/architecture/09-NEURAL-GRAPH.md) | Neural graph and network topology |
+
+### Network specs & integration
+
 | Document | Purpose |
 |----------|---------|
 | [POCP-NEURAL-COMMONS-NETWORK.md](./POCP-NEURAL-COMMONS-NETWORK.md) | Network overview and layers |
@@ -160,9 +199,11 @@ Target architecture for the distributed intelligence and compute network (PoCP A
 | [NEURAL-ROUTING-SPEC.md](./NEURAL-ROUTING-SPEC.md) | Neural routing and matching |
 | [SETTLEMENT-LAYER-SPEC.md](./SETTLEMENT-LAYER-SPEC.md) | Settlement and attribution |
 | [REPUTATION-GOVERNANCE-SPEC.md](./REPUTATION-GOVERNANCE-SPEC.md) | Reputation and governance |
-| [PR-PLAN-NEURAL-COMMONS.md](./PR-PLAN-NEURAL-COMMONS.md) | Suggested PR breakdown |
+| [PR-PLAN-NEURAL-COMMONS.md](./PR-PLAN-NEURAL-COMMONS.md) | Earlier PR plan (superseded by NEURAL-COMMONS-PR-PLAN) |
 | [docs/NEURAL-COMMONS-INTEGRATION-GUIDE.md](./docs/NEURAL-COMMONS-INTEGRATION-GUIDE.md) | Integration guide |
 | [docs/NEURAL-COMMONS-GLOSSARY.md](./docs/NEURAL-COMMONS-GLOSSARY.md) | Terminology |
+| [docs/implementation/CURSOR-NEURAL-COMMONS-EXECUTION.md](./docs/implementation/CURSOR-NEURAL-COMMONS-EXECUTION.md) | Cursor execution checklist |
+| [docs/implementation/MIGRATION-FROM-AI-COMMONS.md](./docs/implementation/MIGRATION-FROM-AI-COMMONS.md) | Migration from AI Commons MVP |
 
 ---
 
@@ -186,6 +227,30 @@ Advanced anti-abuse intelligence, commercial neural routing, enterprise governan
 | [OPEN-SOURCE-ROADMAP.md](./OPEN-SOURCE-ROADMAP.md) | Open-source roadmap |
 | [COMMERCIAL-MODULES.md](./COMMERCIAL-MODULES.md) | Commercial module planning |
 | [docs/OPEN-CORE-INTEGRATION-GUIDE.md](./docs/OPEN-CORE-INTEGRATION-GUIDE.md) | Integration guide |
+
+---
+
+## Public Open-Source Core
+
+PoCP keeps its protocol skeleton, schemas, reference implementation, SDK-facing interfaces, and community tools open source.
+
+The public repository is intended to remain readable, runnable, auditable, and contributor-friendly.
+
+Commercial intelligence capabilities — including advanced anti-abuse intelligence, commercial neural routing, managed compute scheduling, enterprise governance, private deployment tooling, and advanced reputation / risk models — may be implemented in separate commercial modules.
+
+| Document | Purpose |
+|----------|---------|
+| [OPEN-SOURCE-CORE-QUALITY.md](./OPEN-SOURCE-CORE-QUALITY.md) | Public core quality standards |
+| [REFERENCE-IMPLEMENTATION.md](./REFERENCE-IMPLEMENTATION.md) | Reference implementation scope |
+| [PUBLIC-CORE-BOUNDARY.md](./PUBLIC-CORE-BOUNDARY.md) | What stays public |
+| [COMMERCIAL-RESERVED-BOUNDARY.md](./COMMERCIAL-RESERVED-BOUNDARY.md) | What remains commercial |
+| [REPO-HEALTH-CHECKLIST.md](./REPO-HEALTH-CHECKLIST.md) | Repository health checklist |
+| [CONTRIBUTOR-QUALITY-GUIDE.md](./CONTRIBUTOR-QUALITY-GUIDE.md) | Contributor quality guide |
+| [docs/FORMATTER-AND-CI-GUIDE.md](./docs/FORMATTER-AND-CI-GUIDE.md) | Formatter and CI setup |
+
+Some architecture documents describe the target modular structure. The current reference implementation may still use aggregated routers or services while modularization is in progress.
+
+**Repository health check:** `python backend/scripts/health_check.py`
 
 ---
 

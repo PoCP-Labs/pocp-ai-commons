@@ -40,10 +40,12 @@ class EntityOntologyTests(unittest.TestCase):
     def tearDown(self):
         self.db.close()
 
-    def test_ontology_document_has_nine_types(self):
+    def test_ontology_document_has_fourteen_types(self):
         doc = ontology_document()
-        self.assertEqual(doc["spec_version"], "0.1")
-        self.assertEqual(len(doc["entity_types"]), 9)
+        self.assertEqual(doc["spec_version"], "0.3")
+        self.assertEqual(len(doc["entity_types"]), 14)
+        self.assertIn("compute_node", doc["entity_types"])
+        self.assertIn("protocol_treasury", doc["entity_types"])
         self.assertIn("witness", doc["participant_roles"])
         self.assertEqual(doc["docs"], "docs/ENTITY-ONTOLOGY.md")
 

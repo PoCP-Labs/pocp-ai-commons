@@ -17,14 +17,21 @@ class EntityType(str, enum.Enum):
     tool = "tool"
     dataset = "dataset"
     workflow = "workflow"
+    compute_node = "compute_node"
+    verifier_node = "verifier_node"
+    reviewer_node = "reviewer_node"
     organization = "organization"
     community = "community"
+    sponsor = "sponsor"
+    protocol_treasury = "protocol_treasury"
 
 
 class EntityStatus(str, enum.Enum):
     active = "active"
     inactive = "inactive"
     pending = "pending"
+    suspended = "suspended"
+    archived = "archived"
 
 
 class Entity(Base):

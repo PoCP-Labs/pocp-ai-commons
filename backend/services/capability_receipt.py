@@ -22,6 +22,8 @@ _ACTION_CAPABILITY_KIND = {
     "invokes_llm": "llm",
     "invoke_tool": "tool",
     "invoke_mcp": "tool",
+    "invokes_mcp": "tool",
+    "invokes_peer_mcp": "tool",
     "reads_dataset": "dataset",
 }
 

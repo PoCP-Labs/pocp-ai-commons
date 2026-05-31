@@ -1,58 +1,45 @@
-# Pull Request
+## Purpose
 
-## Summary
+What does this PR change?
 
-Describe what this PR changes.
+## Scope
 
-## Type of Contribution
+Included:
 
-- [ ] Documentation
-- [ ] Frontend
-- [ ] Backend
-- [ ] AI Verifier
-- [ ] Skill
-- [ ] Research
-- [ ] Governance
-- [ ] Anti-abuse
-- [ ] Community
-- [ ] Other
+- 
 
-## Why This Matters
+Not included:
 
-Explain how this supports PoCP AI Commons.
+- 
 
-## How to Test
+## Open Core Boundary
 
-Provide steps:
+Does this PR affect public-core vs commercial-reserved boundaries?
 
-```bash
-# commands or manual steps
-```
+- [ ] No
+- [ ] Yes, explanation below
+
+Explanation:
+
+## Tests / Verification
+
+- [ ] Ran `python backend/scripts/health_check.py`
+- [ ] Ran smoke test if applicable
+- [ ] Ran formatter / linter if applicable
+- [ ] Manually tested relevant UI/API if applicable
 
 ## AI Assistance Disclosure
 
-- [ ] I did not use AI assistance.
-- [ ] I used AI assistance and reviewed the output before submitting.
+Was AI used heavily to create this PR?
 
-Details if applicable:
-
-## Risk Notes
-
-Does this affect:
-
-- [ ] CP
-- [ ] AI Credits
-- [ ] Wallet
-- [ ] Ledger
-- [ ] Verification
-- [ ] Human review
-- [ ] Reputation
-- [ ] Governance
-- [ ] User data
+- [ ] No
+- [ ] Yes, briefly describe:
 
 ## Checklist
 
-- [ ] I read `CONTRIBUTING.md`.
-- [ ] I followed the Code of Conduct.
-- [ ] I updated documentation if needed.
-- [ ] I tested my changes or explained why testing is not needed.
+- [ ] Existing demo is preserved.
+- [ ] No secrets are committed.
+- [ ] No commercial anti-abuse internals are exposed.
+- [ ] No commercial routing internals are exposed.
+- [ ] No private risk weights are exposed.
+- [ ] README/docs updated if behavior changed.

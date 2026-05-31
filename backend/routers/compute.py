@@ -29,7 +29,7 @@ router = APIRouter(prefix="/api/v1/compute", tags=["compute"])
 
 class ComputeJobRequest(BaseModel):
     capability: str = Field(
-        description="llm_inference | embeddings | witness | mcp_host | agent_runtime"
+        description="llm_inference | embeddings | witness | mcp_host | agent_runtime | training"
     )
     contribution_id: str | None = None
     task_id: str | None = None
@@ -147,6 +147,115 @@ def submit_compute_job(
 
 class ComputeExecuteRequest(BaseModel):
     context: dict = Field(default_factory=dict)
+
+
+class AdapterImportRequest(BaseModel):
+    display_name: str | None = None
+    entity_id: str | None = Field(default=None, max_length=36)
+    external_provider_id: str | None = None
+    offers: list[dict[str, Any]] | None = None
+    endpoints: dict[str, Any] = Field(default_factory=dict)
+    capacity: dict[str, Any] = Field(default_factory=dict)
+    policy: dict[str, Any] = Field(default_factory=dict)
+    external: dict[str, Any] = Field(default_factory=dict)
+    models: list[str] = Field(default_factory=list)
+    summary: str | None = None
+    status: str = "active"
+
+
+class AdapterJobRequest(BaseModel):
+    capability: str = "llm_inference"
+    provider_entity_id: str
+    contribution_id: str | None = None
+    task_id: str | None = None
+    trace_id: str | None = None
+    constraints: dict[str, Any] = Field(default_factory=dict)
+
+
+@router.get("/adapters")
+def list_compute_adapters():
+    """Catalog of external compute network adapters (Akash, Render, …)."""
+    from services.compute_adapters.service import list_adapter_catalog
+
+    return list_adapter_catalog()
+
+
+@router.post("/adapters/{slug}/import")
+def import_compute_adapter_provider(
+    slug: str,
+    body: AdapterImportRequest,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    """Register external network provider as community Entity + compute_profile."""
+    from services.compute_adapters.service import import_adapter_provider
+
+    try:
+        result = import_adapter_provider(
+            db,
+            slug,
+            body.model_dump(exclude_none=True),
+            owner_entity_id=current_user.entity_id,
+        )
+        db.commit()
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/adapters/{slug}/jobs")
+def submit_adapter_compute_job(
+    slug: str,
+    body: AdapterJobRequest,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    """Submit contribution-bound job to external adapter (stub or live)."""
+    from services.anti_abuse import check_compute_job_limits, require_contribution_bound_compute
+    from services.compute_adapters.service import submit_adapter_job
+
+    require_contribution_bound_compute(
+        contribution_id=body.contribution_id,
+        task_id=body.task_id,
+    )
+    check_compute_job_limits(db, current_user.entity_id)
+
+    try:
+        result = submit_adapter_job(
+            db,
+            slug,
+            capability=body.capability,
+            requester_entity_id=current_user.entity_id,
+            provider_entity_id=body.provider_entity_id,
+            contribution_id=body.contribution_id,
+            task_id=body.task_id,
+            trace_id=body.trace_id,
+            constraints=body.constraints,
+        )
+        db.commit()
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/adapters/{slug}/jobs/{job_id}/poll")
+def poll_adapter_compute_job(
+    slug: str,
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    """Poll external adapter job; completes PoCP ComputeReceipt when ready."""
+    from services.compute_adapters.service import poll_adapter_job
+    from services.compute_jobs import get_job_record
+
+    existing = get_job_record(db, job_id)
+    if existing.get("initiator_entity_id") != current_user.entity_id:
+        raise HTTPException(status_code=403, detail="Not authorized to poll this job")
+
+    job = poll_adapter_job(db, slug, job_id)
+    db.commit()
+    return job
 
 
 @router.get("/jobs/{job_id}")

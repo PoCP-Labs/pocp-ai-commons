@@ -21,6 +21,7 @@ from services.entity_register import validate_participants_for_submission
 from services.evidence import POCP_META_KEY, enrich_evidence
 from services.evidence_validate import validate_evidence_urls
 from services.provenance import attach_provenance_to_evidence
+from services.training_contribution import TRAINING_TYPE, enrich_training_evidence, validate_training_evidence
 
 
 def submit_contribution_event(
@@ -70,6 +71,13 @@ def submit_contribution_event(
         meta = dict(evidence.get(POCP_META_KEY) or {})
         meta["url_checks"] = url_report
         evidence[POCP_META_KEY] = meta
+
+    if contribution_type.strip().lower() == TRAINING_TYPE:
+        try:
+            validate_training_evidence(evidence)
+            evidence = enrich_training_evidence(evidence)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     contribution = ContributionEvent(
         task_id=task_id,

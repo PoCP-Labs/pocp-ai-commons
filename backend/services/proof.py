@@ -36,6 +36,7 @@ from services.ledger_merkle import build_inclusion_bundle
 from services.rights_conversion import build_contribution_to_rights_conversion
 from services.capability_receipt import build_step_capability_receipts
 from services.compute_attribution import build_compute_attribution_block
+from services.mcp_invocation_context import build_mcp_invocation_context
 from services.finalization import build_proof_finalization_block
 
 POCP_PROOF_SPEC_VERSION = "0.1"
@@ -58,6 +59,7 @@ PROOF_LAYER_COVERAGE = [
     "human_ai_verification_state",
     "finalization",
     "invocation_trace",
+    "mcp_invocation_context",
     "compute_attribution",
     "contribution_graph",
     "contribution_to_rights_conversion",
@@ -329,6 +331,11 @@ def build_contribution_proof_packet(db: Session, contribution_id: str) -> dict |
             "trace_count": len(invocations),
         },
         "compute_attribution": build_compute_attribution_block(db, contribution.id, invocations),
+        "mcp_invocation_context": build_mcp_invocation_context(
+            invocations,
+            contribution_id=contribution.id,
+            entities=entities,
+        ),
         "contribution_graph": {
             "nodes": [_entity_snapshot(e) for e in entities.values()],
             "edges": graph_edges,

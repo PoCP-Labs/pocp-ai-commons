@@ -1,0 +1,67 @@
+# Training contribution evidence schema v0.1 (draft)
+# Gensyn-inspired: training as a contribution type with attestation fields.
+# See docs/TRAINING-CONTRIBUTION-SPEC.md
+
+spec_version: "0.1"
+schema_id: pocp.training_contribution.v0.1
+contribution_type: training
+
+required_evidence_fields:
+  - training.job_id
+  - training.objective
+  - training.dataset_ref
+  - training.model_ref
+
+optional_evidence_fields:
+  - training.hyperparameters
+  - training.checkpoints
+  - training.metrics
+  - training.verifier_reports
+
+compute_receipt:
+  capability: training
+  integrity_extensions:
+    - training_attestation
+    - verifier_signatures
+  resource_units:
+    - gpu_seconds
+    - gpu_count
+    - network
+
+witness:
+  plugins:
+    - multi_verifier
+    - external_training_verifier
+  min_verifiers: 1
+
+finalization:
+  auto_on_job_complete: false
+  requires_human_or_policy: true
+
+gensyn_alignment:
+  borrow:
+    - verifiable training work unit
+    - external verifier network pattern
+    - checkpoint / metric attestation
+  reject:
+    - on_chain training market as PoCP spine
+    - token settlement as CP substitute
+
+example:
+  _pocp:
+    evidence_standard: pocp.training_contribution.v0.1
+    tags: [training, fine_tune, gensyn_benchmark]
+  training:
+    job_id: train-job-demo-001
+    objective: fine_tune_study_agent
+    dataset_ref: dataset:entity-id-or-cid
+    model_ref: huggingface:org/model-name
+    hyperparameters:
+      epochs: 3
+      learning_rate: 2.0e-5
+    metrics:
+      loss_final: 0.42
+    verifier_reports:
+      - verifier: external-training-verifier
+        passed: true
+        score: 0.91

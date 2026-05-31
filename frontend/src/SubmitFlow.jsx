@@ -13,7 +13,12 @@ const ROLES = [
 
 const STEPS = ["execute", "submit", "verify", "done"];
 
-export default function SubmitFlow({ api, entities, tasks, currentEntityId, onComplete }) {
+const CONTRIBUTION_TYPES = [
+  { value: "knowledge", label: "Knowledge / docs" },
+  { value: "training", label: "Training (Gensyn schema)" },
+];
+
+export default function SubmitFlow({ api, entities, tasks, currentEntityId, onComplete, onProofLink }) {
   const humans = entities.filter((e) => e.entity_type === "human");
   const agents = entities.filter((e) => e.entity_type === "agent");
   const skills = entities.filter((e) => e.entity_type === "skill");
@@ -28,6 +33,7 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
 
   const [form, setForm] = useState({
     taskId: tasks[0]?.id || "",
+    contributionType: "knowledge",
     creatorId: humans[0]?.id || "",
     agentId: agents[0]?.id || "",
     skillId: skills[0]?.id || "",
@@ -39,6 +45,11 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
     description: "",
     contentPreview: "",
     executeInput: tasks[0]?.description || "Organize study notes for this task.",
+    trainingJobId: "",
+    trainingObjective: "fine_tune_study_agent",
+    trainingDatasetRef: "dataset:pocp-demo",
+    trainingModelRef: "huggingface:org/model",
+    trainingLoss: "",
   });
 
   const [contributionId, setContributionId] = useState(null);
@@ -63,10 +74,32 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
     return res.json();
   }
 
+  function copyProofLink() {
+    if (!contributionId) return;
+    const url = `${window.location.origin}${window.location.pathname}?proof=${contributionId}`;
+    navigator.clipboard?.writeText(url).catch(() => {});
+    setMessage("Proof link copied — share or open in Verify Proof tab.");
+    onProofLink?.(contributionId);
+  }
+
   async function handleInvoke() {
     setLoading(true);
     setMessage(null);
     try {
+      if (form.contributionType === "training") {
+        const jobId = form.trainingJobId || `train-${Date.now().toString(36)}`;
+        setForm((f) => ({
+          ...f,
+          trainingJobId: jobId,
+          description: f.description || `Training: ${f.trainingObjective}`,
+          contentPreview: `dataset=${f.trainingDatasetRef}; model=${f.trainingModelRef}`,
+        }));
+        setMessage(`Training template ready — job ${jobId}`);
+        setStep("submit");
+        setLoading(false);
+        return;
+      }
+
       const agent = agents.find((a) => a.id === form.agentId);
       const useStudyAgent = agent?.name === "StudyAgent";
 
@@ -139,43 +172,118 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
         participants.push({ entity_id: form.sponsorId, role: "sponsor", weight: 0.05 });
       }
 
+      const isTraining = form.contributionType === "training";
+      const evidence = isTraining
+        ? {
+            training: {
+              job_id: form.trainingJobId || `train-${Date.now().toString(36)}`,
+              objective: form.trainingObjective,
+              dataset_ref: form.trainingDatasetRef,
+              model_ref: form.trainingModelRef,
+              ...(form.trainingLoss !== "" && form.trainingLoss != null
+                ? { metrics: { loss_final: Number(form.trainingLoss) } }
+                : {}),
+            },
+            content_preview: form.contentPreview,
+          }
+        : {
+            content_preview: form.contentPreview,
+            artifact: "backend/services/proof.py",
+            capability_execution: {
+              trace_id: executionTraceId,
+              agent_entity_id: form.agentId,
+              skill_entity_id: form.skillId,
+            },
+          };
+
       const contrib = await post("/api/v1/contributions", {
         task_id: form.taskId,
         primary_entity_id: form.creatorId,
-        contribution_type: "knowledge",
-        description: form.description || "New contribution via PoCP workflow",
-        evidence: {
-          content_preview: form.contentPreview,
-          artifact: "backend/services/proof.py",
-          capability_execution: {
-            trace_id: executionTraceId,
-            agent_entity_id: form.agentId,
-            skill_entity_id: form.skillId,
-          },
-        },
-        provenance: {
-          creation_mode: "ai_assisted",
-          ai_tools_used: ["cursor"],
-          human_experts_cited: [],
-          verification_claims: [
-            { claim_type: "self_reviewed", details: "Submitted via PoCP workflow UI" },
-          ],
-        },
+        contribution_type: form.contributionType,
+        description:
+          form.description ||
+          (isTraining ? `Training contribution: ${form.trainingObjective}` : "New contribution via PoCP workflow"),
+        evidence,
+        provenance: isTraining
+          ? {
+              creation_mode: "mixed",
+              ai_tools_used: ["compute_adapter"],
+              verification_claims: [
+                { claim_type: "training_attestation", details: "Submitted via training workflow UI" },
+              ],
+            }
+          : {
+              creation_mode: "ai_assisted",
+              ai_tools_used: ["cursor"],
+              human_experts_cited: [],
+              verification_claims: [
+                { claim_type: "self_reviewed", details: "Submitted via PoCP workflow UI" },
+              ],
+            },
         participants,
       });
 
-      await post("/api/v1/invocations", {
-        initiator_id: form.creatorId,
-        skill_entity_id: form.skillId,
-        agent_entity_id: form.agentId,
-        model_provider: "deepseek",
-        task_id: form.taskId,
-        contribution_id: contrib.id,
-      });
+      if (!isTraining) {
+        await post("/api/v1/invocations", {
+          initiator_id: form.creatorId,
+          skill_entity_id: form.skillId,
+          agent_entity_id: form.agentId,
+          model_provider: "deepseek",
+          task_id: form.taskId,
+          contribution_id: contrib.id,
+        });
+      } else {
+        const token = localStorage.getItem(TOKEN_KEY);
+        if (token) {
+          try {
+            const imported = await post("/api/v1/compute/adapters/gensyn/import", {
+              entity_id: "pocp-adapt-gensyn-ui",
+              display_name: "Gensyn Stub (UI)",
+              offers: [{ capability: "training", adapters: ["gensyn"] }],
+            });
+            const job = await post("/api/v1/compute/adapters/gensyn/jobs", {
+              capability: "training",
+              provider_entity_id: imported.entity_id,
+              contribution_id: contrib.id,
+              task_id: form.taskId,
+              constraints: {
+                objective: form.trainingObjective,
+                job_id: form.trainingJobId || evidence.training?.job_id,
+                dataset_ref: form.trainingDatasetRef,
+                model_ref: form.trainingModelRef,
+              },
+            });
+            let polled = job;
+            for (let i = 0; i < 5 && polled.status !== "completed"; i += 1) {
+              polled = await post(
+                `/api/v1/compute/adapters/gensyn/jobs/${job.job_id}/poll`,
+                {}
+              );
+            }
+            const attestation = polled.compute_receipt?.integrity?.training_attestation;
+            setMessage(
+              attestation
+                ? `Training submitted + Gensyn stub attestation (${polled.status})`
+                : `Training submitted; adapter job ${polled.status || job.status}`
+            );
+          } catch (adapterErr) {
+            setMessage(
+              `Contribution submitted; Gensyn adapter skipped: ${adapterErr.message}`
+            );
+          }
+        } else {
+          setMessage(
+            `Contribution submitted (${contrib.id.slice(0, 8)}…). Dev login to dispatch Gensyn adapter job.`
+          );
+        }
+      }
+
+      if (!isTraining) {
+        setMessage(`Contribution submitted (${contrib.id.slice(0, 8)}…)`);
+      }
 
       setContributionId(contrib.id);
       setStep("verify");
-      setMessage(`Contribution submitted (${contrib.id.slice(0, 8)}…)`);
     } catch (err) {
       setMessage(`Error: ${err.message}`);
     } finally {
@@ -304,7 +412,70 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
             </select>
           </label>
         )}
-        {step === "execute" && (
+        <label className="field-label form-grid__full">
+          Contribution type
+          <select
+            className="field-select"
+            value={form.contributionType}
+            onChange={(e) => setForm({ ...form, contributionType: e.target.value })}
+          >
+            {CONTRIBUTION_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        {step === "execute" && form.contributionType === "training" && (
+          <>
+            <label className="field-label">
+              Training job ID
+              <input
+                className="field-input"
+                value={form.trainingJobId}
+                onChange={(e) => setForm({ ...form, trainingJobId: e.target.value })}
+                placeholder="train-001 (auto if empty)"
+              />
+            </label>
+            <label className="field-label">
+              Objective
+              <input
+                className="field-input"
+                value={form.trainingObjective}
+                onChange={(e) => setForm({ ...form, trainingObjective: e.target.value })}
+              />
+            </label>
+            <label className="field-label form-grid__full">
+              Dataset ref
+              <input
+                className="field-input"
+                value={form.trainingDatasetRef}
+                onChange={(e) => setForm({ ...form, trainingDatasetRef: e.target.value })}
+                placeholder="dataset:entity-id or CID"
+              />
+            </label>
+            <label className="field-label form-grid__full">
+              Model ref
+              <input
+                className="field-input"
+                value={form.trainingModelRef}
+                onChange={(e) => setForm({ ...form, trainingModelRef: e.target.value })}
+                placeholder="huggingface:org/model"
+              />
+            </label>
+            <label className="field-label">
+              Final loss (optional)
+              <input
+                className="field-input"
+                type="number"
+                step="any"
+                value={form.trainingLoss}
+                onChange={(e) => setForm({ ...form, trainingLoss: e.target.value })}
+              />
+            </label>
+          </>
+        )}
+        {step === "execute" && form.contributionType !== "training" && (
           <label className="field-label form-grid__full">
             Execute input (Agent + Skill)
             <textarea
@@ -347,7 +518,7 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
       <div>
         {step === "execute" && (
           <button type="button" className="btn btn--primary" onClick={handleInvoke} disabled={loading}>
-            1. Execute Agent + Skill
+            {form.contributionType === "training" ? "1. Prepare training submit" : "1. Execute Agent + Skill"}
           </button>
         )}
         {step === "submit" && (
@@ -361,19 +532,24 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
           </button>
         )}
         {step === "done" && (
-          <button
-            type="button"
-            className="btn btn--ghost"
-            onClick={() => {
-              setStep("execute");
-              setContributionId(null);
-              setExecutionTraceId(null);
-              setApprovalResult(null);
-              setVerifyStatus(null);
-            }}
-          >
-            Start New Block
-          </button>
+          <>
+            <button type="button" className="btn btn--ghost" onClick={copyProofLink} disabled={!contributionId}>
+              Copy proof link
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => {
+                setStep("execute");
+                setContributionId(null);
+                setExecutionTraceId(null);
+                setApprovalResult(null);
+                setVerifyStatus(null);
+              }}
+            >
+              Start New Block
+            </button>
+          </>
         )}
       </div>
 

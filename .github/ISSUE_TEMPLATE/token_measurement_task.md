@@ -1,28 +1,25 @@
 ---
 name: Token Measurement Task
-about: Implement or design CP, AI Credits, Compute Credits, or Protocol Token accounting
+about: Add or improve internal protocol accounting units
 title: "[Token Measurement] "
-labels: "token-measurement, settlement"
+labels: "token-measurement"
 assignees: ""
 ---
 
 ## Goal
 
-What token measurement capability should be added?
-
 ## Unit
 
 - [ ] CP
-- [ ] AI Credits
-- [ ] Compute Credits
-- [ ] PoCP Protocol Token internal unit
-
-## Acceptance criteria
-
-- [ ] 
-- [ ] 
-- [ ] 
+- [ ] AIC
+- [ ] CC
+- [ ] PT internal account
 
 ## Important
 
 Tokenized measurement does not mean immediate public token issuance.
+
+## Acceptance criteria
+
+- [ ] 
+- [ ]

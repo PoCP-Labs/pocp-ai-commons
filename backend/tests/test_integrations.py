@@ -224,6 +224,18 @@ class CommunityPartnerTests(unittest.TestCase):
         slugs = {p["slug"] for p in list_partners()}
         self.assertIn("forgefed", slugs)
         self.assertIn("ollama", slugs)
+        self.assertIn("akash", slugs)
+
+    def test_benchmark_inspirations_registered(self):
+        from services.external_inspiration import get_inspiration, list_inspirations
+
+        slugs = {i["slug"] for i in list_inspirations()}
+        for slug in ("gensyn", "akash", "gitcoin", "mcp", "provenancekit", "io-net"):
+            self.assertIn(slug, slugs)
+        self.assertIsNotNone(get_inspiration("akash"))
+        declined = {i["slug"] for i in list_inspirations(include_declined=True) if i.get("declined")}
+        self.assertIn("bittensor", declined)
+        self.assertIn("virtuals-protocol", declined)
 
     def test_match_witness_partners(self):
         from services.community_partner import match_partners_for_capability

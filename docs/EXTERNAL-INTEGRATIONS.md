@@ -423,3 +423,51 @@ All integration endpoints live under `backend/routers/integrations.py` with tag 
 | GET | `/api/v1/crypto/readiness` | Hybrid suite / PQC readiness |
 
 See [PORTABLE-PROOF-FEDERATION.md](./PORTABLE-PROOF-FEDERATION.md) · [QUANTUM-READINESS.md](./QUANTUM-READINESS.md).
+
+---
+
+## 27. Compute Adapters — Akash / Render / io.net / Gensyn (evaluating)
+
+**Inspired by:** [Akash Network](https://akash.network/) · [Render Network](https://rendernetwork.com/) · [io.net](https://io.net/) · [Gensyn](https://www.gensyn.ai/)
+
+**Mapping:** [COMPUTE-ADAPTER-SPEC.md](./COMPUTE-ADAPTER-SPEC.md) · [inspiration-mappings/akash.md](./inspiration-mappings/akash.md) · [inspiration-mappings/ionet.md](./inspiration-mappings/ionet.md) · [inspiration-mappings/gensyn.md](./inspiration-mappings/gensyn.md)
+
+**Borrow:** external provider registration, contribution-bound job dispatch, `ComputeReceipt` with `external_job_id`, GPU / training resource units as evidence.
+
+**Reject:** AKT / RNDR / IO as PoCP settlement currency; job success auto-finalizes contributions; rebuilding DePIN or training markets inside PoCP.
+
+**PoCP modules:** `services/compute_adapters/*`, `compute_jobs.py`, `compute_receipt.py`, `compute_settlement.py`
+
+| Method | Path | Role |
+|--------|------|------|
+| GET | `/api/v1/compute/adapters` | Adapter catalog |
+| POST | `/api/v1/compute/adapters/{slug}/import` | Register provider Entity |
+| POST | `/api/v1/compute/adapters/{slug}/jobs` | Submit external job (stub/live) |
+| POST | `/api/v1/compute/adapters/{slug}/jobs/{job_id}/poll` | Poll + receipt |
+| GET | `/api/v1/contributions/{id}/compute-jobs` | Jobs bound to a contribution |
+
+Registry slugs: `akash`, `render-network`, `io-net`, `gensyn` in `external_inspirations.yaml` round 8.
+
+Proof layers in contribution packets: `mcp_invocation_context` (MCP steps) · `compute_attribution` (receipt hashes) · training attestation under `receipt.integrity.training_attestation`.
+
+---
+
+## 28. Training Contribution — Gensyn pattern (evaluating)
+
+**Inspired by:** [Gensyn](https://www.gensyn.ai/) decentralized training / verification network
+
+**Mapping:** [TRAINING-CONTRIBUTION-SPEC.md](./TRAINING-CONTRIBUTION-SPEC.md) · [inspiration-mappings/gensyn.md](./inspiration-mappings/gensyn.md) · [protocol/CAPABILITY-SCHEMA-v0.3.md](./protocol/CAPABILITY-SCHEMA-v0.3.md)
+
+**Borrow:** training-as-work evidence schema, external verifier slot, checkpoint / metric attestation on `ComputeReceipt`.
+
+**Reject:** on-chain training market as PoCP spine; token settlement substituting CP / AI Credits.
+
+**PoCP modules:** `training_contribution.py`, `contribution_submit.py`, `compute_adapters/gensyn.py`, `SubmitFlow.jsx` (training type + optional adapter dispatch)
+
+| Method | Path | Role |
+|--------|------|------|
+| POST | `/api/v1/contributions` | `contribution_type: training` + `evidence.training.*` |
+| POST | `/api/v1/compute/adapters/gensyn/jobs` | Contribution-bound training job (stub) |
+| GET | `/api/v1/contributions/{id}/proof` | Includes compute + training settlement layers |
+
+Schema: `backend/config/schemas/training_contribution_v0.1.yaml` · evidence standard `pocp.training_contribution.v0.1`.

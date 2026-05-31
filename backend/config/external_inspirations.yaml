@@ -518,6 +518,239 @@ inspirations:
           - GET /api/v1/wallets/export
           - POST /api/v1/wallets/export/verify
 
+  gensyn:
+    display_name: Gensyn
+    entity_id: pocp-insp-gensyn
+    entity_type: community
+    portable_id: web:gensyn.ai
+    homepage_url: https://www.gensyn.ai/
+    status: evaluating
+    integration_round: 8
+    summary: >
+      Decentralized AI training, verification, and evolution network — benchmark for
+      compute job attestation and training-as-contribution patterns (adapter only).
+    mapping_doc: docs/inspiration-mappings/gensyn.md
+    benchmark_tier: ai_training_network
+    contributions:
+      - id: gensyn-training-contribution-type
+        title: "[evaluating] Training job as Contribution type + ComputeReceipt"
+        integration_section: 26
+        pocp_modules:
+          - docs/TRAINING-CONTRIBUTION-SPEC.md
+          - backend/config/schemas/training_contribution_v0.1.yaml
+          - backend/services/compute_receipt.py
+          - backend/services/compute_attribution.py
+        api_paths:
+          - POST /api/v1/compute/adapters/gensyn/import
+          - POST /api/v1/compute/adapters/gensyn/jobs
+      - id: gensyn-training-adapter-stub
+        title: Gensyn training adapter stub with training_attestation receipt
+        integration_section: 27
+        pocp_modules:
+          - backend/services/compute_adapters/gensyn.py
+        api_paths:
+          - GET /api/v1/compute/adapters
+
+  akash:
+    display_name: Akash Network
+    entity_id: pocp-insp-akash
+    entity_type: community
+    portable_id: github:akash-network/node
+    github_url: https://github.com/akash-network/node
+    homepage_url: https://akash.network/
+    status: evaluating
+    integration_round: 8
+    summary: >
+      Decentralized compute marketplace — external Compute Entity source via PoCP Compute Adapter.
+    mapping_doc: docs/inspiration-mappings/akash.md
+    benchmark_tier: compute_marketplace
+    contributions:
+      - id: akash-compute-adapter
+        title: "[evaluating] Akash deployment → ComputeProfile external provider"
+        integration_section: 26
+        pocp_modules:
+          - docs/COMPUTE-ADAPTER-SPEC.md
+          - backend/services/compute_profile.py
+          - backend/services/compute_scheduler.py
+        api_paths:
+          - POST /api/v1/compute/jobs
+          - GET /api/v1/compute/providers
+
+  render-network:
+    display_name: Render Network
+    entity_id: pocp-insp-render
+    entity_type: community
+    portable_id: web:rendernetwork.com
+    homepage_url: https://rendernetwork.com/
+    status: evaluating
+    integration_round: 8
+    summary: >
+      Decentralized GPU network — GPU compute adapter candidate for llm_inference jobs.
+    mapping_doc: docs/inspiration-mappings/akash.md
+    benchmark_tier: compute_marketplace
+    contributions:
+      - id: render-gpu-adapter
+        title: "[evaluating] GPU provider adapter with ComputeReceipt attribution"
+        integration_section: 26
+        pocp_modules:
+          - docs/COMPUTE-ADAPTER-SPEC.md
+          - backend/services/compute_executor.py
+        api_paths:
+          - POST /api/v1/compute/jobs
+
+  io-net:
+    display_name: io.net
+    entity_id: pocp-insp-io-net
+    entity_type: community
+    portable_id: web:io.net
+    homepage_url: https://io.net/
+    github_url: https://github.com/ionet-official
+    status: evaluating
+    integration_round: 8
+    summary: >
+      Decentralized GPU network for ML workloads — compute adapter candidate alongside
+      Akash/Render; contribution-bound jobs with ComputeReceipt only.
+    mapping_doc: docs/inspiration-mappings/ionet.md
+    benchmark_tier: gpu_network
+    contributions:
+      - id: ionet-gpu-adapter
+        title: "[evaluating] io.net cluster → ComputeProfile external provider"
+        integration_section: 27
+        pocp_modules:
+          - backend/services/compute_adapters/ionet.py
+          - docs/COMPUTE-ADAPTER-SPEC.md
+        api_paths:
+          - GET /api/v1/compute/adapters
+          - POST /api/v1/compute/adapters/io-net/import
+          - POST /api/v1/compute/adapters/io-net/jobs
+
+  gitcoin:
+    display_name: Gitcoin / Deep Funding
+    entity_id: pocp-insp-gitcoin
+    entity_type: community
+    portable_id: github:gitcoinco/gitcoin
+    github_url: https://github.com/gitcoinco/gitcoin
+    homepage_url: https://gitcoin.co/
+    status: evaluating
+    integration_round: 8
+    summary: >
+      Public goods funding and dependency-graph capital allocation — advisory patterns
+      for contribution graph hints (never auto-finalize).
+    mapping_doc: docs/inspiration-mappings/gitcoin.md
+    benchmark_tier: public_goods_funding
+    contributions:
+      - id: gitcoin-dependency-graph-hints
+        title: "[evaluating] Dependency-aware graph hints for review priority"
+        integration_section: 26
+        pocp_modules:
+          - backend/services/graph_analytics.py
+        api_paths:
+          - GET /api/v1/graph/analytics
+      - id: gitcoin-ai-human-allocation
+        title: "[evaluating] AI-assisted + human spot-check allocation template (advisory)"
+        integration_section: 26
+        pocp_modules:
+          - backend/services/verifiers/multi_verifier.py
+        api_paths: []
+
+  intelligent-internet:
+    display_name: Intelligent Internet
+    entity_id: pocp-insp-intelligent-internet
+    entity_type: community
+    portable_id: web:ii.inc
+    homepage_url: https://ii.inc/
+    status: evaluating
+    integration_round: 8
+    summary: >
+      II-Account, II-Agent, proof-of-personhood, and compute contribution signals —
+      research benchmark for multi-signal Entity profiles.
+    mapping_doc: docs/inspiration-mappings/intelligent-internet.md
+    benchmark_tier: intelligent_internet
+    contributions:
+      - id: ii-account-agent-profile
+        title: "[evaluating] Personal account + reasoning agent as Entity bundle"
+        integration_section: 26
+        pocp_modules:
+          - backend/models/entity.py
+          - backend/intelligence/entity_ontology.py
+        api_paths:
+          - POST /api/v1/entities
+      - id: ii-compute-signal
+        title: "[evaluating] Compute contribution as reputation signal (advisory)"
+        integration_section: 26
+        pocp_modules:
+          - backend/services/compute_attribution.py
+        api_paths: []
+
+  singularitynet:
+    display_name: SingularityNET
+    entity_id: pocp-insp-singularitynet
+    entity_type: community
+    portable_id: github:singnet/platform
+    github_url: https://github.com/singnet/platform
+    homepage_url: https://singularitynet.io/
+    status: evaluating
+    integration_round: 8
+    summary: >
+      Decentralized AI services marketplace — benchmark for Agent/LLM service discovery,
+      not PoCP settlement spine.
+    mapping_doc: docs/inspiration-mappings/agent-marketplace.md
+    benchmark_tier: ai_services_marketplace
+    contributions:
+      - id: singularitynet-service-discovery
+        title: "[evaluating] External AI service catalog → Capability import"
+        integration_section: 26
+        pocp_modules:
+          - backend/services/capability_import.py
+          - backend/services/a2a_agent_card.py
+        api_paths:
+          - POST /api/v1/capabilities/import
+
+  fetch-ai:
+    display_name: Fetch.ai
+    entity_id: pocp-insp-fetch-ai
+    entity_type: community
+    portable_id: github:fetchai
+    github_url: https://github.com/fetchai
+    homepage_url: https://fetch.ai/
+    status: evaluating
+    integration_round: 8
+    summary: >
+      Autonomous agent network and multi-agent coordination — A2A/interop patterns only.
+    mapping_doc: docs/inspiration-mappings/agent-marketplace.md
+    benchmark_tier: agent_economy
+    contributions:
+      - id: fetch-agent-coordination
+        title: "[evaluating] Multi-agent task delegation → InvocationTrace"
+        integration_section: 26
+        pocp_modules:
+          - backend/services/invocation.py
+          - backend/services/a2a_task_bridge.py
+        api_paths:
+          - POST /api/v1/intelligence/a2a/send
+
+  provenancekit:
+    display_name: ProvenanceKit (EAA)
+    entity_id: pocp-insp-provenancekit
+    entity_type: community
+    portable_id: github:Arttribute/provenancekit
+    github_url: https://github.com/Arttribute/provenancekit
+    status: evaluating
+    integration_round: 8
+    summary: >
+      Entity-Action-Attribution graph extensions for witness and AI steps in proof packets.
+    mapping_doc: docs/inspiration-mappings/provenancekit.md
+    benchmark_tier: attribution_graph
+    contributions:
+      - id: provenancekit-eaa-extensions
+        title: "[evaluating] Proof ext:witness / ext:ai blocks aligned to EAA"
+        integration_section: 26
+        pocp_modules:
+          - backend/services/proof.py
+          - backend/services/provenance.py
+        api_paths:
+          - GET /api/v1/contributions/{id}/proof
+
 # Projects evaluated but not imported — recorded for transparency
 declined_inspirations:
   agent-commons:
@@ -527,6 +760,29 @@ declined_inspirations:
     portable_id: github:agentcommons/agent-commons
     status: not_imported
     reason: Token-first economics conflict with NO-TOKEN-FIRST.md
+  bittensor:
+    display_name: Bittensor
+    entity_id: pocp-insp-bittensor
+    entity_type: community
+    portable_id: github:opentensor/bittensor
+    github_url: https://github.com/opentensor/bittensor
+    homepage_url: https://bittensor.com/
+    status: not_imported
+    reason: >
+      Token-miner subnet marketplace conflicts with NO-TOKEN-FIRST and bilateral
+      contribution-bound credits; borrow subnet capability taxonomy only as benchmark.
+    benchmark_tier: ai_intelligence_market
+  virtuals-protocol:
+    display_name: Virtuals Protocol
+    entity_id: pocp-insp-virtuals
+    entity_type: community
+    portable_id: web:virtuals.io
+    homepage_url: https://virtuals.io/
+    status: not_imported
+    reason: >
+      Agent-native token issuance platform — PoCP records Agent as Entity with reputation,
+      not as tradable agent coin; see ENTITY-MARKET-SPEC.md rejected models.
+    benchmark_tier: agent_tokenization
   lineage:
     display_name: Lineage (on-chain iNFT)
     entity_id: pocp-insp-lineage

@@ -1169,6 +1169,25 @@ body::before {
   font-family: var(--mono);
 }
 
+.proof-layers {
+  margin: 12px 0;
+}
+
+.proof-layers__title {
+  font-size: 0.82rem;
+  margin: 0 0 8px;
+}
+
+.proof-layers__card {
+  margin-bottom: 8px;
+}
+
+.proof-layers__meta {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
 .wallet-audit-hint {
   margin-top: 0.75rem;
   font-size: 0.72rem;

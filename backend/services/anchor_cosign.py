@@ -2,6 +2,9 @@
 
 When trusted peers report the same merkle_root + tip_hash, their signatures are
 bundled as peer attestations so third parties need not trust a single operator.
+
+Peer fetches use `GET /api/v1/ledger/anchor?skip_cosign=true` to avoid recursive
+cross-node deadlocks during federation health checks and cosign collection.
 """
 
 from __future__ import annotations
@@ -42,7 +45,7 @@ def collect_peer_anchor_attestations(
         if not base or not node.public_key:
             continue
         try:
-            anchor = _get_json(f"{base}/api/v1/ledger/anchor", timeout=timeout)
+            anchor = _get_json(f"{base}/api/v1/ledger/anchor?skip_cosign=true", timeout=timeout)
         except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError):
             continue
 

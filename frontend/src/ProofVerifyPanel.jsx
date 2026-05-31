@@ -1,12 +1,89 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 function truncateHash(value, len = 14) {
   if (!value || typeof value !== "string") return "—";
   return value.length <= len ? value : `${value.slice(0, len)}…`;
 }
 
+function ProofSettlementLayers({ proof, computeJobs }) {
+  const mcp = proof?.mcp_invocation_context;
+  const compute = proof?.compute_attribution;
+  const training = proof?.evidence?.raw?.training;
+  const ctype = proof?.contribution_event?.contribution_type;
+
+  const hasMcp = (mcp?.trace_count || 0) > 0;
+  const hasCompute = (compute?.receipt_count || 0) > 0 || (computeJobs?.job_count || 0) > 0;
+  const hasTraining = ctype === "training" && training;
+  const trainingAttestationCount = compute?.training_attestation_count;
+
+  if (!hasMcp && !hasCompute && !hasTraining) return null;
+
+  return (
+    <div className="proof-layers">
+      <h4 className="proof-layers__title">Settlement layers</h4>
+      {hasMcp && (
+        <div className="mini-card proof-layers__card">
+          <strong>MCP tool invocations</strong>
+          <div className="proof-layers__meta">
+            {mcp.trace_count} trace(s) · {mcp.tool_step_count} step(s)
+            {(mcp.invoke_modes || []).length > 0 && (
+              <span> · modes: {mcp.invoke_modes.join(", ")}</span>
+            )}
+          </div>
+          {(mcp.capability_receipt_hashes || []).length > 0 && (
+            <div className="proof-layers__meta">
+              Receipt hashes: {mcp.capability_receipt_hashes.length} · verified{" "}
+              {mcp.verified_receipt_count ?? 0}
+            </div>
+          )}
+        </div>
+      )}
+      {hasCompute && (
+        <div className="mini-card proof-layers__card">
+          <strong>Compute attribution</strong>
+          <div className="proof-layers__meta">
+            {compute?.receipt_count ?? 0} receipt(s) in proof
+            {compute?.verified_count != null && (
+              <span> · {compute.verified_count} verified</span>
+            )}
+            {(compute?.capabilities || []).length > 0 && (
+              <span> · {compute.capabilities.join(", ")}</span>
+            )}
+            {trainingAttestationCount != null && trainingAttestationCount > 0 && (
+              <span> · {trainingAttestationCount} training attestation(s)</span>
+            )}
+          </div>
+          {computeJobs?.job_count > 0 && (
+            <div className="proof-layers__meta">
+              Adapter jobs: {computeJobs.job_count}
+              {(computeJobs.adapters || []).length > 0 && (
+                <span> ({computeJobs.adapters.join(", ")})</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+      {hasTraining && (
+        <div className="mini-card proof-layers__card">
+          <strong>Training attestation</strong>
+          <div className="proof-layers__meta">
+            Job: {training.job_id} · {training.objective}
+          </div>
+          <div className="proof-layers__meta">
+            Dataset: {training.dataset_ref} · Model: {training.model_ref}
+          </div>
+          {training.metrics?.loss_final != null && (
+            <div className="proof-layers__meta">Loss: {training.metrics.loss_final}</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProofVerifyPanel({ apiBase, contributionId, compact = false }) {
   const [proof, setProof] = useState(null);
+  const [computeJobs, setComputeJobs] = useState(null);
   const [verifyResult, setVerifyResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -16,10 +93,18 @@ export default function ProofVerifyPanel({ apiBase, contributionId, compact = fa
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${apiBase}/api/v1/contributions/${contributionId}/proof`);
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
+      const [proofRes, jobsRes] = await Promise.all([
+        fetch(`${apiBase}/api/v1/contributions/${contributionId}/proof`),
+        fetch(`${apiBase}/api/v1/contributions/${contributionId}/compute-jobs`).catch(() => null),
+      ]);
+      if (!proofRes.ok) throw new Error(await proofRes.text());
+      const data = await proofRes.json();
       setProof(data);
+      if (jobsRes?.ok) {
+        setComputeJobs(await jobsRes.json());
+      } else {
+        setComputeJobs(null);
+      }
       return data;
     } catch (err) {
       setError(err.message || String(err));
@@ -28,6 +113,12 @@ export default function ProofVerifyPanel({ apiBase, contributionId, compact = fa
       setLoading(false);
     }
   }, [apiBase, contributionId]);
+
+  useEffect(() => {
+    if (contributionId) {
+      fetchProof();
+    }
+  }, [contributionId, fetchProof]);
 
   const runVerify = useCallback(
     async (packet) => {
@@ -78,6 +169,9 @@ export default function ProofVerifyPanel({ apiBase, contributionId, compact = fa
         Export a contribution proof and independently verify its hash chain — like auditing a Bitcoin full node.
       </p>
       <div className="proof-audit__actions">
+        <button type="button" className="btn btn--ghost btn--sm" onClick={() => fetchProof()} disabled={loading}>
+          Refresh
+        </button>
         <button type="button" className="btn btn--ghost btn--sm" onClick={handleExport} disabled={loading}>
           Export proof JSON
         </button>
@@ -96,6 +190,7 @@ export default function ProofVerifyPanel({ apiBase, contributionId, compact = fa
           )}
         </p>
       )}
+      <ProofSettlementLayers proof={proof} computeJobs={computeJobs} />
       {verifyResult && (
         <div className={`alert ${verifyResult.valid ? "alert--success" : "alert--error"}`}>
           {verifyResult.valid ? "Proof valid — hash chain and integrity checks passed." : "Proof verification failed."}

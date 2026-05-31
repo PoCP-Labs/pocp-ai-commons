@@ -28,7 +28,7 @@ def build_ledger_inclusion_proof(db: Session, record_hash: str) -> dict | None:
     return build_inclusion_bundle(hashes, record_hash)
 
 
-def build_ledger_anchor(db: Session) -> dict:
+def build_ledger_anchor(db: Session, *, skip_cosign: bool = False) -> dict:
     verify = verify_ledger_chain(db)
     records = (
         db.query(LedgerRecord)
@@ -71,7 +71,7 @@ def build_ledger_anchor(db: Session) -> dict:
                 "crypto_suite": active_crypto_suite(),
             }
 
-    if anchor_cosign_enabled():
+    if anchor_cosign_enabled() and not skip_cosign:
         peer_attestations = collect_peer_anchor_attestations(
             root,
             anchor.get("tip_hash"),

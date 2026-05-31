@@ -1,6 +1,6 @@
 ---
 name: Compute Node Task
-about: Add or improve compute node registration, usage, or verification
+about: Add or improve compute node support
 title: "[Compute Node] "
 labels: "compute-node"
 assignees: ""
@@ -8,20 +8,16 @@ assignees: ""
 
 ## Goal
 
-What compute node capability should be added?
-
 ## Area
 
-- [ ] compute node entity type
-- [ ] hardware profile
-- [ ] compute capability
-- [ ] compute usage
-- [ ] compute verification
-- [ ] compute settlement
-- [ ] compute reputation
+- [ ] Entity type
+- [ ] Hardware profile
+- [ ] Compute usage
+- [ ] Compute verification
+- [ ] Compute settlement
+- [ ] Compute reputation
 
 ## Acceptance criteria
 
-- [ ] 
 - [ ] 
 - [ ]

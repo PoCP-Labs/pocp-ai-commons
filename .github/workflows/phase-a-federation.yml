@@ -1,8 +1,8 @@
 name: Phase A Federation Acceptance
 
-on:
+  on:
   push:
-    branches: [main, master]
+    branches: [main, master, graph-network-animation]
     paths:
       - "backend/**"
       - "docker-compose.federation.yml"

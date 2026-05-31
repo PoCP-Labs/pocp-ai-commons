@@ -1,5 +1,6 @@
 from models.agent import Agent
 from models.agent_feedback import AgentFeedback
+from models.capability import EntityCapability
 from models.reputation_audit import ReputationAuditEntry
 from models.ai_usage import AIUsageLog
 from models.code_attribution import CodeAttributionRecord
@@ -23,6 +24,7 @@ from models.wallet import CreditTransaction, ReputationScore, Wallet
 
 __all__ = [
     "Entity",
+    "EntityCapability",
     "Skill",
     "Agent",
     "AgentFeedback",

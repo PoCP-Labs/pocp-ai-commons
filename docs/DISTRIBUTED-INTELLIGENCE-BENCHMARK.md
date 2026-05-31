@@ -29,6 +29,37 @@ This benchmark answers:
 
 ---
 
+## Contribution Settlement Layer (PoCP position)
+
+No single upstream project equals **PoCP Neural Commons Network**. The market splits by layer:
+
+| Layer | Representative projects | What they optimize | PoCP role |
+|-------|-------------------------|-------------------|-----------|
+| AI intelligence market | Bittensor, SingularityNET | Subnet / service marketplace + token incentive | **Declined** token loop; borrow capability taxonomy only |
+| AI training network | Gensyn | Decentralized train / verify / trade | Training as **contribution type** + ComputeReceipt |
+| Compute marketplace | Akash, Render, io.net, Aethir | GPU supply and job market | **Compute Adapter** — external Entity source |
+| Agent economy | Fetch.ai, Virtuals, Agent Economy research | Agent payment and assetization | Agent as **Entity** + InvocationTrace; **decline** agent coins |
+| Tool protocol | MCP | Agent ↔ tool wiring | **Integrated** — PoCP records post-invoke proof |
+| Public goods / graph | Gitcoin, SourceCred, CHAOSS | Funding and dependency graphs | **Advisory** graph hints — never auto-finalize |
+| Intelligent Internet | II (ii.inc) | Account + agent + compute signals | **Research** benchmark for multi-signal profiles |
+
+### What PoCP adds (the missing layer)
+
+```text
+Who joined the task?
+Which capability was invoked (LLM / Skill / Tool / Compute)?
+Was output verified?
+Who finalized?
+How were CP / AI Credits / reputation updated?
+What is the portable Proof + graph edge?
+```
+
+Registry: `external_inspirations.yaml` (round 8) · Compute: [COMPUTE-ADAPTER-SPEC.md](./COMPUTE-ADAPTER-SPEC.md)
+
+**One-line:** Others build **resource markets**; PoCP builds **contribution proof + multi-entity settlement + reputation graph** after resources are invoked.
+
+---
+
 ## Capability matrix
 
 | PoCP intelligence capability | Primary code today | OSS benchmark | PoCP coverage | Adapter priority |
@@ -175,11 +206,27 @@ This benchmark answers:
 
 ### Declined (policy)
 
-| Project | Reason |
-|---------|--------|
-| [agentcommons/agent-commons](https://github.com/agentcommons/agent-commons) | Token-first economics |
-| Bittensor subnets | Token-miner marketplace; conflicts with bilateral credits model |
-| Surveillance / social-credit scoring | Violates human-finalization principle |
+| Project | Reason | Registry slug |
+|---------|--------|---------------|
+| [agentcommons/agent-commons](https://github.com/agentcommons/agent-commons) | Token-first economics | `agent-commons` |
+| Bittensor subnets | Token-miner marketplace; conflicts with bilateral credits model | `bittensor` |
+| Virtuals Protocol | Agent-native token issuance | `virtuals-protocol` |
+| Surveillance / social-credit scoring | Violates human-finalization principle | — |
+
+### Evaluating (round 8 — benchmark registered)
+
+| Project | Borrow | Reject | Registry slug |
+|---------|--------|--------|---------------|
+| Gensyn | Training attestation, verifier plugins | On-chain training market as spine | `gensyn` |
+| Akash | Compute adapter, provider registration | AKT as PoCP currency | `akash` |
+| Render Network | GPU adapter, job metering | RNDR settlement loop | `render-network` |
+| Gitcoin / Deep Funding | Dependency graph hints (advisory) | Grant vote as finalization | `gitcoin` |
+| Intelligent Internet | Account+agent bundle, compute signals | Mandatory chain PoP | `intelligent-internet` |
+| SingularityNET | Service discovery → capability import | AGIX marketplace spine | `singularitynet` |
+| Fetch.ai | Multi-agent delegation → InvocationTrace | FET payment loop | `fetch-ai` |
+| ProvenanceKit | EAA proof extensions | On-chain default settlement | `provenancekit` |
+
+See [inspiration-mappings/](./inspiration-mappings/) and [COMPUTE-ADAPTER-SPEC.md](./COMPUTE-ADAPTER-SPEC.md).
 
 See [NO-TOKEN-FIRST.md](../NO-TOKEN-FIRST.md) and `declined_inspirations` in `external_inspirations.yaml`.
 

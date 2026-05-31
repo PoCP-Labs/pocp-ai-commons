@@ -36,7 +36,7 @@ def probe_peer(base_url: str) -> dict:
         health = _get_json(f"{root}/health")
         node = _get_json(f"{root}/api/v1/federation/node")
         ledger_verify = _get_json(f"{root}/api/v1/ledger/verify")
-        anchor = _get_json(f"{root}/api/v1/ledger/anchor")
+        anchor = _get_json(f"{root}/api/v1/ledger/anchor?skip_cosign=true")
         result.update(
             {
                 "reachable": True,
@@ -67,7 +67,7 @@ def verify_remote_ledger(base_url: str, expected_tip_hash: str | None = None) ->
     if not expected_tip_hash:
         return
 
-    anchor = _get_json(f"{root}/api/v1/ledger/anchor")
+    anchor = _get_json(f"{root}/api/v1/ledger/anchor?skip_cosign=true")
     tip = anchor.get("tip_hash")
     if tip and tip != expected_tip_hash:
         raise ValueError("Remote ledger tip_hash does not match proof ledger_tip_hash")

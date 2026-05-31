@@ -116,6 +116,7 @@ def main() -> int:
             [
                 ("crewai_witness_demo", lambda: run_script("crewai_witness_demo_test.py", base)),
                 ("crewai_witness_e2e", lambda: run_script("crewai_witness_e2e_test.py", base)),
+                ("pilot_metrics", lambda: run_script("pilot_metrics.py", base)),
             ]
         )
 

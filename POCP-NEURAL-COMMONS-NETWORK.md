@@ -1,128 +1,71 @@
 # PoCP Neural Commons Network
 
-## Definition
+## 1. Definition
 
 PoCP Neural Commons Network is a protocol-based distributed intelligence and compute network.
 
-It connects humans, agents, LLMs, skills, tools, datasets, workflows, compute nodes, verifier nodes, reviewer nodes, organizations, communities, sponsors, and protocol treasury entities into a verifiable contribution network.
+It coordinates:
 
-Through CP, AI Credits, Compute Credits, and future PoCP Protocol Tokens, PoCP measures contribution, coordinates capability invocation, settles value, updates reputation, and supports governance.
+- human contribution;
+- agent execution;
+- LLM reasoning;
+- skill invocation;
+- tool usage;
+- dataset contribution;
+- workflow execution;
+- compute supply;
+- verification;
+- review;
+- settlement;
+- reputation;
+- governance.
 
-## Positioning
+## 2. Why It Exists
 
-PoCP is not only an AI Credits application.
+AI-era work is no longer produced by a single user or a single platform.
 
-PoCP is designed as:
-
-```text
-Entity Registry
-+ Capability Registry
-+ Neural Routing
-+ Invocation Ledger
-+ Verification Layer
-+ Token Measurement
-+ Settlement Layer
-+ Reputation Network
-+ Governance Layer
-+ Contribution Graph
-```
-
-## Core Thesis
-
-The AI era will be defined by cooperation between humans and intelligent entities.
-
-A single result may be created by:
+A result may be created by:
 
 ```text
-Human
-→ Agent
-→ LLM
-→ Skill
-→ Tool
-→ Dataset
-→ Workflow
-→ Compute Node
-→ Verifier
-→ Human Reviewer
+Human requester
+→ Agent planner
+→ LLM reasoning engine
+→ Skill executor
+→ Tool connector
+→ Dataset provider
+→ Workflow runner
+→ Compute node
+→ AI verifier
+→ Human reviewer
 ```
 
-PoCP asks:
+PoCP provides the protocol layer to record, verify, measure, settle, and govern this collaboration.
 
-> Who contributed what, who verified it, what capability was invoked, what value was created, and how should rights be returned?
+## 3. What PoCP Coordinates
 
-## Network Participants
+PoCP coordinates five networks:
 
-- Human: goals, creativity, domain context, judgment, responsibility, review, governance.
-- Agent: task execution, workflow coordination, tool and skill calling.
-- LLM: reasoning, generation, coding, translation, summarization, advisory verification.
-- Skill: reusable task capability.
-- Tool: external action or data access.
-- Dataset: knowledge resource.
-- Workflow: repeatable process.
-- Compute Node: GPU, CPU, storage, bandwidth, model serving, inference, training, verification compute.
-- Verifier Node: AI or protocol-based verification.
-- Reviewer Node: accountable human or organizational review.
-- Organization: sponsor, operator, maintainer, or governor.
-- Sponsor: funding for AI Credits, Compute Credits, task pools, or public goods.
-- Protocol Treasury: protocol fees, grants, rewards, and ecosystem funds.
+### 3.1 Contribution Network
 
-## Core Flow
+Records who contributed what.
 
-```text
-Task Created
-→ Capability Matching
-→ Neural Routing
-→ Entity Invocation
-→ Compute / Intelligence Execution
-→ Contribution Event
-→ AI Verification
-→ Human / Verifier Review
-→ Settlement
-→ Token / Credits Distribution
-→ Reputation Update
-→ Contribution Graph
-→ Governance / Feedback
-```
+### 3.2 Capability Network
 
-## Eight-Layer Architecture
+Records what each Entity can do.
 
-### 1. Application Layer
+### 3.3 Compute Network
 
-AI Chat, Task Center, Agent Workbench, Skill Market, Compute Market, Contribution Dashboard, Wallet, Graph Explorer, Governance Portal.
+Records compute supply, usage, and verification.
 
-### 2. Entity Registry Layer
+### 3.4 Reputation Network
 
-Registers all intelligent and operational participants.
+Records contextual trust and performance.
 
-### 3. Capability Registry Layer
+### 3.5 Rights / Token Network
 
-Registers what each Entity can do, how it is priced, verified, reviewed, and settled.
+Records CP, AI Credits, Compute Credits, internal token accounts, settlement, stake, and governance eligibility.
 
-### 4. Neural Routing Layer
-
-Matches tasks to agents, skills, models, tools, datasets, workflows, and compute nodes.
-
-### 5. Execution & Invocation Layer
-
-Records capability calls, execution logs, costs, outputs, and status.
-
-### 6. Verification & Proof Layer
-
-Verifies contribution, intelligence output, compute work, evidence, and review quality.
-
-### 7. Token Measurement & Settlement Layer
-
-Handles CP, AI Credits, Compute Credits, PoCP Token accounts, settlement, staking, slashing, treasury, and sponsor pools.
-
-### 8. Reputation & Governance Layer
-
-Computes contextual reputation and supports contribution-weighted governance.
-
-## AI Commons as First Application
-
-PoCP AI Commons is the first application scenario of the Neural Commons Network.
-
-It starts with:
+## 4. First Living Loop
 
 ```text
 Contribution
@@ -133,28 +76,54 @@ Contribution
 → More Contribution
 ```
 
-The target network expands this into:
+## 5. Full Neural Loop
 
 ```text
-Task
-→ Capability Routing
-→ Invocation
-→ Verification
+Task Created
+→ Capability Matching
+→ Neural Routing
+→ Entity Invocation
+→ Compute / Intelligence Execution
+→ Contribution Event
+→ AI / Protocol Verification
+→ Human / Reviewer Approval
 → Settlement
-→ Reputation
-→ Graph
+→ Token / Credits Distribution
+→ Reputation Update
+→ Neural Graph
+→ Governance Feedback
 ```
 
-## Tokenized Measurement
+## 6. Protocol Promise
 
-Tokenized measurement does not mean immediate public token issuance.
+PoCP does not promise that every contribution is valuable.
 
-Early versions may implement CP, AI Credits, Compute Credits, and PoCP Token accounts as internal protocol accounting units.
+PoCP promises to make contribution claims visible, verifiable, reviewable, attributable, and accountable.
 
-External issuance, transferability, staking, and governance require separate legal, security, and governance review.
+## 7. Public vs Commercial Boundary
 
-## End State
+Open source:
 
-PoCP Neural Commons Network aims to become a contribution operating protocol for distributed intelligence and compute.
+- protocol schemas;
+- reference implementation;
+- basic AI Commons loop;
+- basic token measurement;
+- basic routing;
+- basic settlement;
+- basic reputation;
+- SDK-facing interfaces.
+
+Commercial or restricted:
+
+- advanced anti-abuse intelligence;
+- commercial neural routing optimizer;
+- managed compute scheduler;
+- enterprise governance console;
+- private risk models;
+- commercial API gateway.
+
+## 8. Long-Term Vision
+
+PoCP can become a contribution operating protocol for distributed intelligence and compute.
 
 PoCP begins with contribution.

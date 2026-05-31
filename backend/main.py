@@ -19,6 +19,7 @@ from routers.integrations import router as integrations_router
 from routers.intelligence import router as intelligence_router
 from routers.compute import router as compute_router
 from routers.capabilities import router as capabilities_router
+from routers.capability_registry import router as capability_registry_router
 from routers.community_partners import router as community_partners_router
 from routers.crypto import router as crypto_router
 from genesis import ensure_genesis_entities
@@ -125,6 +126,7 @@ app.include_router(community_partners_router)
 app.include_router(integrations_router)
 app.include_router(intelligence_router)
 app.include_router(capabilities_router)
+app.include_router(capability_registry_router)
 app.include_router(compute_router)
 app.include_router(crypto_router)
 
@@ -147,7 +149,7 @@ def health():
         "service": "pocp-ai-commons",
         "protocol": "pocp-v0.1",
         "version": "0.3.0",
-        "stage": "genesis-mvp",
+        "stage": "phase-a",
         "full_seed": _full_seed_enabled(),
         "crypto_suite": active_crypto_suite(),
         "node_mode": node_mode(),

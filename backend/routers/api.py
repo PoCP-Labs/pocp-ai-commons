@@ -341,6 +341,30 @@ def get_contribution(contribution_id: str, db: Session = Depends(get_db)):
     return contribution
 
 
+@router.get("/contributions/{contribution_id}/compute-jobs")
+def list_contribution_compute_jobs(contribution_id: str, db: Session = Depends(get_db)):
+    """Compute jobs and adapter receipts bound to this contribution."""
+    from services.compute_jobs import list_jobs_for_contribution
+
+    contribution = db.get(ContributionEvent, contribution_id)
+    if contribution is None:
+        raise HTTPException(status_code=404, detail="Contribution not found")
+    jobs = list_jobs_for_contribution(db, contribution_id)
+    adapters = sorted(
+        {
+            (job.get("selected_provider") or {}).get("adapter")
+            for job in jobs
+            if (job.get("selected_provider") or {}).get("adapter")
+        }
+    )
+    return {
+        "contribution_id": contribution_id,
+        "job_count": len(jobs),
+        "adapters": adapters,
+        "jobs": jobs,
+    }
+
+
 @router.get("/wallets", response_model=list[WalletOut])
 def list_wallets(db: Session = Depends(get_db)):
     return db.query(Wallet).all()

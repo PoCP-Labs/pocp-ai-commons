@@ -104,6 +104,83 @@ partners:
       template_doc: docs/outreach/ollama-compute-profile.md
       next_action: Publish PoCP compute_profile Ollama adapter spec in docs
 
+  akash:
+    display_name: Akash Network
+    entity_id: pocp-entity-partner-akash
+    inspiration_slug: akash
+    community_kind: compute_collective
+    portable_id: github:akash-network/node
+    github_url: https://github.com/akash-network/node
+    homepage_url: https://akash.network/
+    partnership_status: prospect
+    outreach_priority: medium
+    alignment: [distributed_compute, adapter_only, no_token_first]
+    summary: >
+      Decentralized compute marketplace — candidate external Compute Entity source
+      via COMPUTE-ADAPTER-SPEC (not PoCP GPU cloud).
+    capabilities_offered:
+      - capability: llm_inference
+        label: Leased GPU/CPU deployments for inference jobs
+      - capability: federation_import
+        label: Provider manifests portable across PoCP nodes
+    capabilities_sought:
+      - capability: witness
+        label: Contribution-bound ComputeReceipt on every job
+    outreach:
+      channel: github
+      contact_url: https://github.com/akash-network/support/discussions
+      template_doc: docs/COMPUTE-ADAPTER-SPEC.md
+      next_action: Draft Akash manifest → compute_profile import stub
+
+  render-network:
+    display_name: Render Network
+    entity_id: pocp-entity-partner-render
+    inspiration_slug: render-network
+    community_kind: compute_collective
+    portable_id: web:rendernetwork.com
+    homepage_url: https://rendernetwork.com/
+    partnership_status: prospect
+    outreach_priority: low
+    alignment: [gpu_network, adapter_only, no_token_first]
+    summary: GPU rendering and ML compute network — evaluate as GPU adapter, not settlement spine.
+    capabilities_offered:
+      - capability: llm_inference
+        label: Distributed GPU for ML workloads
+    capabilities_sought:
+      - capability: witness
+        label: Job receipts linked to contribution evidence
+    outreach:
+      channel: web
+      template_doc: docs/COMPUTE-ADAPTER-SPEC.md
+      next_action: Document Render job unit mapping to ComputeReceipt.resource_units
+
+  io-net:
+    display_name: io.net
+    entity_id: pocp-entity-partner-ionet
+    inspiration_slug: io-net
+    community_kind: compute_collective
+    portable_id: web:io.net
+    homepage_url: https://io.net/
+    github_url: https://github.com/ionet-official
+    partnership_status: prospect
+    outreach_priority: medium
+    alignment: [gpu_network, adapter_only, no_token_first]
+    summary: >
+      Decentralized GPU network for ML — same Compute Adapter pattern as Akash;
+      scales GPU clusters without PoCP operating a GPU farm.
+    capabilities_offered:
+      - capability: llm_inference
+        label: Scalable GPU clusters for inference and training jobs
+      - capability: training
+        label: Distributed training compute (contribution-bound)
+    capabilities_sought:
+      - capability: witness
+        label: Training/inference ComputeReceipt in proof packets
+    outreach:
+      channel: web
+      template_doc: docs/COMPUTE-ADAPTER-SPEC.md
+      next_action: Align io.net provider manifest with adapter import API
+
   huggingface:
     display_name: Hugging Face Hub
     entity_id: pocp-oss-huggingface

@@ -213,6 +213,7 @@ export default function App() {
   const [entityStatusFilter, setEntityStatusFilter] = useState("");
   const [reviewQueue, setReviewQueue] = useState([]);
   const [pendingEntityReviews, setPendingEntityReviews] = useState([]);
+  const [proofContributionId, setProofContributionId] = useState("");
 
   const loadProfile = useCallback(async () => {
     if (!getToken()) {
@@ -321,9 +322,16 @@ export default function App() {
     if (urlToken) {
       setToken(urlToken);
       params.delete("token");
-      const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
-      window.history.replaceState({}, "", next);
     }
+    const proofId = params.get("proof") || params.get("contribution");
+    if (proofId) {
+      setProofContributionId(proofId);
+      setTab("verify");
+      params.delete("proof");
+      params.delete("contribution");
+    }
+    const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
+    window.history.replaceState({}, "", next);
     load();
     loadProfile();
     fetch(`${API}/health`)
@@ -418,6 +426,7 @@ export default function App() {
   const tabs = [
     { id: "dashboard", label: "Network" },
     { id: "workflow", label: "Contribute" },
+    { id: "verify", label: "Verify Proof" },
     { id: "account", label: "Wallet" },
     { id: "chat", label: "AI Node" },
     { id: "graph", label: "Graph" },
@@ -690,7 +699,34 @@ export default function App() {
             tasks={tasks}
             currentEntityId={profile?.entity?.id || null}
             onComplete={load}
+            onProofLink={(id) => {
+              setProofContributionId(id);
+              setTab("verify");
+            }}
           />
+        </section>
+      )}
+
+      {tab === "verify" && (
+        <section className="panel">
+          <h2 className="panel__title">Verify Contribution Proof</h2>
+          <p className="panel__subtitle">
+            Deep-link: <code>?proof=&lt;contribution_id&gt;</code> — audit hash chain and export portable proof JSON.
+          </p>
+          <label className="form-row">
+            <span>Contribution ID</span>
+            <input
+              type="text"
+              value={proofContributionId}
+              onChange={(e) => setProofContributionId(e.target.value.trim())}
+              placeholder="Paste contribution UUID from ledger or submit flow"
+            />
+          </label>
+          {proofContributionId ? (
+            <ProofVerifyPanel apiBase={API} contributionId={proofContributionId} />
+          ) : (
+            <p className="panel__subtitle">Enter a contribution ID or open a shared proof link.</p>
+          )}
         </section>
       )}
 

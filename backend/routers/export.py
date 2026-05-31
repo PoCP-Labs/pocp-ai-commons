@@ -270,8 +270,11 @@ def get_contribution_graph_merkle_proof(contribution_id: str, db: Session = Depe
 
 
 @router.get("/ledger/anchor", response_model=LedgerAnchorOut)
-def get_ledger_anchor(db: Session = Depends(get_db)):
-    return build_ledger_anchor(db)
+def get_ledger_anchor(
+    db: Session = Depends(get_db),
+    skip_cosign: bool = Query(default=False, description="Skip peer cosign fetch (avoids federation recursion)"),
+):
+    return build_ledger_anchor(db, skip_cosign=skip_cosign)
 
 
 @router.get("/ledger/export", response_model=LedgerExportOut)

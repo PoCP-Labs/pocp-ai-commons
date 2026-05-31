@@ -53,6 +53,13 @@ def build_compute_attribution_block(
     providers = sorted(
         {r.get("provider_entity_id") for r in merged if r.get("provider_entity_id")}
     )
+    training_attestations = [
+        (r.get("integrity") or {}).get("training_attestation")
+        or (r.get("extra") or {}).get("training_attestation")
+        for r in merged
+        if r.get("capability") == "training"
+    ]
+    training_attestations = [a for a in training_attestations if a]
     return {
         "spec_version": "0.1",
         "contribution_id": contribution_id,
@@ -60,6 +67,7 @@ def build_compute_attribution_block(
         "verified_count": len(verified),
         "capabilities": capabilities,
         "provider_entity_ids": providers,
+        "training_attestation_count": len(training_attestations),
         "receipts": merged,
         "rule": "Distributed compute attribution — advisory receipts bound to contribution.",
     }

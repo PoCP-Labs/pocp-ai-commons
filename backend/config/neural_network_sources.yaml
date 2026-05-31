@@ -223,7 +223,60 @@ sources:
       Sponsor-bound identity, peer handshake, Merkle audit patterns.
       Human finalization remains PoCP gate. Benchmark BI-2.
 
+  akash_network:
+    display_name: Akash Network
+    category: llm_inference
+    github_url: https://github.com/akash-network/node
+    license: Apache-2.0
+    integration_round: 8
+    status: adapter_planned
+    pocp_modules:
+      - docs/COMPUTE-ADAPTER-SPEC.md
+      - backend/services/compute_profile.py
+      - backend/services/compute_scheduler.py
+    notes: External compute marketplace adapter — contribution-bound jobs only
+
+  render_network:
+    display_name: Render Network
+    category: llm_inference
+    homepage_url: https://rendernetwork.com/
+    integration_round: 8
+    status: adapter_planned
+    pocp_modules:
+      - docs/COMPUTE-ADAPTER-SPEC.md
+      - backend/services/compute_executor.py
+    notes: GPU network adapter candidate; no RNDR settlement in PoCP spine
+
+  gensyn:
+    display_name: Gensyn
+    category: training
+    homepage_url: https://www.gensyn.ai/
+    integration_round: 8
+    status: adapter_planned
+    pocp_modules:
+      - backend/services/compute_adapters/gensyn.py
+      - docs/TRAINING-CONTRIBUTION-SPEC.md
+    notes: Training-only adapter stub; integrity.training_attestation on ComputeReceipt
+
+  io_net:
+    display_name: io.net
+    category: llm_inference
+    homepage_url: https://io.net/
+    github_url: https://github.com/ionet-official
+    integration_round: 8
+    status: adapter_planned
+    pocp_modules:
+      - backend/services/compute_adapters/ionet.py
+      - docs/COMPUTE-ADAPTER-SPEC.md
+    notes: Decentralized GPU network — stub adapter; IO token external to PoCP ledger
+
 declined:
   agent_commons_token:
     github_url: https://github.com/agentcommons/agent-commons
     reason: Token-first economics; see NO-TOKEN-FIRST.md
+  bittensor:
+    github_url: https://github.com/opentensor/bittensor
+    reason: Token-miner subnet marketplace; benchmark taxonomy only
+  virtuals_protocol:
+    homepage_url: https://virtuals.io/
+    reason: Agent token issuance; see ENTITY-MARKET-SPEC.md rejected models
