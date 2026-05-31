@@ -23,7 +23,7 @@ Contribution → Verification → CP → AI Credits → AI Use → More Contribu
 
 The network target expands this into capability matching, neural routing, invocation, settlement, and reputation — see [Neural Commons Architecture](#neural-commons-architecture) below.
 
-**Execution path:** we ship in three phases — **`v0.3.0-alpha`** (Phase A docs + engineering, done) → **public staging** (Phase A complete) → **Phase B** → **Phase C**. See [docs/ROADMAP-THREE-PHASES.md](./docs/ROADMAP-THREE-PHASES.md).
+**Execution path:** we ship in three phases — **`v0.3.0-alpha`** (Phase A docs + engineering, done) → **local optimization** (Exchange Spine + Wallet, in progress) → **public staging** → **Phase B** → **Phase C**. See [docs/ROADMAP-THREE-PHASES.md](./docs/ROADMAP-THREE-PHASES.md).
 
 ---
 

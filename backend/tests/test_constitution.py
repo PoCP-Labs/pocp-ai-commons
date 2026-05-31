@@ -114,6 +114,8 @@ class ConstitutionExchangeTests(unittest.TestCase):
         )
         settle_bilateral(self.db, receipt, consumer_entity_id="human-1")
         self.db.commit()
+        self.db.refresh(self.db.query(Wallet).filter(Wallet.entity_id == "human-1").one())
+        self.db.refresh(self.db.query(Wallet).filter(Wallet.entity_id == "llm-1").one())
 
         audit = audit_all_wallets(self.db)
         self.assertTrue(audit.get("valid"), audit)

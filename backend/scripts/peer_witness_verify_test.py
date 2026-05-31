@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import sys
+import uuid
 import urllib.error
 import urllib.request
 
@@ -41,7 +42,14 @@ def main() -> int:
     assert status.get("peer_compute_enabled"), "ENABLE_PEER_COMPUTE not set on this node"
     print("OK peer_compute_enabled")
 
-    login = req("POST", "/api/v1/auth/dev-login", {"username": "rain", "email": "rain@example.com"})
+    login = req(
+        "POST",
+        "/api/v1/auth/dev-login",
+        {
+            "username": f"peer-witness-{uuid.uuid4().hex[:10]}",
+            "email": f"peer-witness-{uuid.uuid4().hex[:10]}@example.com",
+        },
+    )
     token = login["access_token"]
     entity_id = login["entity"]["id"]
     print("OK dev-login")

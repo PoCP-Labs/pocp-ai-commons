@@ -125,6 +125,18 @@ def step_ledger_verify(base: str) -> tuple[bool, str]:
         return False, str(exc)
 
 
+def step_wallet_audit(base: str) -> tuple[bool, str]:
+    try:
+        data = get_json(f"{base.rstrip('/')}/api/v1/wallets/audit")
+        ok = data.get("valid") is True
+        return ok, (
+            f"valid={data.get('valid')} wallets={data.get('wallet_count')} "
+            f"invalid={data.get('invalid_count')}"
+        )
+    except Exception as exc:
+        return False, str(exc)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Phase A acceptance runner")
     parser.add_argument("base", nargs="?", default=DEFAULT_BASE, help="API base URL")
@@ -152,6 +164,7 @@ def main() -> int:
     checks: list[tuple[str, callable]] = [
         ("health", lambda: step_health(base)),
         ("intelligence/status", lambda: step_intelligence_status(base)),
+        ("wallet_audit", lambda: step_wallet_audit(base)),
     ]
 
     if args.staging:
@@ -172,6 +185,7 @@ def main() -> int:
                 ("crypto_readiness", lambda: step_crypto_readiness(base)),
                 ("crypto_readiness_peer", lambda: step_crypto_readiness(node_b)),
                 ("federation_demo", lambda: run_script("federation_demo_test.py", base, [node_b])),
+                ("federation_exchange_demo", lambda: run_script("federation_exchange_demo_test.py", base, [node_b])),
                 ("peer_witness_verify", lambda: run_script("peer_witness_verify_test.py", base)),
                 ("peer_mcp_demo", lambda: run_script("peer_mcp_demo_test.py", base)),
             ]
@@ -210,10 +224,12 @@ def main() -> int:
             "dev_login_disabled",
             "github_oauth",
             "ledger_verify",
+            "wallet_audit",
             "crypto_readiness",
             "crypto_readiness_peer",
             "smoke_test",
             "federation_demo",
+            "federation_exchange_demo",
             "peer_witness_verify",
             "peer_mcp_demo",
         ):

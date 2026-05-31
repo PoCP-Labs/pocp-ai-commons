@@ -1,6 +1,6 @@
 # Capability Schema v0.3
 
-Entity-attached capabilities for PoCP settlement. External networks (Akash, Render, io.net, Gensyn) register as **Compute Entities** via [COMPUTE-ADAPTER-SPEC.md](../COMPUTE-ADAPTER-SPEC.md); MCP tools register as **Tool Entities**. PoCP records invocation **after** upstream transport completes — no token settlement in the spine.
+Entity-attached capabilities for PoCP settlement. External networks (Akash, Render, io.net, Gensyn) register as **Compute Entities** via [COMPUTE-ADAPTER-SPEC.md](../COMPUTE-ADAPTER-SPEC.md); MCP tools register as **Tool Entities**. PoCP records invocation after upstream transport completes; **internal BC/AIC settlement** flows through the [Exchange Spine](./EXCHANGE-SPINE-v0.1.md) — not external network token transfers.
 
 See also: [TRAINING-CONTRIBUTION-SPEC.md](../TRAINING-CONTRIBUTION-SPEC.md) · [inspiration-mappings/mcp.md](../inspiration-mappings/mcp.md)
 

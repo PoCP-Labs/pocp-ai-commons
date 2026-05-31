@@ -1,8 +1,8 @@
 # Three-Phase Roadmap — Protocol · Intelligence · Compute
 
-**Status:** Phase A engineering milestone **done** (`v0.3.0-alpha`); **Phase A complete** pending public staging.  
-**Release:** [`v0.3.0-alpha`](https://github.com/PoCP-Labs/pocp-ai-commons/releases/tag/v0.3.0-alpha) on `graph-network-animation`.  
-**Local federation acceptance:** `run_phase_a_acceptance.py` green on node-a :8100 + node-b :8101.  
+**Status:** Phase A engineering milestone **done** (`v0.3.0-alpha`); **local optimization** in progress; **public staging deferred**.  
+**Release:** [`v0.3.0-alpha`](https://github.com/PoCP-Labs/pocp-ai-commons/releases/tag/v0.3.0-alpha) on `graph-network-animation`; local HEAD adds Exchange Spine + Wallet wave (`6ddb1b6`, unpushed).  
+**Local federation acceptance:** `run_phase_a_acceptance.py` green on node-a :8100 + node-b :8101 (incl. exchange proof demo).  
 **North star:** Forkable **protocol + distributed intelligence + distributed compute** — not transaction-layer SaaS.
 
 **Neural Commons** (v0.3 docs + v0.4 kernel) supports this path — it is not a separate product track. See [alignment](#neural-commons-alignment) below.
@@ -16,23 +16,47 @@ See also: [DISTRIBUTED-LAYERS.md](./DISTRIBUTED-LAYERS.md) · [ACCOUNTABILITY-BO
 | Milestone | What it means | Status |
 |-----------|---------------|--------|
 | **`v0.3.0-alpha`** | Phase A **documentation + engineering** land: acceptance runner, federation E2E green, Neural Commons v0.3 docs, v0.4 Entity/Capability kernel, Open Core quality tooling, proof verify UI | **Done** |
-| **Phase A complete** | **Public staging** live: Postgres, GitHub OAuth, `ENABLE_DEV_LOGIN=false`, `run_phase_a_acceptance.py` green against staging API | **Remaining** |
+| **Phase A complete** | **Public staging** live: Postgres, GitHub OAuth, `ENABLE_DEV_LOGIN=false`, `run_phase_a_acceptance.py --staging` green | **Deferred** — optimize locally first |
 
-Do not call Phase A finished until staging passes acceptance. Do not delay tagging or docs for staging — `v0.3.0-alpha` is the engineering checkpoint; staging is the public exit gate.
+Do not call Phase A finished until staging passes acceptance. Staging tooling is ready; public deploy is paused while Exchange Spine, Wallet, and federation settlement are hardened locally.
+
+---
+
+## Local optimization track (NOW — staging deferred)
+
+Public staging is **not blocked on engineering** — it is **deferred by choice**. Until deploy resumes:
+
+| Priority | Work | Exit signal |
+|----------|------|-------------|
+| **P0** | Exchange Spine E2E | `federation_exchange_demo_test.py` green in federation acceptance |
+| **P0** | Wallet transaction replay | `GET /wallets/audit` valid; constitution tests green |
+| **P1** | Federation L1 exchange import | B node imports A exchange proof without BC mint |
+| **P1** | Live compute adapter wire | `test_akash_live_wire.py` + stub→live config path documented |
+| **P2** | Split unpushed wave for review | Wallet → Settlement → Live adapters as separate PRs |
+| **P2** | Frontend provider/ecosystem UX | ProviderPanel + WalletPanel usable in local federation demo |
+
+**Local acceptance (full federation):**
+
+```bash
+./scripts/run-phase-a.ps1 -Federation
+# or: python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8100 --federation http://127.0.0.1:8101
+```
+
+Includes: health, wallet audit, federation demo, **exchange proof demo**, peer witness, peer MCP.
 
 ---
 
 ## Execution priority (NOW → NEXT)
 
 ```text
-v0.3.0-alpha ✅  →  public staging (Phase A complete)  →  Phase B
+v0.3.0-alpha ✅  →  local optimization (Exchange/Wallet hardening)  →  public staging  →  Phase B
 Phase B         →  operable multi-node compute/MCP  →  30-day third-party peer
 Phase C         →  protocol SDK  →  2+ forks exchange proof packets
 ```
 
 **Rule:** Do not skip Phase A exit criteria for architecture-only work. Neural Commons v0.4+ code lands **inside** Phase A/B themes (Entity registry → Phase B compute profile; Capability registry → Phase C market).
 
-**Release sequencing (canonical):** Land **public staging** and pass staging acceptance **before** committing the Wallet / Federation settlement wave (Wave 2). Staging proves the OAuth + Postgres path; Wave 2 builds on that foundation in separate PRs.
+**Release sequencing:** Harden Exchange Spine + Wallet **locally** first; push in split PRs; **public staging** when ready — not required to continue local optimization.
 
 ---
 
@@ -69,8 +93,10 @@ Phase C         →  protocol SDK  →  2+ forks exchange proof packets
 - [x] **CI: federation acceptance** — `.github/workflows/phase-a-federation.yml`
 - [x] **Git tag** `v0.3.0-alpha` — pushed to GitHub
 - [x] Local federation acceptance green
+- [x] Exchange proof federation demo (`federation_exchange_demo_test.py`)
+- [x] Wallet audit in acceptance runner (`GET /wallets/audit`)
 
-**Phase A complete — staging exit gate**
+**Phase A complete — staging exit gate (deferred)**
 
 - [ ] **Public staging** — Postgres + GitHub OAuth; `ENABLE_DEV_LOGIN=false`
 - [ ] **Staging acceptance** — `run_phase_a_acceptance.py https://api.<staging-host> --staging --skip-optional` (or `scripts/run-staging-acceptance.ps1`)
