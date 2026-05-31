@@ -140,11 +140,9 @@ Registry entries:
 | POST | `/api/v1/compute/adapters/{slug}/import` | Register external provider Entity |
 | POST | `/api/v1/compute/adapters/{slug}/jobs` | Submit contribution-bound adapter job |
 | POST | `/api/v1/compute/adapters/{slug}/jobs/{job_id}/poll` | Poll + finalize ComputeReceipt |
-| POST | `/api/v1/compute/jobs` | Submit contribution-bound job |
-| GET | `/api/v1/compute/jobs/{id}` | Poll + receipt |
-| GET | `/api/v1/compute/providers` | List compute_profile entities |
-| POST | `/api/v1/compute/providers` | Register provider |
-| POST | `/api/v1/intelligence/compute/witness` | Peer witness (NN-5) |
+| GET | `/api/v1/contributions/{id}/compute-jobs` | Jobs bound to a contribution |
+
+Live wire: [COMPUTE-ADAPTER-LIVE-WIRE.md](./COMPUTE-ADAPTER-LIVE-WIRE.md) · env `POCP_*_API_URL` sets `live_configured` on catalog.
 
 Planned:
 
@@ -193,8 +191,12 @@ From [NO-TOKEN-FIRST.md](../NO-TOKEN-FIRST.md) and [ENTITY-MARKET-SPEC.md](./ENT
 [x] API: POST /api/v1/compute/adapters/{slug}/jobs/{job_id}/poll
 [x] Tests: backend/tests/test_compute_adapters.py
 [x] Docs: EXTERNAL-INTEGRATIONS.md §27
-[ ] Live Akash wire protocol (deployment lease API)
-[ ] Inspiration sync + community partner outreach log
+[x] Live wire draft: docs/COMPUTE-ADAPTER-LIVE-WIRE.md
+[x] Env detection: backend/services/compute_adapters/live_config.py
+[x] Akash gateway HTTP client: backend/services/compute_adapters/akash_live.py
+[ ] Operator-hosted Akash gateway reference implementation
+[ ] io.net + Render live job clients
+[ ] Gensyn training attestation client
 ```
 
 Track in [DEV-TASKS.md](../DEV-TASKS.md) under Distributed Compute.

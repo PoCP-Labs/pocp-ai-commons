@@ -43,3 +43,20 @@ class ImportEventPayload(BaseModel):
     participants: list[ImportParticipant] = Field(default_factory=list)
     ledger_record_hash: str
     signature: str | None = None
+
+
+class FederationSettlementIntentIn(BaseModel):
+    spec_version: str = "pocp.federation_settlement.v0.4"
+    consumer_node_id: str
+    provider_node_id: str
+    consumer_entity_id: str
+    provider_entity_id: str | None = None
+    receipt_hash: str
+    receipt: dict[str, Any] = Field(default_factory=dict)
+    consumer_tokens: float = 0.0
+    provider_tokens: float = 0.0
+    capability: str | None = None
+    contribution_id: str | None = None
+    job_id: str | None = None
+    message: str | None = None
+    signature: str | None = None

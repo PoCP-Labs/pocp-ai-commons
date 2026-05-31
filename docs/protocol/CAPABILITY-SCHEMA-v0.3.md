@@ -14,7 +14,7 @@ See also: [TRAINING-CONTRIBUTION-SPEC.md](../TRAINING-CONTRIBUTION-SPEC.md) · [
 | `unit` | Meter for CP advisory — not on-chain price |
 | `price_model` | Advisory only; `sponsored` common in Sprint Alpha |
 | `accepted_units` | AIC / CC / PT — ledger units, not external network tokens |
-| `verification_method` | Maps to witness plugins + human/policy finalization |
+| `verification_method` | Witness plugin hint + policy finalization (`policy_delegate` default for Sprint Alpha) |
 
 ### `capability_type` (v0.3)
 

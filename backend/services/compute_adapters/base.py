@@ -78,14 +78,22 @@ class ComputeAdapter(ABC):
     inspiration_slug: str | None = None
 
     def catalog_entry(self) -> dict[str, Any]:
+        from services.compute_adapters.live_config import adapter_runtime_status
+
+        runtime = adapter_runtime_status(self.slug, default=self.mode)
         return {
             "slug": self.slug,
             "display_name": self.display_name,
             "network": self.network,
-            "mode": self.mode,
+            "mode": runtime["mode"],
             "inspiration_slug": self.inspiration_slug,
             "spec_doc": "docs/COMPUTE-ADAPTER-SPEC.md",
+            "live_configured": runtime["live_configured"],
+            "live_wire_active": runtime["live_wire_active"],
         }
+
+    def effective_mode(self) -> str:
+        return self.mode
 
     def quote_job(self, spec: AdapterJobSpec) -> dict[str, Any]:
         """Advisory estimate — no billing commitment."""
@@ -140,7 +148,7 @@ class ComputeAdapter(ABC):
             finished_at=finished,
             extra={
                 "external_job_id": external_job_id,
-                "adapter_mode": self.mode,
+                "adapter_mode": self.effective_mode(),
                 "network": self.network,
                 "resource_units": poll.resource_units,
                 "trace_id": spec.trace_id,

@@ -2,6 +2,7 @@
 
 import os
 import unittest
+from unittest.mock import patch
 from datetime import datetime, timezone
 
 from models.entity import Entity, EntityStatus, EntityType
@@ -9,6 +10,11 @@ from models.wallet import Wallet
 from services.compute_artifact import clear_artifact_store, lookup_artifact
 from services.compute_pool import deposit_to_pool, get_pool_summary, spend_from_pool
 from services.compute_precompute import recycle_surplus, run_precompute_on_provider
+from services.compute_balance_cron import (
+    auto_balance_enabled,
+    discover_balance_org_targets,
+    run_auto_balance_cycle,
+)
 from services.compute_utilization import balance_summary, list_idle_providers, provider_utilization
 from services.protocol_config import get_rewards_config
 
@@ -128,6 +134,50 @@ class ComputeSurplusRecycleTests(unittest.TestCase):
         out = recycle_surplus(self.db, organization_entity_id="org-1")
         self.assertEqual(out["status"], "completed")
         self.assertGreaterEqual(out["providers_recycled"], 1)
+
+
+class ComputeAutoBalanceTests(unittest.TestCase):
+    def setUp(self):
+        from tests.compute_test_db import make_compute_test_session
+
+        self.db = make_compute_test_session()
+        clear_artifact_store()
+        _org(self.db)
+        _provider(self.db)
+        self.db.commit()
+        get_rewards_config.cache_clear()
+
+    def tearDown(self):
+        clear_artifact_store()
+        self.db.close()
+
+    def test_discover_org_targets(self):
+        targets = discover_balance_org_targets(self.db)
+        self.assertIn("org-1", targets)
+
+    def test_auto_balance_dry_run_recycle(self):
+        result = run_auto_balance_cycle(
+            self.db, organization_entity_id="org-1", dry_run=True, force=True
+        )
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual(result["actions"][0]["action"], "would_recycle")
+
+    def test_auto_balance_force_recycle(self):
+        result = run_auto_balance_cycle(
+            self.db, organization_entity_id="org-1", force=True
+        )
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual(result["actions"][0]["action"], "recycled")
+        self.assertGreaterEqual(result["actions"][0]["recycle"]["providers_recycled"], 1)
+
+    def test_auto_balance_skipped_when_disabled(self):
+        result = run_auto_balance_cycle(self.db, organization_entity_id="org-1")
+        self.assertEqual(result["status"], "skipped")
+
+    def test_auto_balance_enabled_from_env(self):
+        with patch.dict(os.environ, {"POCP_COMPUTE_AUTO_BALANCE": "true"}):
+            get_rewards_config.cache_clear()
+            self.assertTrue(auto_balance_enabled())
 
 
 if __name__ == "__main__":

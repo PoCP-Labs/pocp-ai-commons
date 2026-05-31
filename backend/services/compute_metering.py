@@ -122,12 +122,20 @@ def _round_tokens(value: float) -> float:
     return round(max(value, 0.0), 4)
 
 
+def _merged_rates(model: str | None, rate_overrides: dict[str, float] | None) -> dict[str, float]:
+    rates = _model_rates(model)
+    if rate_overrides:
+        rates.update(rate_overrides)
+    return rates
+
+
 def consumer_tokens_for_usage(
     usage: dict[str, Any] | None,
     *,
     model: str | None,
     capability: str = "llm_inference",
     execution_mode: str = "live_inference",
+    rate_overrides: dict[str, float] | None = None,
 ) -> float:
     """PoCP Tokens debited from consumer Wallet (unified metering + settlement)."""
     cfg = _metering_cfg()
@@ -140,11 +148,14 @@ def consumer_tokens_for_usage(
             model=model,
             capability=capability,
             execution_mode="live_inference",
+            rate_overrides=rate_overrides,
         )
         return _round_tokens(max(live * mult, float(cfg.get("min_consumer_tokens") or cfg.get("min_consumer_credits") or 0.1)))
 
     if mode == "intel" or (usage and usage.get("service")):
         service = (usage or {}).get("service") or capability
+        if rate_overrides and "consumer_tokens" in rate_overrides:
+            return _round_tokens(float(rate_overrides["consumer_tokens"]))
         intel = (cfg.get("intel") or {}).get(service) or {}
         amount = intel.get("consumer_tokens", intel.get("consumer_credits", 5.0))
         return _round_tokens(float(amount))
@@ -155,7 +166,7 @@ def consumer_tokens_for_usage(
     if not usage:
         usage = estimate_token_usage(prompt="", output="")
 
-    rates = _model_rates(model)
+    rates = _merged_rates(model, rate_overrides)
     prompt = int(usage.get("prompt_tokens") or 0)
     completion = int(usage.get("completion_tokens") or 0)
     intel_eq = int(usage.get("intel_equivalent_tokens") or 0)
@@ -175,6 +186,7 @@ def provider_tokens_for_usage(
     model: str | None,
     capability: str = "llm_inference",
     execution_mode: str = "live_inference",
+    rate_overrides: dict[str, float] | None = None,
 ) -> float:
     """PoCP Tokens credited to provider Wallet (unified metering + settlement)."""
     cfg = _metering_cfg()
@@ -187,6 +199,7 @@ def provider_tokens_for_usage(
             model=model,
             capability=capability,
             execution_mode="live_inference",
+            rate_overrides=rate_overrides,
         )
         return _round_tokens(live * mult)
 
@@ -194,6 +207,8 @@ def provider_tokens_for_usage(
 
     if mode == "intel" or (usage and usage.get("service")):
         service = (usage or {}).get("service") or capability
+        if rate_overrides and "provider_tokens" in rate_overrides:
+            return _round_tokens(float(rate_overrides["provider_tokens"]))
         intel = (cfg.get("intel") or {}).get(service) or {}
         amount = intel.get("provider_tokens", intel.get("provider_credits", 3.0))
         return _round_tokens(float(amount))
@@ -209,7 +224,7 @@ def provider_tokens_for_usage(
     if not usage:
         usage = estimate_token_usage(prompt="", output="")
 
-    rates = _model_rates(model)
+    rates = _merged_rates(model, rate_overrides)
     total = int(usage.get("total_tokens") or 0)
     tokens = rates["base_provider"] + (total / 1000.0) * rates["provider_per_1k_total"]
 
@@ -235,15 +250,62 @@ def burn_tokens_from_receipt(receipt: dict[str, Any] | None) -> float:
     )
 
 
+def split_config() -> dict[str, float]:
+    """Skill orchestration split percentages from pocp_rewards.yaml."""
+    cfg = (_metering_cfg().get("split") or {})
+    return {
+        "skill_orchestration_pct": float(cfg.get("skill_orchestration_pct", 0.10)),
+        "protocol_fee_pct": float(cfg.get("protocol_fee_pct", 0.05)),
+    }
+
+
+def orchestration_split_shares(
+    consumer_total: float,
+    compute_provider: float,
+    *,
+    skill_orchestration_pct: float | None = None,
+    protocol_fee_pct: float | None = None,
+) -> dict[str, float]:
+    """Split one consumer debit across compute, skill orchestration, and protocol fee.
+
+    Shares satisfy: compute_share + skill_share + protocol_fee + burn == consumer_total.
+    """
+    cfg = split_config()
+    skill_pct = (
+        skill_orchestration_pct
+        if skill_orchestration_pct is not None
+        else cfg["skill_orchestration_pct"]
+    )
+    protocol_pct = (
+        protocol_fee_pct if protocol_fee_pct is not None else cfg["protocol_fee_pct"]
+    )
+    consumer_total = _round_tokens(max(consumer_total, 0.0))
+    skill_share = _round_tokens(consumer_total * skill_pct)
+    protocol_fee = _round_tokens(consumer_total * protocol_pct)
+    available_compute = max(consumer_total - skill_share - protocol_fee, 0.0)
+    compute_share = _round_tokens(min(max(compute_provider, 0.0), available_compute))
+    burn = _round_tokens(max(consumer_total - skill_share - protocol_fee - compute_share, 0.0))
+    return {
+        "consumer_total": consumer_total,
+        "compute_share": compute_share,
+        "skill_share": skill_share,
+        "protocol_fee": protocol_fee,
+        "burn": burn,
+        "skill_orchestration_pct": skill_pct,
+        "protocol_fee_pct": protocol_pct,
+    }
+
+
 def settlement_block(
     usage: dict[str, Any] | None,
     *,
     pocp_tokens_consumer: float,
     pocp_tokens_provider: float | None = None,
+    split: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Unified settlement payload for Receipt / Ledger."""
     u = usage or {}
-    return {
+    block: dict[str, Any] = {
         "unified_token": unified_token_enabled(),
         "token_unit": token_unit(),
         "llm_prompt_tokens": int(u.get("prompt_tokens") or 0),
@@ -253,6 +315,10 @@ def settlement_block(
         "pocp_tokens_consumer": pocp_tokens_consumer,
         "pocp_tokens_provider": pocp_tokens_provider,
     }
+    if split:
+        block["split"] = split
+        block["settlement_kind"] = "skill_orchestration_split"
+    return block
 
 
 # Backward-compatible aliases (1 PoCP Token == 1 ai_credits in Wallet)

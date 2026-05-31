@@ -181,6 +181,30 @@ partners:
       template_doc: docs/COMPUTE-ADAPTER-SPEC.md
       next_action: Align io.net provider manifest with adapter import API
 
+  gensyn:
+    display_name: Gensyn
+    entity_id: pocp-entity-partner-gensyn
+    inspiration_slug: gensyn
+    community_kind: training_network
+    portable_id: web:gensyn.ai
+    homepage_url: https://www.gensyn.ai/
+    partnership_status: prospect
+    outreach_priority: medium
+    alignment: [training_attestation, adapter_only, no_token_first]
+    summary: >
+      Decentralized AI training and verification network — training-as-contribution
+      via TRAINING-CONTRIBUTION-SPEC + gensyn compute adapter stub.
+    capabilities_offered:
+      - capability: training
+        label: Verifiable training work units with external attestation
+    capabilities_sought:
+      - capability: witness
+        label: Multi-verifier training evidence in proof packets
+    outreach:
+      channel: web
+      template_doc: docs/TRAINING-CONTRIBUTION-SPEC.md
+      next_action: Map training attestation fields to ComputeReceipt.integrity
+
   huggingface:
     display_name: Hugging Face Hub
     entity_id: pocp-oss-huggingface

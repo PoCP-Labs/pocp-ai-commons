@@ -1,7 +1,8 @@
 # Three-Phase Roadmap — Protocol · Intelligence · Compute
 
-**Status:** Phase A in progress (~90%) — **primary execution path**.  
-**Local federation acceptance:** `run_phase_a_acceptance.py` green on node-a :8100 + node-b :8101 (after anchor cosign recursion fix).  
+**Status:** Phase A engineering milestone **done** (`v0.3.0-alpha`); **Phase A complete** pending public staging.  
+**Release:** [`v0.3.0-alpha`](https://github.com/PoCP-Labs/pocp-ai-commons/releases/tag/v0.3.0-alpha) on `graph-network-animation`.  
+**Local federation acceptance:** `run_phase_a_acceptance.py` green on node-a :8100 + node-b :8101.  
 **North star:** Forkable **protocol + distributed intelligence + distributed compute** — not transaction-layer SaaS.
 
 **Neural Commons** (v0.3 docs + v0.4 kernel) supports this path — it is not a separate product track. See [alignment](#neural-commons-alignment) below.
@@ -10,15 +11,28 @@ See also: [DISTRIBUTED-LAYERS.md](./DISTRIBUTED-LAYERS.md) · [ACCOUNTABILITY-BO
 
 ---
 
+## Phase A milestone definition (canonical)
+
+| Milestone | What it means | Status |
+|-----------|---------------|--------|
+| **`v0.3.0-alpha`** | Phase A **documentation + engineering** land: acceptance runner, federation E2E green, Neural Commons v0.3 docs, v0.4 Entity/Capability kernel, Open Core quality tooling, proof verify UI | **Done** |
+| **Phase A complete** | **Public staging** live: Postgres, GitHub OAuth, `ENABLE_DEV_LOGIN=false`, `run_phase_a_acceptance.py` green against staging API | **Remaining** |
+
+Do not call Phase A finished until staging passes acceptance. Do not delay tagging or docs for staging — `v0.3.0-alpha` is the engineering checkpoint; staging is the public exit gate.
+
+---
+
 ## Execution priority (NOW → NEXT)
 
 ```text
-Phase A (~80%)  →  finish P0/P1  →  tag v0.3.0-alpha  →  public staging
+v0.3.0-alpha ✅  →  public staging (Phase A complete)  →  Phase B
 Phase B         →  operable multi-node compute/MCP  →  30-day third-party peer
 Phase C         →  protocol SDK  →  2+ forks exchange proof packets
 ```
 
 **Rule:** Do not skip Phase A exit criteria for architecture-only work. Neural Commons v0.4+ code lands **inside** Phase A/B themes (Entity registry → Phase B compute profile; Capability registry → Phase C market).
+
+**Release sequencing (canonical):** Land **public staging** and pass staging acceptance **before** committing the Wallet / Federation settlement wave (Wave 2). Staging proves the OAuth + Postgres path; Wave 2 builds on that foundation in separate PRs.
 
 ---
 
@@ -47,12 +61,20 @@ Phase C         →  protocol SDK  →  2+ forks exchange proof packets
 
 ### P0 — Must ship
 
+**Engineering milestone (`v0.3.0-alpha`) — done**
+
 - [x] **Acceptance runner** — `backend/scripts/run_phase_a_acceptance.py`
 - [x] **One-command local** — `scripts/run-phase-a.ps1` / `scripts/run-phase-a.sh`
 - [x] **CI: unit + smoke** — `.github/workflows/smoke-test.yml`
 - [x] **CI: federation acceptance** — `.github/workflows/phase-a-federation.yml`
-- [ ] **Git tag** `v0.3.0-alpha` after review (maintainer)
+- [x] **Git tag** `v0.3.0-alpha` — pushed to GitHub
+- [x] Local federation acceptance green
+
+**Phase A complete — staging exit gate**
+
 - [ ] **Public staging** — Postgres + GitHub OAuth; `ENABLE_DEV_LOGIN=false`
+- [ ] **Staging acceptance** — `run_phase_a_acceptance.py https://api.<staging-host> --staging --skip-optional` (or `scripts/run-staging-acceptance.ps1`)
+- [ ] **Staging env verify** — `scripts/verify-staging.ps1` passes on production `backend/.env`
 
 ### P1 — Should ship in Phase A
 
@@ -93,6 +115,17 @@ Phase C         →  protocol SDK  →  2+ forks exchange proof packets
 ```bash
 python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8000
 python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8100 --federation http://127.0.0.1:8101
+```
+
+**Public staging (OAuth, no dev-login):**
+
+```bash
+# On the server after deploy — verify backend/.env first
+./scripts/verify-staging.sh
+python backend/scripts/run_phase_a_acceptance.py https://api.your-domain.com --staging --skip-optional
+
+# Or one command from repo root (local machine with backend/.env configured)
+./scripts/run-staging-acceptance.sh https://api.your-domain.com
 ```
 
 ---
@@ -137,6 +170,9 @@ python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8100 --federat
 | Phase A acceptance | `backend/scripts/run_phase_a_acceptance.py` |
 | Federation CI | `.github/workflows/phase-a-federation.yml` |
 | Staging env template | `backend/.env.staging.example` |
+| Staging env verify | `backend/scripts/verify_staging_env.py` · `scripts/verify-staging.ps1` |
+| Staging acceptance | `scripts/run-staging-acceptance.ps1` · `--staging` on acceptance runner |
+| Public deploy guide | [PUBLIC-DEPLOY.md](./PUBLIC-DEPLOY.md) |
 | Federation compose | `docker-compose.federation.yml` |
 | Pilot checklist | [PILOT-LAUNCH-CHECKLIST.md](./PILOT-LAUNCH-CHECKLIST.md) |
 

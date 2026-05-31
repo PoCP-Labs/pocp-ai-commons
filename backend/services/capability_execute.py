@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 from typing import Any
 
@@ -19,7 +20,10 @@ from models.wallet import CreditTransaction, CreditType, Wallet
 from services.agent_receipt import build_agent_receipt
 from services.ai_chat import AI_CHAT_COST_PER_MESSAGE
 from services.compute_metering import burn_tokens_from_receipt, settlement_block
+from services.compute_settlement import settle_intel_provider
+from services.intel_receipt import build_intel_receipt
 from services.anti_abuse import check_daily_ai_burn_limit
+from services.exchange_spine import emit_exchange_settled
 from services.ledger_chain import append_ledger_record
 
 SKILL_EXECUTE_COST = float(os.getenv("SKILL_EXECUTE_COST", str(AI_CHAT_COST_PER_MESSAGE)))
@@ -71,6 +75,9 @@ async def _burn_credits_for_execution(
     model: str,
     cost: float,
     reason: str,
+    provider_entity_id: str | None = None,
+    capability: str = "skill_invocation",
+    receipt_hash: str | None = None,
 ) -> dict[str, Any]:
     wallet = db.query(Wallet).filter(Wallet.entity_id == entity_id).first()
     if wallet is None:
@@ -81,14 +88,13 @@ async def _burn_credits_for_execution(
         raise HTTPException(status_code=402, detail="Insufficient AI Credits")
 
     wallet.ai_credits -= cost
-    db.add(
-        CreditTransaction(
-            wallet_id=wallet.id,
-            amount=-cost,
-            credit_type=CreditType.ai_credits,
-            reason=reason,
-        )
+    burn_tx = CreditTransaction(
+        wallet_id=wallet.id,
+        amount=-cost,
+        credit_type=CreditType.ai_credits,
+        reason=reason,
     )
+    db.add(burn_tx)
     db.add(
         AIUsageLog(
             entity_id=entity_id,
@@ -116,12 +122,34 @@ async def _burn_credits_for_execution(
             "reason": reason,
         },
     )
+    provider_ids = [provider_entity_id or os.getenv("POCP_CHAT_PROVIDER_ENTITY_ID", LUMEN_0_ID)]
+    if not receipt_hash:
+        material = f"{entity_id}|{provider}|{model}|{cost}|{reason}"
+        receipt_hash = f"sha256:{hashlib.sha256(material.encode()).hexdigest()}"
+    exchange_record = emit_exchange_settled(
+        db,
+        consumer_entity_id=entity_id,
+        provider_entity_ids=provider_ids,
+        exchange_kind="capability",
+        credit_transactions=[burn_tx],
+        receipt_hash=receipt_hash,
+        capability=capability,
+        usage={
+            "metering_mode": "flat",
+            "bc_debited": cost,
+            "provider": provider,
+            "model": model,
+        },
+        legacy_event_type="ai_credits_burned",
+        settlement_policy="capability_execute.v1",
+    )
     db.flush()
     return {
         "credits_spent": cost,
         "remaining_credits": wallet.ai_credits,
         "provider": provider,
         "model": model,
+        "exchange_id": (exchange_record.payload or {}).get("exchange_id"),
     }
 
 
@@ -255,6 +283,8 @@ async def execute_skill(
     job_id = None
     schedule_receipt = None
     selected: dict[str, Any] = {}
+    skill_settlement = None
+    intel_receipt = None
     if mode == "openclaw":
         output, provider, model = await _execute_openclaw_skill(
             runtime=runtime,
@@ -277,23 +307,73 @@ async def execute_skill(
             model=model,
             prompt=prompt,
             system_content=system,
+            skill_entity_id=skill_entity.id,
         )
         job_id = compute_meta.get("job_id")
         schedule_receipt = compute_meta.get("schedule_receipt")
         selected = compute_meta.get("selected_provider") or {}
         wallet = db.query(Wallet).filter(Wallet.entity_id == human_entity_id).first()
-        billing = await _burn_credits_for_execution(
-            db,
-            entity_id=human_entity_id,
-            prompt=prompt,
-            response=output,
-            provider=provider,
-            model=model,
-            cost=burn_tokens_from_receipt(compute_receipt) if compute_receipt else SKILL_EXECUTE_COST,
-            reason=f"Skill execution: {skill_entity.name}",
-        )
-        if wallet:
+        compute_settlement = (compute_receipt or {}).get("settlement") or {}
+        if compute_settlement.get("settled") and compute_settlement.get("consumer_debited"):
+            billing = {
+                "credits_spent": compute_settlement.get("consumer_tokens", 0),
+                "remaining_credits": compute_settlement.get("consumer_remaining_tokens"),
+                "provider": provider,
+                "model": model,
+                "settlement": (
+                    "skill_orchestration_split"
+                    if compute_settlement.get("multiparty_split")
+                    else "bilateral_compute"
+                ),
+            }
+        else:
+            receipt_hash = (compute_receipt.get("integrity") or {}).get("receipt_hash") if compute_receipt else None
+            billing = await _burn_credits_for_execution(
+                db,
+                entity_id=human_entity_id,
+                prompt=prompt,
+                response=output,
+                provider=provider,
+                model=model,
+                cost=burn_tokens_from_receipt(compute_receipt) if compute_receipt else SKILL_EXECUTE_COST,
+                reason=f"Skill execution: {skill_entity.name}",
+                provider_entity_id=skill_entity.id,
+                capability="skill_invocation",
+                receipt_hash=receipt_hash,
+            )
+        if wallet and billing.get("remaining_credits") is None:
             billing["remaining_credits"] = wallet.ai_credits
+
+        if compute_settlement.get("multiparty_split"):
+            receipt_hash = (compute_receipt.get("integrity") or {}).get("receipt_hash")
+            intel_receipt = build_intel_receipt(
+                provider_entity_id=skill_entity.id,
+                service="skill_orchestration",
+                contribution_id=contribution_id,
+                task_id=task_id,
+                initiator_entity_id=human_entity_id,
+                downstream_compute_receipt_hashes=[receipt_hash] if receipt_hash else [],
+                extra={
+                    "split": compute_settlement.get("split"),
+                    "settlement": compute_settlement.get("settlement"),
+                },
+            )
+            if compute_settlement.get("settled"):
+                intel_receipt["settlement"] = {
+                    "skill_credits_granted": compute_settlement.get("skill_credits_granted"),
+                    "protocol_fee_collected": compute_settlement.get("protocol_fee_collected"),
+                    "split": compute_settlement.get("split"),
+                }
+            skill_settlement = compute_settlement
+        elif compute_settlement.get("settled"):
+            skill_settlement = settle_intel_provider(
+                db,
+                provider_entity_id=skill_entity.id,
+                service="skill_invocation",
+                consumer_entity_id=human_entity_id,
+                contribution_id=contribution_id,
+                task_id=task_id,
+            )
 
     chain: list[tuple[str, str, str]] = []
     step_meta: list[dict | None] = []
@@ -346,6 +426,8 @@ async def execute_skill(
         "compute_receipt": compute_receipt if mode != "openclaw" else None,
         "compute_schedule": schedule_receipt if mode != "openclaw" else None,
         "selected_provider": selected if mode != "openclaw" else None,
+        "skill_settlement": skill_settlement,
+        "intel_receipt": intel_receipt if mode != "openclaw" else None,
         "advisory_only": True,
         "note": "Output is advisory; attach trace_id to contribution evidence for verification.",
     }

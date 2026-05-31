@@ -45,6 +45,15 @@ def verify_proof_integrity(
     require_signature: bool = False,
 ) -> dict[str, Any]:
     """Verify proof hash, embedded ledger subchain, and optional federation signature."""
+    if proof.get("proof_type") == "pocp_exchange_proof":
+        from services.exchange_proof import verify_exchange_proof_integrity
+
+        return verify_exchange_proof_integrity(
+            proof,
+            trusted_public_key=trusted_public_key,
+            require_signature=require_signature,
+        )
+
     checks: list[dict[str, Any]] = []
     valid = True
 

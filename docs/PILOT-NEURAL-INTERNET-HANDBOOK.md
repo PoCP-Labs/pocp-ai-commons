@@ -261,12 +261,12 @@ python backend/scripts/pilot_metrics.py https://api.your-domain.com --strict  # 
 
 | `balance/summary.recommendation` | 运营动作 |
 |----------------------------------|----------|
-| `surplus_detected_run_recycle` | POST `surplus/recycle` |
+| `surplus_detected_run_recycle` | POST `surplus/recycle` 或启用 `POCP_COMPUTE_AUTO_BALANCE=true` |
 | `pool_low_sponsor_deposit` | Sponsor Pool deposit |
 | `deficit_escalate_purchase` | 开 federation 或 cloud adapter（最后档） |
 | `balanced` | 维持；记录 weekly 指标 |
 
-v0.4 将提供自动 cron；Pilot 阶段 **手动 weekly** 即可。
+v0.4 已提供自动 cron；Pilot 仍建议 weekly 人工抽查 `balance/auto-status`。
 
 ### 6.3 反滥用 spot check
 

@@ -237,6 +237,16 @@ def heartbeat_entity_compute_profile(
     }
 
 
+@router.get("/entities/{entity_id}/node-manifest")
+def get_entity_node_manifest(entity_id: str, db: Session = Depends(get_db)):
+    from services.node_manifest import build_entity_node_manifest
+
+    try:
+        return build_entity_node_manifest(db, entity_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @router.get("/entities/{entity_id}", response_model=EntityOut)
 def get_entity(entity_id: str, db: Session = Depends(get_db)):
     entity = db.query(Entity).filter(Entity.id == entity_id).first()
@@ -357,10 +367,20 @@ def list_contribution_compute_jobs(contribution_id: str, db: Session = Depends(g
             if (job.get("selected_provider") or {}).get("adapter")
         }
     )
+    modes = sorted(
+        {
+            (job.get("selected_provider") or {}).get("mode")
+            or (job.get("compute_receipt") or {}).get("extra", {}).get("adapter_mode")
+            for job in jobs
+            if (job.get("selected_provider") or {}).get("mode")
+            or (job.get("compute_receipt") or {}).get("extra", {}).get("adapter_mode")
+        }
+    )
     return {
         "contribution_id": contribution_id,
         "job_count": len(jobs),
         "adapters": adapters,
+        "adapter_modes": modes,
         "jobs": jobs,
     }
 

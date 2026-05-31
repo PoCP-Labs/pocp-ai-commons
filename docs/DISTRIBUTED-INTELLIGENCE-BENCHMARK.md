@@ -15,7 +15,7 @@ PoCP’s **Distributed Intelligence Layer** is not a single upstream project. It
 ```text
 Orchestration  +  Witness quorum  +  Matching  +  Graph advisory  +  Compute routing
         ↓
-Contribution → Proof → Human finalization → Ledger
+Contribution → Proof → Policy finalization → Ledger
 ```
 
 This benchmark answers:

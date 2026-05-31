@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -140,6 +140,28 @@ def capability_catalog(
         status=status,
     )
     return {"count": len(items), "items": items}
+
+
+@router.get("/directory")
+def capability_directory(
+    exchange_kind: str | None = Query(default=None, description="compute | capability | hybrid"),
+    capability_type: str | None = Query(default=None),
+    availability: str | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=500),
+    db: Session = Depends(get_db),
+):
+    """Public marketplace directory — compute + AI capabilities by provider Entity."""
+    from services.node_manifest import list_provider_directory
+
+    if exchange_kind and exchange_kind not in ("compute", "capability", "hybrid"):
+        raise HTTPException(status_code=400, detail="exchange_kind must be compute, capability, or hybrid")
+    return list_provider_directory(
+        db,
+        exchange_kind=exchange_kind,
+        capability_type=capability_type,
+        availability=availability,
+        limit=limit,
+    )
 
 
 @router.post("/skills/{skill_entity_id}/execute")

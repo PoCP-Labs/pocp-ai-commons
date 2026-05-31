@@ -16,6 +16,7 @@ from models.wallet import ReputationScore, Wallet
 
 CONTRIBUTION_HUB_PREFIX = "contribution:"
 LEDGER_NODE_PREFIX = "ledger:"
+EXCHANGE_NODE_PREFIX = "exchange:"
 
 # Participant roles shown on the invocation chain instead of separate hub edges.
 _INVOCATION_COVERED_ROLES = {ParticipantRole.executor, ParticipantRole.skill_provider}
@@ -32,6 +33,21 @@ _HUB_INBOUND_ROLES = {
 }
 def _contribution_hub_id(contribution_id: str) -> str:
     return f"{CONTRIBUTION_HUB_PREFIX}{contribution_id}"
+
+
+def _exchange_node_id(exchange_id: str) -> str:
+    return f"{EXCHANGE_NODE_PREFIX}{exchange_id}"
+
+
+def _exchange_upgrade_from_evidence(evidence: dict | None) -> dict:
+    if not evidence:
+        return {}
+    direct = evidence.get("exchange_upgrade") or {}
+    if direct.get("exchange_id"):
+        return direct
+    meta = evidence.get("_pocp") or {}
+    nested = meta.get("exchange_upgrade") or {}
+    return nested if nested.get("exchange_id") else {}
 
 
 def _contribution_label(contrib: ContributionEvent) -> str:
@@ -231,6 +247,51 @@ def build_contribution_graph(db: Session) -> dict:
                     },
                 )
 
+    for contrib in contributions:
+        upgrade = _exchange_upgrade_from_evidence(contrib.evidence)
+        exchange_id = upgrade.get("exchange_id")
+        if not exchange_id:
+            continue
+        ex_node = _exchange_node_id(exchange_id)
+        if ex_node not in node_ids:
+            kind = upgrade.get("exchange_kind") or "exchange"
+            nodes.append(
+                {
+                    "id": ex_node,
+                    "entity_type": "exchange",
+                    "name": f"{kind} {exchange_id[:12]}…",
+                    "reputation": 0,
+                    "cp_balance": 0,
+                    "ai_credits": 0,
+                }
+            )
+            node_ids.add(ex_node)
+        hub_id = _contribution_hub_id(contrib.id)
+        if hub_id not in node_ids:
+            continue
+        _append_edge(
+            edges,
+            {
+                "source": ex_node,
+                "target": hub_id,
+                "relation": "promoted_to",
+                "contribution_id": contrib.id,
+                "weight": 1.0,
+            },
+        )
+        consumer_id = upgrade.get("consumer_entity_id")
+        if consumer_id and consumer_id in node_ids:
+            _append_edge(
+                edges,
+                {
+                    "source": consumer_id,
+                    "target": ex_node,
+                    "relation": "settled_exchange",
+                    "contribution_id": contrib.id,
+                    "weight": 1.0,
+                },
+            )
+
     if contrib_ids:
         ledger_rows = (
             db.query(LedgerRecord)
@@ -346,6 +407,7 @@ def build_contribution_graph(db: Session) -> dict:
     )
 
     contribution_nodes = sum(1 for n in nodes if n["entity_type"] == "contribution")
+    exchange_nodes = sum(1 for n in nodes if n["entity_type"] == "exchange")
     federation_import_nodes = sum(1 for n in nodes if n["entity_type"] == "federation_import")
     ledger_nodes = sum(1 for n in nodes if n["entity_type"] == "ledger")
     return {
@@ -353,6 +415,7 @@ def build_contribution_graph(db: Session) -> dict:
         "edges": edges,
         "entity_count": len(entities),
         "contribution_node_count": contribution_nodes,
+        "exchange_node_count": exchange_nodes,
         "federation_import_node_count": federation_import_nodes,
         "ledger_node_count": ledger_nodes,
     }

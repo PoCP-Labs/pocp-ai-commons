@@ -93,6 +93,7 @@ services:
       POCP_VERIFY_REMOTE_LEDGER: "true"
       POCP_FEDERATION_SYNC_ON_STARTUP: "false"
       POCP_ALLOW_PEER_WITNESS: "true"
+      POCP_SIGN_COMPUTE_RECEIPTS: "true"
       POCP_WAIT_FOR_DB: "true"
       ENABLE_DEV_LOGIN: "true"
     volumes:

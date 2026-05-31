@@ -21,8 +21,10 @@ NODE_B = sys.argv[2] if len(sys.argv) > 2 else "http://127.0.0.1:8101"
 RAIN_PORTABLE = "dev:rain@example.com"
 
 
-def req(base: str, method: str, path: str, body: dict | None = None) -> dict | list:
+def req(base: str, method: str, path: str, body: dict | None = None, token: str | None = None) -> dict | list:
     headers = {"Content-Type": "application/json"} if body else {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
     data = json.dumps(body).encode() if body else None
     request = urllib.request.Request(
         f"{base.rstrip('/')}{path}",
@@ -151,6 +153,35 @@ def main() -> None:
     assert anchor_b.get("merkle_root"), anchor_b
     assert_hybrid_crypto(NODE_A, "Node A")
     print("OK public ledger anchors on both nodes")
+
+    try:
+        login = req(NODE_A, "POST", "/api/v1/auth/dev-login", {"username": "rain", "email": "rain@example.com"})
+        token = login["access_token"]
+        chat = req(
+            NODE_A,
+            "POST",
+            "/api/v1/ai/chat",
+            {"message": "Federation exchange proof step.", "provider": "mock"},
+            token=token,
+        )
+        exchange_id = chat.get("exchange_id")
+        if exchange_id:
+            proof = req(NODE_A, "GET", f"/api/v1/exchanges/{exchange_id}/proof")
+            imported = req(
+                NODE_B,
+                "POST",
+                "/api/v1/federation/import-exchange-proof",
+                {"source_node_id": "node-a", "proof": proof, "acceptance_level": "L1"},
+            )
+            assert imported.get("id"), imported
+            print(f"OK exchange proof L1 import on Node B ({exchange_id[:16]}…)")
+        else:
+            print("SKIP exchange proof import (no exchange_id on chat — upgrade backend)")
+    except urllib.error.HTTPError as exc:
+        if exc.code in (404, 501):
+            print("SKIP exchange proof import (endpoint not available on this build)")
+        else:
+            raise
 
     print(
         "OK Epic D demo: dual-node federation — signed proof → mirror sync → cross-node reputation"

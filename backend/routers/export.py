@@ -47,6 +47,7 @@ class ProofVerifyOut(BaseModel):
     valid: bool
     proof_id: str | None = None
     contribution_id: str | None = None
+    exchange_id: str | None = None
     checks: list[dict] = Field(default_factory=list)
     ledger_subchain: dict | None = None
 

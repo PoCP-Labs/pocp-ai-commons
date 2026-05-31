@@ -46,6 +46,7 @@ class ComputeRegisterRequest(BaseModel):
     capacity: dict[str, Any] = Field(default_factory=dict)
     policy: dict[str, Any] = Field(default_factory=dict)
     accountability: dict[str, Any] = Field(default_factory=dict)
+    market_profile: dict[str, Any] | None = None
     status: str = "active"
 
 
@@ -288,14 +289,21 @@ def register_entity_compute(
     entity = capability_layer.register_compute_profile(
         db,
         entity_id=entity_id,
-        profile=body.model_dump(),
+        profile=body.model_dump(exclude={"market_profile"}, exclude_none=True),
         owner_entity_id=current_user.entity_id,
     )
+    market_profile = None
+    if body.market_profile:
+        from services.market_pricing import register_market_profile
+
+        market_profile = register_market_profile(db, entity_id, body.market_profile)
+        db.refresh(entity)
     db.commit()
     db.refresh(entity)
     return {
         "entity_id": entity.id,
         "compute_profile": (entity.metadata_ or {}).get("compute_profile"),
+        "market_profile": market_profile or (entity.metadata_ or {}).get("market_profile"),
         "principle": capability_layer.principle,
     }
 
@@ -408,6 +416,12 @@ class SurplusRecycleRequest(BaseModel):
     max_providers: int | None = None
 
 
+class AutoBalanceRunRequest(BaseModel):
+    organization_entity_id: str | None = None
+    dry_run: bool = False
+    force: bool = False
+
+
 @router.get("/balance/summary")
 def compute_balance_summary(
     organization_entity_id: str | None = None,
@@ -423,6 +437,46 @@ def compute_balance_summary(
 
         org_id = resolve_org_entity_id(db, current_user.entity_id)
     return balance_summary(db, organization_entity_id=org_id)
+
+
+@router.get("/balance/auto-status")
+def compute_auto_balance_status(
+    current_user: UserAccount = Depends(require_current_user),
+):
+    """Last auto-balance cycle result (background cron or manual run)."""
+    from services.compute_balance_cron import auto_balance_enabled, auto_balance_interval_minutes, get_last_auto_balance_run
+
+    last = get_last_auto_balance_run()
+    return {
+        "auto_balance_enabled": auto_balance_enabled(),
+        "interval_minutes": auto_balance_interval_minutes(),
+        "last_run": last,
+    }
+
+
+@router.post("/balance/auto-run")
+def run_compute_auto_balance(
+    body: AutoBalanceRunRequest,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    """Manually trigger balance/summary → surplus recycle cycle (operator)."""
+    from services.compute_balance_cron import auto_balance_enabled, run_auto_balance_cycle
+
+    if not body.force and not body.dry_run and not auto_balance_enabled():
+        raise HTTPException(
+            status_code=400,
+            detail="Auto balance disabled; pass force=true or dry_run=true",
+        )
+    result = run_auto_balance_cycle(
+        db,
+        organization_entity_id=body.organization_entity_id,
+        dry_run=body.dry_run,
+        force=body.force,
+    )
+    if result.get("status") == "completed" and not body.dry_run:
+        db.commit()
+    return result
 
 
 @router.get("/pools/{org_entity_id}")

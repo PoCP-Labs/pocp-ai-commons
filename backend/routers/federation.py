@@ -9,13 +9,20 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models.federation import FederatedImport
-from schemas.federation import FederationNodeOut, ImportEventPayload, TrustListOut, TrustedNode
+from schemas.federation import (
+    FederationNodeOut,
+    FederationSettlementIntentIn,
+    ImportEventPayload,
+    TrustListOut,
+    TrustedNode,
+)
 from services.federation_crypto import get_node_public_key_hex
 from services.crypto_suite import active_crypto_suite, get_node_pqc_public_key_hex
 from services.federation_import import import_federated_event, import_from_proof_packet
 from services.federation_peers import probe_peer
 from services.federation_reputation import get_federated_reputation
 from services.federation_sync import sync_all_trusted_peers
+from services.federation_settlement import apply_settlement_intent, list_federation_settlements
 from services.federation_community import (
     federation_import_graph_summary,
     list_entity_federation_imports,
@@ -34,6 +41,12 @@ _SPEC_VERSION = "0.1"
 class ImportProofIn(BaseModel):
     source_node_id: str
     proof: dict
+
+
+class ImportExchangeProofIn(BaseModel):
+    source_node_id: str
+    proof: dict
+    acceptance_level: str = "L1"
 
 
 class FederatedImportOut(BaseModel):
@@ -79,6 +92,8 @@ def get_node_info():
             f"{backend_url}/api/v1/federation/reputation?portable_id={{portable_id}}",
             f"{backend_url}/api/v1/federation/peers/health",
             f"{backend_url}/api/v1/federation/sync",
+            f"{backend_url}/api/v1/federation/settlement/intent",
+            f"{backend_url}/api/v1/federation/settlements",
             f"{backend_url}/api/v1/intelligence/federation/export/{{contribution_id}}",
             f"{backend_url}/api/v1/intelligence/protocol",
         ],
@@ -185,3 +200,41 @@ def import_proof_endpoint(body: ImportProofIn, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(record)
     return record
+
+
+@router.post("/import-exchange-proof", response_model=FederatedImportOut, status_code=201)
+def import_exchange_proof_endpoint(body: ImportExchangeProofIn, db: Session = Depends(get_db)):
+    """L1 federation import for portable exchange proofs (verify-only, no BC mint)."""
+    from services.federation_exchange_import import import_federated_exchange_proof
+
+    record = import_federated_exchange_proof(
+        db,
+        body.source_node_id,
+        body.proof,
+        acceptance_level=body.acceptance_level,
+    )
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+@router.post("/settlement/intent")
+def federation_settlement_intent(body: FederationSettlementIntentIn, db: Session = Depends(get_db)):
+    """Apply mirrored provider credit from a trusted consumer node's signed intent."""
+    try:
+        result = apply_settlement_intent(db, body.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    db.commit()
+    return result
+
+
+@router.get("/settlements")
+def federation_settlements(
+    side: str | None = None,
+    status: str | None = None,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+):
+    """List local federation settlement ledger entries (consumer debits or provider credits)."""
+    return list_federation_settlements(db, side=side, status=status, limit=limit)

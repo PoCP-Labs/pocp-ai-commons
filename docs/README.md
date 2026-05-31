@@ -97,6 +97,7 @@ PoCP AI Commons documentation is organized around the **Genesis Package** and th
 | [BC-CP-MECHANISM.md](./BC-CP-MECHANISM.md) | BC ↔ CP conversion mechanics |
 | [COMPUTE-METERING-SPEC.md](./COMPUTE-METERING-SPEC.md) | Token metering for compute & intelligence (v0.2 draft) |
 | [ENTITY-MARKET-SPEC.md](./ENTITY-MARKET-SPEC.md) | Bilateral Entity market thesis & settlement (v0.2 draft) |
+| [SETTLEMENT-REDEMPTION-SPEC.md](./SETTLEMENT-REDEMPTION-SPEC.md) | Redemption, fiat on/off-ramp governance, BTC optional path (v0.4 draft) |
 | [DISTRIBUTED-TOKEN-RESEARCH.md](./DISTRIBUTED-TOKEN-RESEARCH.md) | Deep research: compute vs intelligence metering, «storage» analogy |
 | [COMPUTE-CAPACITY-SPEC.md](./COMPUTE-CAPACITY-SPEC.md) | Capacity reservation + ComputeArtifact cache (v0.2) |
 | [COMPUTE-BALANCE-SPEC.md](./COMPUTE-BALANCE-SPEC.md) | Surplus storage + deficit purchase dynamic balance (v0.3) |

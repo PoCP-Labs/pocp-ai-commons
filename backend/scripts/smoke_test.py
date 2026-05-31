@@ -53,11 +53,55 @@ def main() -> None:
     assert chat["remaining_credits"] == credits_before - 5, (
         f"expected {credits_before - 5}, got {chat['remaining_credits']}"
     )
+    exchange_id = chat.get("exchange_id")
     print("OK ai/chat burns credits")
+
+    if exchange_id:
+        exchange = req("GET", f"/api/v1/exchanges/{exchange_id}")
+        assert exchange["exchange_id"] == exchange_id
+        assert exchange.get("exchange_kind") == "capability"
+        proof = req("GET", f"/api/v1/exchanges/{exchange_id}/proof")
+        assert proof["proof_type"] == "pocp_exchange_proof"
+        assert proof["exchange_id"] == exchange_id
+        verified = req("POST", "/api/v1/proof/verify", {"proof": proof})
+        assert verified.get("valid") is True, verified
+        elc = req("GET", f"/api/v1/entities/{entity_id}/local-chain?limit=5")
+        assert any(r.get("ref_id") == exchange_id for r in elc.get("records", []))
+        print(f"OK exchange proof verify exchange={exchange_id[:16]}…")
+    else:
+        print("SKIP exchange proof (no exchange_id on chat response)")
 
     usage = req("GET", "/api/v1/ai/usage", token=token)
     assert len(usage) >= 1
     print("OK ai/usage log")
+
+    quote = req(
+        "POST",
+        "/api/v1/wallets/me/quote",
+        {"action": "ai_chat", "provider": "mock"},
+        token=token,
+    )
+    assert quote["action"] == "ai_chat"
+    assert quote["cost"] == 5
+    assert quote["allowed"] is True
+    print(f"OK wallet quote cost={quote['cost']} balance_after={quote['balance_after']}")
+
+    summary = req("GET", "/api/v1/wallets/me/summary", token=token)
+    assert summary["entity_id"] == entity_id
+    assert summary["audit_valid"] is True
+    assert summary["transaction_count"] >= 1
+    print(f"OK wallet summary bc={summary['ai_credits']} txs={summary['transaction_count']}")
+
+    txs = req("GET", "/api/v1/wallets/me/transactions?limit=10", token=token)
+    assert txs["total"] >= 1
+    assert any(t["amount"] < 0 for t in txs["items"]), "chat burn should appear in transactions"
+    print(f"OK wallet transactions total={txs['total']}")
+
+    export = req("GET", "/api/v1/wallets/me/export", token=token)
+    assert export["export_kind"] == "wallet_entity_v0.1"
+    verified = req("POST", "/api/v1/wallets/me/export/verify", export, token=token)
+    assert verified["valid"] is True, verified
+    print("OK wallet export verify")
 
     entities = req("GET", "/api/v1/entities")
     humans = [e for e in entities if e["entity_type"] == "human"]
@@ -141,6 +185,26 @@ def main() -> None:
         },
         token=token,
     )
+
+    if exchange_id:
+        try:
+            promoted = req(
+                "POST",
+                f"/api/v1/exchanges/{exchange_id}/publish-contribution",
+                {
+                    "task_id": task["id"],
+                    "description": "Promoted from smoke-test AI chat exchange",
+                },
+                token=token,
+            )
+            assert promoted["status"] == "submitted"
+            assert (promoted.get("evidence") or {}).get("exchange_upgrade", {}).get("exchange_id") == exchange_id
+            print(f"OK exchange publish-contribution {promoted['id'][:12]}…")
+        except urllib.error.HTTPError as exc:
+            if exc.code == 409:
+                print("OK exchange publish-contribution already present")
+            else:
+                raise
 
     contrib = req(
         "POST",

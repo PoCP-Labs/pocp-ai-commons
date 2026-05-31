@@ -2,7 +2,7 @@
 
 **Contribution-attributed bilateral market for distributed compute and intelligence — not a centralized GPU cloud selling tokens.**
 
-See also: [COMPUTE-METERING-SPEC.md](./COMPUTE-METERING-SPEC.md) · [DISTRIBUTED-TOKEN-RESEARCH.md](./DISTRIBUTED-TOKEN-RESEARCH.md) · [DISTRIBUTED-COMPUTE-PRIMER.md](./DISTRIBUTED-COMPUTE-PRIMER.md) · [DISTRIBUTED-INTELLIGENCE.md](./DISTRIBUTED-INTELLIGENCE.md) · [NO-TOKEN-FIRST.md](../NO-TOKEN-FIRST.md) · [AI-CREDITS-CP-REPUTATION.md](../AI-CREDITS-CP-REPUTATION.md)
+See also: [COMPUTE-METERING-SPEC.md](./COMPUTE-METERING-SPEC.md) · [SETTLEMENT-REDEMPTION-SPEC.md](./SETTLEMENT-REDEMPTION-SPEC.md) · [DISTRIBUTED-TOKEN-RESEARCH.md](./DISTRIBUTED-TOKEN-RESEARCH.md) · [DISTRIBUTED-COMPUTE-PRIMER.md](./DISTRIBUTED-COMPUTE-PRIMER.md) · [DISTRIBUTED-INTELLIGENCE.md](./DISTRIBUTED-INTELLIGENCE.md) · [NO-TOKEN-FIRST.md](../NO-TOKEN-FIRST.md) · [AI-CREDITS-CP-REPUTATION.md](../AI-CREDITS-CP-REPUTATION.md)
 
 ---
 
@@ -208,6 +208,8 @@ Conditions before a tradable protocol token ([NO-TOKEN-FIRST.md](../NO-TOKEN-FIR
 
 **Entity market with AI Credits completes step 2** without violating “no token-first.”
 
+Redemption (fiat/BTC exit) is **out of scope for Pilot** — see [SETTLEMENT-REDEMPTION-SPEC.md](./SETTLEMENT-REDEMPTION-SPEC.md).
+
 ---
 
 ## 8. vs centralized platform (comparison table)
@@ -269,7 +271,7 @@ The thesis is **proven** when a public demo shows:
 | **α–δ** (done) | ComputeProfile, scheduler, receipt, fixed settlement |
 | **v0.2** | Token metering spec implemented; dynamic burn/credit |
 | **v0.3** | IntelReceipt, split settlement, optional Entity price overrides |
-| **v0.4** | Federation bilateral settlement |
+| **v0.4** | Skill orchestration multi-party split (LLM + Skill + protocol fee); federation bilateral settlement |
 | **v1.0** | Governance vote on protocol token (optional) |
 
 ---

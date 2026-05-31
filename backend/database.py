@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 SQLITE_BASELINE_REVISION = "72f32ab86a41"
 SQLITE_LEDGER_HASH_REVISION = "a1b2c3d4e5f6"
 SQLITE_HEAD_STRUCTURAL_REVISION = "b2c3d4e5f6a7"
-SQLITE_HEAD_REVISION = "h0i1j2k3l4m5"
+SQLITE_HEAD_REVISION = "j2k3l4m5n6o7"
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
@@ -146,6 +146,15 @@ def _sqlite_detect_revision() -> str:
         return SQLITE_BASELINE_REVISION
 
     if "entity_capabilities" in table_names:
+        if "federation_settlements" in table_names:
+            credit_columns: set[str] = set()
+            if "credit_transactions" in table_names:
+                credit_columns = {
+                    column["name"] for column in inspector.get_columns("credit_transactions")
+                }
+            if "ledger_record_id" in credit_columns:
+                return "j2k3l4m5n6o7"
+            return "i1j2k3l4m5n6"
         return "h0i1j2k3l4m5"
     if "compute_jobs" in table_names:
         return "g9h0i1j2k3l4"

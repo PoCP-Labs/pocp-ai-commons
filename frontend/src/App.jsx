@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import ContributionGraphView from "./ContributionGraph";
+import ContributionInsights from "./ContributionInsights";
+import EcosystemPanel from "./EcosystemPanel";
+import CapabilityDirectory from "./CapabilityDirectory";
+import ComputePoolPanel from "./ComputePoolPanel";
+import ProviderPanel from "./ProviderPanel";
 import EntityDetail from "./EntityDetail";
 import CryptoReadinessPanel from "./CryptoReadinessPanel";
 import ProofVerifyPanel, { CryptoReadinessBadge, LedgerVerifyBadge } from "./ProofVerifyPanel";
-import SubmitFlow from "./SubmitFlow";
+import WalletPanel from "./WalletPanel";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const TOKEN_KEY = "pocp_token";
@@ -64,6 +69,11 @@ const LEDGER_EVENT_LABELS = {
   contribution_approved: "Contribution approved",
   registration_grant: "Starter AI Credits granted",
   ai_credits_burned: "AI Credits used",
+  compute_provided: "Compute provided",
+  intel_provided: "Capability provided (算力/能力)",
+  protocol_fee_collected: "Protocol fee collected",
+  protocol_tokens_burned: "Protocol tokens burned",
+  compute_settlement: "Compute settlement",
   trust_list_updated: "Trusted federation nodes updated",
   federation_import: "Contribution imported from peer node",
 };
@@ -201,6 +211,7 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [chatMessage, setChatMessage] = useState("");
   const [chatReply, setChatReply] = useState(null);
+  const [chatQuote, setChatQuote] = useState(null);
   const [chatLoading, setChatLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [devPersona, setDevPersona] = useState("rain");
@@ -214,6 +225,8 @@ export default function App() {
   const [reviewQueue, setReviewQueue] = useState([]);
   const [pendingEntityReviews, setPendingEntityReviews] = useState([]);
   const [proofContributionId, setProofContributionId] = useState("");
+  const [walletRefreshKey, setWalletRefreshKey] = useState(0);
+  const [focusedLedgerHash, setFocusedLedgerHash] = useState(null);
 
   const loadProfile = useCallback(async () => {
     if (!getToken()) {
@@ -357,6 +370,26 @@ export default function App() {
     if (tab === "chat" && profile) loadAiUsage();
   }, [tab, profile, loadAiUsage, chatReply]);
 
+  const loadChatQuote = useCallback(async () => {
+    if (!getToken()) {
+      setChatQuote(null);
+      return;
+    }
+    try {
+      const q = await fetchJson("/api/v1/wallets/me/quote", {
+        method: "POST",
+        body: JSON.stringify({ action: "ai_chat", provider: "mock" }),
+      });
+      setChatQuote(q);
+    } catch {
+      setChatQuote(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab === "chat" && profile) loadChatQuote();
+  }, [tab, profile, loadChatQuote, chatReply, walletRefreshKey]);
+
   const devLogin = async () => {
     setAuthLoading(true);
     setError(null);
@@ -403,8 +436,10 @@ export default function App() {
       });
       setChatReply(result);
       setChatMessage("");
+      setWalletRefreshKey((k) => k + 1);
       await loadProfile();
       await load();
+      await loadChatQuote();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -422,9 +457,36 @@ export default function App() {
   const selectedEntity = selectedEntityId ? entityMap[selectedEntityId] : null;
   const contribution = contributions[0];
   const latestLedger = ledger[0];
+  const focusedLedger =
+    focusedLedgerHash &&
+    ledger.find((r) => r.record_hash === focusedLedgerHash || r.id === focusedLedgerHash);
+
+  const openEntity = (entityId) => {
+    if (entityId) {
+      setSelectedEntityId(entityId);
+      setTab("entities");
+    }
+  };
+
+  const openContribution = (contributionId) => {
+    if (contributionId) {
+      setProofContributionId(contributionId);
+      setTab("verify");
+    }
+  };
+
+  const openLedgerLink = (ledgerLink) => {
+    const hash = ledgerLink?.ledger_record_hash || ledgerLink?.ledger_record_id;
+    if (hash) {
+      setFocusedLedgerHash(hash);
+      setTab("dashboard");
+    }
+  };
 
   const tabs = [
     { id: "dashboard", label: "Network" },
+    { id: "ecosystem", label: "Ecosystem" },
+    { id: "provider", label: "Compute / Capability" },
     { id: "workflow", label: "Contribute" },
     { id: "verify", label: "Verify Proof" },
     { id: "account", label: "Wallet" },
@@ -555,44 +617,15 @@ export default function App() {
       {tab === "account" && (
         <section className="panel">
           <h2 className="panel__title">Entity Wallet</h2>
-          <p className="panel__subtitle">Human Entity · CP balance · AI Credits usage rights</p>
-          {!profile ? (
-            <p className="empty-state">Dev Login to create a Human Entity, Wallet, and 100 starter AI Credits.</p>
-          ) : (
-            <div className="profile-grid">
-              <div className="profile-card">
-                <strong>{profile.entity.name}</strong>
-                <div className="profile-card__email">{profile.user.email}</div>
-                <div style={{ marginTop: 8 }}>
-                  <EntityBadge type={profile.entity.entity_type} />
-                </div>
-              </div>
-              <div className="profile-card profile-card--wallet">
-                <div className="profile-card__balance">
-                  <strong>{profile.wallet.cp_balance}</strong> CP
-                </div>
-                <div className="profile-card__balance">
-                  <span className="ai-credits">
-                    <strong>{profile.wallet.ai_credits}</strong>
-                  </span>{" "}
-                  AI Credits remaining
-                </div>
-                {walletAudit?.wallets && (
-                  <div className="wallet-audit-hint">
-                    {(() => {
-                      const row = walletAudit.wallets.find((w) => w.entity_id === profile.entity.id);
-                      if (!row) return null;
-                      return row.valid ? (
-                        <span className="wallet-audit-hint--ok">Balance verified from transaction history</span>
-                      ) : (
-                        <span className="wallet-audit-hint--bad">Balance mismatch detected — contact operator</span>
-                      );
-                    })()}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          <p className="panel__subtitle">CP proof · AI Credits usage rights · transaction history</p>
+          <WalletPanel
+            profile={profile}
+            fetchJson={fetchJson}
+            issuanceBudget={issuanceBudget}
+            onOpenContribution={openContribution}
+            onOpenLedger={openLedgerLink}
+            refreshKey={walletRefreshKey}
+          />
           {profile && pendingEntityReviews.length > 0 && (
             <div className="panel" style={{ marginTop: "1.5rem" }}>
               <h3 className="panel__title" style={{ fontSize: "1rem" }}>
@@ -629,7 +662,10 @@ export default function App() {
           <AdvisoryBanner />
           <h2 className="panel__title section-heading--ai">AI Node</h2>
           <p className="panel__subtitle">
-            Each message burns 5 AI Credits · Mock provider when no API key configured · AI is witness, not ruler
+            {chatQuote
+              ? `Each message burns ${chatQuote.cost} AI Credits · ${chatQuote.allowed ? `${chatQuote.current_balance} BC available` : "insufficient balance"}`
+              : "Each message burns AI Credits · Mock provider when no API key configured"}{" "}
+            · AI is witness, not ruler
           </p>
           {!profile ? (
             <p className="empty-state">Dev Login first to access the AI node.</p>
@@ -647,10 +683,17 @@ export default function App() {
                   type="button"
                   className="btn btn--ai"
                   onClick={sendChat}
-                  disabled={chatLoading || !chatMessage.trim()}
+                  disabled={chatLoading || !chatMessage.trim() || chatQuote?.allowed === false}
                 >
-                  {chatLoading ? "Transmitting…" : "Send · 5 Credits"}
+                  {chatLoading
+                    ? "Transmitting…"
+                    : `Send · ${chatQuote?.cost ?? "?"} Credits`}
                 </button>
+                {chatQuote?.allowed === false && (
+                  <p className="wallet-audit-hint wallet-audit-hint--bad" style={{ marginTop: 8 }}>
+                    Insufficient AI Credits — contribute or check Wallet tab
+                  </p>
+                )}
               </div>
               {chatReply && (
                 <div className="chat-reply">
@@ -686,6 +729,18 @@ export default function App() {
         </section>
       )}
 
+      {tab === "ecosystem" && (
+        <EcosystemPanel fetchJson={fetchJson} authenticated={!!profile} onSelectEntity={openEntity} />
+      )}
+
+      {tab === "provider" && (
+        <>
+          <CapabilityDirectory fetchJson={fetchJson} onSelectEntity={openEntity} />
+          <ProviderPanel fetchJson={fetchJson} me={profile} entities={entities} />
+          <ComputePoolPanel fetchJson={fetchJson} me={profile} entities={entities} />
+        </>
+      )}
+
       {tab === "workflow" && (
         <section className="panel">
           <AdvisoryBanner />
@@ -703,6 +758,7 @@ export default function App() {
               setProofContributionId(id);
               setTab("verify");
             }}
+            onSelectEntity={openEntity}
           />
         </section>
       )}
@@ -723,7 +779,13 @@ export default function App() {
             />
           </label>
           {proofContributionId ? (
-            <ProofVerifyPanel apiBase={API} contributionId={proofContributionId} />
+            <ProofVerifyPanel
+              apiBase={API}
+              contributionId={proofContributionId}
+              fetchJson={fetchJson}
+              onSelectEntity={openEntity}
+              entityMap={entityMap}
+            />
           ) : (
             <p className="panel__subtitle">Enter a contribution ID or open a shared proof link.</p>
           )}
@@ -742,6 +804,9 @@ export default function App() {
               onBack={() => setSelectedEntityId(null)}
               fetchJson={fetchJson}
               authenticated={!!profile}
+              onSelectEntity={openEntity}
+              onOpenContribution={openContribution}
+              onOpenLedger={openLedgerLink}
             />
           ) : (
             <section className="panel">
@@ -962,6 +1027,11 @@ export default function App() {
                   })}
                 </tbody>
               </table>
+              <ContributionInsights
+                contributionId={contribution.id}
+                fetchJson={fetchJson}
+                onSelectEntity={openEntity}
+              />
             </section>
           )}
 
@@ -992,10 +1062,31 @@ export default function App() {
             </section>
           </div>
 
-          {latestLedger && <LedgerBlockPanel record={latestLedger} height={ledger.length} />}
+          {(focusedLedger || latestLedger) && (
+            <div>
+              {focusedLedger && (
+                <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                  <span className="proof-layers__meta">Ledger record from wallet activity</span>
+                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => setFocusedLedgerHash(null)}>
+                    Show latest
+                  </button>
+                </div>
+              )}
+              <LedgerBlockPanel
+                record={focusedLedger || latestLedger}
+                height={ledger.length}
+              />
+            </div>
+          )}
 
           {contribution?.status === "approved" && (
-            <ProofVerifyPanel apiBase={API} contributionId={contribution.id} />
+            <ProofVerifyPanel
+              apiBase={API}
+              contributionId={contribution.id}
+              fetchJson={fetchJson}
+              onSelectEntity={openEntity}
+              entityMap={entityMap}
+            />
           )}
         </>
       )}

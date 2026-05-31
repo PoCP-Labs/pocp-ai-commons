@@ -245,6 +245,13 @@ class CommunityPartnerTests(unittest.TestCase):
         self.assertTrue(len(offers) > 0)
         self.assertTrue("chaoss" in slugs or "meritocrab" in slugs)
 
+    def test_match_training_partners(self):
+        from services.community_partner import match_partners_for_capability
+
+        offers = match_partners_for_capability("training")
+        slugs = {p["slug"] for p in offers}
+        self.assertIn("gensyn", slugs)
+
     def test_outreach_report_shape(self):
         from services.community_partner import build_outreach_report
 

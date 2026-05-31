@@ -68,6 +68,16 @@ Manual verify endpoint exists but is disabled by default; use `auto-verify`.
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/v1/wallets` | All wallets |
+| GET | `/api/v1/wallets/me/summary` | Authenticated wallet summary (Bearer) |
+| GET | `/api/v1/wallets/me/transactions` | Transaction history with ledger links |
+| POST | `/api/v1/wallets/me/quote` | Pre-flight spend quote (`ai_chat`, etc.) |
+| GET | `/api/v1/wallets/me/export` | Personal wallet audit bundle |
+| POST | `/api/v1/wallets/me/export/verify` | Verify export JSON replay |
+| GET | `/api/v1/wallets/{entity_id}/summary` | Public entity wallet summary |
+| GET | `/api/v1/wallets/{entity_id}/transactions` | Public entity transactions |
+| GET | `/api/v1/wallets/audit` | Recompute all balances from transactions |
+| GET | `/api/v1/wallets/export` | Operator full wallet export |
+| POST | `/api/v1/wallets/export/verify` | Verify operator export |
 | GET | `/api/v1/reputation` | Reputation records |
 | GET | `/api/v1/ledger` | Ledger records |
 | GET | `/api/v1/ledger/verify` | Verify hash chain integrity |
@@ -136,5 +146,6 @@ Authorization: Bearer <access_token>
 
 - [Sprint Alpha](./SPRINT_ALPHA.md)
 - [AI Credits Guide](./AI-CREDITS-GUIDE.md)
+- [Wallet Guide](./WALLET-GUIDE.md)
 - [Verifier Guide](./VERIFIER-GUIDE.md)
 - [Human Review Guide](./HUMAN-REVIEW-GUIDE.md)

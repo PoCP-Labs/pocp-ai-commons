@@ -9,7 +9,6 @@ from database import Base
 from genesis import RAIN_ID
 from models.entity import Entity, EntityStatus, EntityType
 from services.compute_adapters.base import AdapterJobSpec
-from services.compute_adapters.base import AdapterJobSpec
 from services.compute_adapters.registry import get_adapter, list_adapters
 from services.compute_adapters.service import import_adapter_provider, poll_adapter_job, submit_adapter_job
 from services.compute_adapters.stub_state import reset_stub_jobs

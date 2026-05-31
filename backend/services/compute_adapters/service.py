@@ -11,19 +11,25 @@ from sqlalchemy.orm import Session
 
 from models.entity import Entity, EntityStatus, EntityType
 from services.compute_adapters.base import AdapterJobSpec, AdapterJobStatus
+from services.compute_adapters.live_config import adapter_runtime_status
 from services.compute_adapters.registry import get_adapter, list_adapters
 from services.compute_jobs import create_job_record, get_job_record, update_job_record
 from services.compute_profile import get_compute_profile, register_compute_profile
 from services.compute_receipt import build_compute_receipt
-from services.compute_settlement import settle_compute_provider
+from services.compute_settlement import settle_bilateral
 
 
 def list_adapter_catalog() -> dict[str, Any]:
+    adapters = []
+    for entry in list_adapters():
+        runtime = adapter_runtime_status(entry["slug"], default=entry.get("mode", "stub"))
+        adapters.append({**entry, **runtime})
     return {
         "spec_version": "pocp.compute_adapter.v0.1",
-        "adapters": list_adapters(),
+        "adapters": adapters,
         "principle": "External network tokens are evidence only — not PoCP CP issuance.",
         "spec_doc": "docs/COMPUTE-ADAPTER-SPEC.md",
+        "live_wire_doc": "docs/COMPUTE-ADAPTER-LIVE-WIRE.md",
     }
 
 
@@ -170,7 +176,7 @@ def submit_adapter_job(
             "adapter": adapter.slug,
             "provider_entity_id": provider_entity_id,
             "network": adapter.network,
-            "mode": adapter.mode,
+            "mode": adapter.effective_mode(),
         },
         receipt=receipt_stub,
         status="scheduled",
@@ -253,7 +259,7 @@ def poll_adapter_job(db: Session, slug: str, job_id: str) -> dict[str, Any]:
         started_at=started_at,
         input_material=spec.constraints.get("input_preview"),
     )
-    settlement = settle_compute_provider(
+    settlement = settle_bilateral(
         db,
         receipt,
         consumer_entity_id=job.get("initiator_entity_id"),

@@ -42,16 +42,12 @@ Recommended DNS:
 | `api.your-domain.com` | A | server IP |
 | `app.your-domain.com` | A | server IP |
 
-Use the branch that contains Sprint Alpha features (e.g. `community-launch-pack`) until merged to `main`.
-
----
-
-## Step 1 — Clone and configure
+Use tag **`v0.3.0-alpha`** or branch **`graph-network-animation`** (Phase A release).
 
 ```bash
 git clone https://github.com/PoCP-Labs/pocp-ai-commons.git
 cd pocp-ai-commons
-git checkout community-launch-pack   # or main after merge
+git checkout v0.3.0-alpha   # or: git checkout graph-network-animation
 ```
 
 ### Project-root `.env` (Compose build variables)
@@ -74,6 +70,15 @@ openssl rand -hex 16
 ```
 
 ### Backend `backend/.env` (application secrets)
+
+**Phase A staging** (recommended first deploy):
+
+```bash
+cp backend/.env.staging.example backend/.env
+python backend/scripts/verify_staging_env.py   # must pass before go-live
+```
+
+**Production** (same stack; stricter `APP_ENV`):
 
 ```bash
 cp backend/.env.production.example backend/.env
@@ -166,16 +171,31 @@ With `ENABLE_DEV_LOGIN=false`, users must use **GitHub Login** on the public sit
 
 ---
 
-## Step 5 — Smoke test
+## Step 5 — Staging acceptance (Phase A exit gate)
 
-From your laptop (replace the API host):
+With `ENABLE_DEV_LOGIN=false`, do **not** use `smoke_test.py` (it relies on dev-login). Use the staging acceptance runner instead.
+
+**On the server** (after `backend/.env` is configured):
 
 ```bash
-cd backend
-python scripts/smoke_test.py https://api.your-domain.com
+./scripts/verify-staging.sh
+python backend/scripts/run_phase_a_acceptance.py https://api.your-domain.com --staging --skip-optional
 ```
 
-Note: the default smoke test uses **dev-login**. For production, either temporarily set `ENABLE_DEV_LOGIN=true` on a staging host, or test manually via GitHub Login in the UI.
+**From your laptop** (repo cloned; `backend/.env` matches production secrets for env check only):
+
+```bash
+./scripts/run-staging-acceptance.sh https://api.your-domain.com
+```
+
+The `--staging` mode checks:
+
+- `/health` and `/api/v1/intelligence/status`
+- `POST /api/v1/auth/dev-login` returns **403**
+- `GET /api/v1/auth/github/login` redirects to GitHub OAuth
+- `/api/v1/crypto/readiness` and `/api/v1/ledger/verify`
+
+Manually confirm **GitHub Login** in the browser once OAuth is configured.
 
 ---
 

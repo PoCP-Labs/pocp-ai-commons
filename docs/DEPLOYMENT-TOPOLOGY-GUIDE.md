@@ -384,6 +384,8 @@ python backend/scripts/pilot_metrics.py https://api.your-domain.com --json
 | 调度 job | POST | `/api/v1/compute/jobs` |
 | 执行 job | POST | `/api/v1/compute/jobs/{id}/execute` |
 | 平衡诊断 | GET | `/api/v1/compute/balance/summary` |
+| 自动平衡 | POST | `/api/v1/compute/balance/auto-run` |
+| 自动平衡状态 | GET | `/api/v1/compute/balance/auto-status` |
 | 过剩回收 | POST | `/api/v1/compute/surplus/recycle` |
 | Pool 充值 | POST | `/api/v1/compute/pools/{org_id}/deposit` |
 | Skill 执行 | POST | `/api/v1/capabilities/execute` |

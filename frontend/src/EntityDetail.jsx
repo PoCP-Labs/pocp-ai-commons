@@ -1,5 +1,67 @@
 import { useCallback, useEffect, useState } from "react";
+import ComputeAttributionPanel from "./ComputeAttributionPanel";
+import EntityWalletActivity from "./EntityWalletActivity";
 import LogOutreachForm from "./LogOutreachForm";
+function ContributionReceiptSummary({ contributionId, entityMap, fetchJson, onSelectEntity }) {
+  const [proof, setProof] = useState(null);
+  const [computeJobs, setComputeJobs] = useState(null);
+  const [expanded, setExpanded] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!expanded || !fetchJson || !contributionId) return;
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([
+      fetchJson(`/api/v1/contributions/${contributionId}/proof`).catch(() => null),
+      fetchJson(`/api/v1/contributions/${contributionId}/compute-jobs`).catch(() => null),
+    ])
+      .then(([proofData, jobsData]) => {
+        if (cancelled) return;
+        setProof(proofData);
+        setComputeJobs(jobsData);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [expanded, contributionId, fetchJson]);
+
+  const hasReceipts =
+    (proof?.compute_attribution?.receipt_count || 0) > 0 || (computeJobs?.job_count || 0) > 0;
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <button
+        type="button"
+        className="btn btn--ghost btn--sm"
+        onClick={() => setExpanded((v) => !v)}
+      >
+        {expanded ? "Hide compute receipts" : "Show compute receipts"}
+      </button>
+      {expanded && loading && (
+        <p className="proof-layers__meta" style={{ marginTop: 6 }}>
+          Loading proof…
+        </p>
+      )}
+      {expanded && !loading && !hasReceipts && (
+        <p className="proof-layers__meta" style={{ marginTop: 6 }}>
+          No compute receipts bound to this contribution.
+        </p>
+      )}
+      {expanded && !loading && hasReceipts && (
+        <ComputeAttributionPanel
+          computeAttribution={proof?.compute_attribution}
+          computeJobs={computeJobs}
+          entityMap={entityMap}
+          onSelectEntity={onSelectEntity}
+        />
+      )}
+    </div>
+  );
+}
 
 export default function EntityDetail({
   entity,
@@ -10,6 +72,9 @@ export default function EntityDetail({
   onBack,
   fetchJson,
   authenticated = false,
+  onSelectEntity,
+  onOpenContribution,
+  onOpenLedger,
 }) {
   const [audit, setAudit] = useState([]);
   const [portable, setPortable] = useState(null);
@@ -19,6 +84,8 @@ export default function EntityDetail({
   const [federationImports, setFederationImports] = useState(null);
   const [partnerDetail, setPartnerDetail] = useState(null);
   const [partnerOutreachLog, setPartnerOutreachLog] = useState([]);
+  const [nodeManifest, setNodeManifest] = useState(null);
+  const [localChain, setLocalChain] = useState(null);
 
   const isPartnerEntity =
     entity?.metadata?.roles?.includes("community_partner") ||
@@ -114,6 +181,22 @@ export default function EntityDetail({
         if (!cancelled) setFederationImports(null);
       });
 
+    fetchJson(`/api/v1/entities/${entity.id}/node-manifest`)
+      .then((data) => {
+        if (!cancelled) setNodeManifest(data);
+      })
+      .catch(() => {
+        if (!cancelled) setNodeManifest(null);
+      });
+
+    fetchJson(`/api/v1/entities/${entity.id}/local-chain?limit=8`)
+      .then((data) => {
+        if (!cancelled) setLocalChain(data);
+      })
+      .catch(() => {
+        if (!cancelled) setLocalChain(null);
+      });
+
     if (isPartnerEntity) {
       loadPartnerData();
     } else {
@@ -184,7 +267,14 @@ export default function EntityDetail({
           )}
         </div>
 
-        {wallet && (
+        {fetchJson ? (
+          <EntityWalletActivity
+            entityId={entity.id}
+            fetchJson={fetchJson}
+            onOpenContribution={onOpenContribution}
+            onOpenLedger={onOpenLedger}
+          />
+        ) : wallet ? (
           <div className="profile-card profile-card--wallet">
             <div className="profile-card__balance">
               <strong>{wallet.cp_balance}</strong> CP
@@ -196,12 +286,76 @@ export default function EntityDetail({
               AI Credits
             </div>
           </div>
-        )}
-      </div>
+        ) : null}      </div>
 
       {entity.metadata?.roles?.length > 0 && (
         <div className="entity-row__mission" style={{ marginBottom: 12 }}>
           Roles: {entity.metadata.roles.join(", ")}
+        </div>
+      )}
+
+      {nodeManifest?.facets?.length > 0 && (
+        <div className="mini-card" style={{ marginBottom: 12 }}>
+          <strong>Node facets</strong>
+          <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {nodeManifest.facets.map((facet) => (
+              <span key={facet} className="entity-badge entity-badge--agent">
+                {facet.replace(/_/g, " ")}
+              </span>
+            ))}
+          </div>
+          {(nodeManifest.capabilities || []).length > 0 && (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontSize: "0.8rem", fontWeight: 600, marginBottom: 6 }}>Published capabilities</div>
+              {nodeManifest.capabilities.slice(0, 8).map((cap) => (
+                <div key={cap.capability_id || cap.capability_type} className="entity-row__mission">
+                  {cap.name} · {cap.capability_type} · {cap.unit}
+                  {cap.exchange_kind ? ` · ${cap.exchange_kind}` : ""}
+                  {cap.base_price != null ? ` · ${cap.base_price} AIC` : ""}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {localChain?.records?.length > 0 && (
+        <div className="mini-card" style={{ marginBottom: 12 }}>
+          <strong>Exchange activity (ELC)</strong>
+          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 4 }}>
+            {localChain.total} settlement(s) · head {localChain.head_hash?.slice(0, 12)}…
+          </div>
+          {localChain.records.slice().reverse().map((row) => (
+            <div key={row.seq} className="entity-row__mission" style={{ marginTop: 6 }}>
+              #{row.seq} {row.exchange_kind || "exchange"} · {row.ref_id?.slice(0, 16)}…
+              {row.usage?.bc_debited != null ? ` · −${row.usage.bc_debited} BC` : ""}
+              {row.usage?.bc_credited != null ? ` · +${row.usage.bc_credited} BC` : ""}
+              {authenticated && fetchJson && (
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  style={{ marginLeft: 8 }}
+                  title="Publish as contribution (requires open task)"
+                  onClick={() => {
+                    const taskId = window.prompt("Task ID to attach contribution to:");
+                    if (!taskId?.trim()) return;
+                    const desc = window.prompt("Short description (optional):") || undefined;
+                    fetchJson(`/api/v1/exchanges/${row.ref_id}/publish-contribution`, {
+                      method: "POST",
+                      body: JSON.stringify({
+                        task_id: taskId.trim(),
+                        description: desc,
+                      }),
+                    })
+                      .then((c) => window.alert(`Contribution submitted: ${c.id}`))
+                      .catch((err) => window.alert(err.message || "Publish failed"));
+                  }}
+                >
+                  发布为贡献
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
@@ -394,6 +548,14 @@ export default function EntityDetail({
               <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: 4 }}>
                 Primary: {entityMap[c.primary_entity_id]?.name || c.primary_entity_id}
               </div>
+              {fetchJson && (
+                <ContributionReceiptSummary
+                  contributionId={c.id}
+                  entityMap={entityMap}
+                  fetchJson={fetchJson}
+                  onSelectEntity={onSelectEntity}
+                />
+              )}
             </div>
           ))}
         </>

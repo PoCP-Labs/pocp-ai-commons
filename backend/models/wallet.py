@@ -41,6 +41,9 @@ class CreditTransaction(Base):
     contribution_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("contribution_events.id")
     )
+    ledger_record_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("ledger_records.id"), nullable=True, index=True
+    )
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     credit_type: Mapped[CreditType] = mapped_column(pocp_enum(CreditType), nullable=False)
     reason: Mapped[str | None] = mapped_column(String(255))

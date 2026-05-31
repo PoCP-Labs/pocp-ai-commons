@@ -229,6 +229,26 @@ def verify_federation_signatures(
         raise HTTPException(status_code=400, detail="Invalid PQC federation signature")
 
 
+def federation_signatures_valid(
+    federation: dict[str, Any],
+    message: str,
+    *,
+    trusted_public_key: str | None = None,
+    trusted_pqc_public_key: str | None = None,
+) -> bool:
+    """Return True when federation signatures verify; False on any failure."""
+    try:
+        verify_federation_signatures(
+            federation,
+            message,
+            trusted_public_key=trusted_public_key,
+            trusted_pqc_public_key=trusted_pqc_public_key,
+        )
+        return True
+    except HTTPException:
+        return False
+
+
 def crypto_readiness_report() -> dict[str, Any]:
     """Node-level quantum readiness snapshot for operators and federation peers."""
     suite = active_crypto_suite()

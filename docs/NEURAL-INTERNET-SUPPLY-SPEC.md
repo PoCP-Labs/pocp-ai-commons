@@ -348,7 +348,8 @@ Org 注入 ComputePool
 | **α–δ** ✅ | ComputeProfile、scheduler、Receipt、mesh、federation |
 | **v0.2** ✅ | 统一 PoCP Token、Artifact、IntelReceipt |
 | **v0.3** ✅ | ComputePool、surplus recycle、balance API |
-| **v0.4** | 自动 precompute cron；federation 跨节点 Token 清算；Skill 多方 split UI |
+| **v0.4** ✅ | 自动 precompute cron（`compute_balance_cron.py`） |
+| **v0.4** | federation 跨节点 Token 清算；Skill 多方 split UI |
 | **v1.0** | 移动端 Agent 宿主；可选 Protocol Token 治理 |
 
 ---

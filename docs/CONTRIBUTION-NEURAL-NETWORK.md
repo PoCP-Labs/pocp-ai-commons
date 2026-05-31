@@ -189,6 +189,8 @@ If it only adds UI without protocol memory — defer until the graph and ledger 
 
 ## Related
 
+- **[protocol/LANDING-PLAN-v0.1.md](./protocol/LANDING-PLAN-v0.1.md)** — actionable v0.4 neural base (start here for engineering)
+- [protocol/NEURAL-ARCHITECTURE-v0.1.md](./protocol/NEURAL-ARCHITECTURE-v0.1.md) · [protocol/EXCHANGE-SPINE-v0.1.md](./protocol/EXCHANGE-SPINE-v0.1.md) · [protocol/CONSTITUTION-v0.1.md](./protocol/CONSTITUTION-v0.1.md)
 - [GENESIS.md](../GENESIS.md) · [docs/genesis/zh-CN.md](./genesis/zh-CN.md)
 - [INTELLIGENCE-LAYER.md](./INTELLIGENCE-LAYER.md)
 - [VISION.md](./VISION.md)

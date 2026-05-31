@@ -278,6 +278,29 @@ Das ist PoCPs Genesis-Zyklus:
 
 ---
 
+### Beitrags-Neuronales Netz · GitHub-Adoption · Settlement-Schicht
+
+PoCP ist kein einzelnes zentrales Modell, sondern ein **verifizierbares Beitrags-Neuronales Netz** — Intelligenz und Rechenleistung verteilt im Netz, nicht in einer Plattform-Silozelle.
+
+PoCP **übernimmt OSS-Muster als Adapter**, nicht als Token-Marktplatz:
+
+| Kategorie | Beispiele | Rolle in PoCP |
+|-----------|-----------|---------------|
+| **LLM-Inferenz** | Ollama, vLLM, llama.cpp | Lokale AI-Zeugen + AI Chat |
+| **Agent-Orchestrierung** | LangGraph, CrewAI | StudyAgent, MultiVerifier |
+| **Tool-Protokoll** | MCP | Tool Entity + `mcp_invocation_context` Proof |
+| **Compute-Marktplätze** | Akash, Render, io.net | **Compute Adapter** — externe Entity, kein AKT/RNDR/IO in der PoCP-Spine |
+| **Training-Netzwerk** | Gensyn | `contribution_type: training` + `ComputeReceipt.integrity.training_attestation` |
+| **Benchmark (abgelehnt)** | Bittensor, Virtuals | Token-Miner / Agent-Coins — siehe [NO-TOKEN-FIRST.md](../NO-TOKEN-FIRST.md) |
+
+**Settlement-Schicht (PoCP-Position):** Andere bauen Ressourcen- und Tool-Märkte; PoCP baut die Schicht **nach dem Aufruf** — wer beigetragen hat, wie verifiziert, wie CP/AI Credits/Reputation im Graph landen.
+
+Dokumentation: [DISTRIBUTED-INTELLIGENCE-BENCHMARK.md](../DISTRIBUTED-INTELLIGENCE-BENCHMARK.md) · [COMPUTE-ADAPTER-SPEC.md](../COMPUTE-ADAPTER-SPEC.md) · [TRAINING-CONTRIBUTION-SPEC.md](../TRAINING-CONTRIBUTION-SPEC.md) · [CAPABILITY-SCHEMA-v0.3.md](../protocol/CAPABILITY-SCHEMA-v0.3.md) · [SETTLEMENT-SCHEMA-v0.3.md](../protocol/SETTLEMENT-SCHEMA-v0.3.md)
+
+Frontend: Tab **Ecosystem** (Partner · Inspirations · Discover · Compute adapters).
+
+---
+
 ## 5. AI Credits sind das erste Recht, kein Token
 
 PoCP beginnt nicht mit einem Token.

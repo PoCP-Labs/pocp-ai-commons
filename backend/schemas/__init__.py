@@ -104,6 +104,74 @@ class WalletOut(BaseModel):
     ai_credits: float
 
 
+class WalletBalanceAfterOut(BaseModel):
+    cp_balance: float
+    ai_credits: float
+
+
+class CreditTransactionOut(BaseModel):
+    id: str
+    wallet_id: str
+    contribution_id: str | None = None
+    amount: float
+    credit_type: str
+    reason: str | None = None
+    category: str | None = None
+    created_at: str
+    balance_after: WalletBalanceAfterOut
+    ledger_link: dict[str, Any] | None = None
+
+
+class LedgerLinkOut(BaseModel):
+    ledger_record_id: str
+    ledger_event_type: str
+    ledger_record_hash: str | None = None
+    ledger_created_at: str | None = None
+
+
+class WalletTransactionsOut(BaseModel):
+    items: list[CreditTransactionOut] = Field(default_factory=list)
+    total: int
+    limit: int
+    offset: int
+
+
+class RightsPolicyItemOut(BaseModel):
+    version: str
+    spendable: bool
+    transferable: bool
+    description: str
+
+
+class WalletRightsPolicyOut(BaseModel):
+    cp: RightsPolicyItemOut
+    bc: RightsPolicyItemOut
+
+
+class WalletSummaryOut(BaseModel):
+    entity_id: str
+    wallet_id: str
+    cp_balance: float
+    ai_credits: float
+    today_earned: dict[str, float]
+    today_spent: dict[str, float]
+    today_compute_earned: float = 0.0
+    today_compute_spent: float = 0.0
+    transaction_count: int
+    audit_valid: bool
+    rights_policy: WalletRightsPolicyOut
+
+
+class WalletQuoteOut(BaseModel):
+    action: str
+    credit_type: str
+    cost: float
+    current_balance: float
+    balance_after: float
+    allowed: bool
+    provider: str | None = None
+
+
 class ReputationOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

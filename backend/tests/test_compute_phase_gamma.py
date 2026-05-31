@@ -77,6 +77,15 @@ class ComputeSettlementGammaTests(unittest.TestCase):
             )
         )
         self.db.add(Wallet(entity_id="llm-1", cp_balance=0, ai_credits=10))
+        self.db.add(
+            Entity(
+                id="human-1",
+                entity_type=EntityType.human,
+                name="Consumer",
+                status=EntityStatus.active,
+            )
+        )
+        self.db.add(Wallet(entity_id="human-1", cp_balance=0, ai_credits=100))
         self.db.commit()
 
     def tearDown(self):
@@ -89,6 +98,7 @@ class ComputeSettlementGammaTests(unittest.TestCase):
             capability="llm_inference",
             adapter="mock",
             contribution_id="c1",
+            initiator_entity_id="human-1",
             input_material="in",
             output_material="out",
         )

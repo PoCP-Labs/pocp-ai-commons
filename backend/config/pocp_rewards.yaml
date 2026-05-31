@@ -68,6 +68,9 @@ compute_metering:
       provider_credits: 1.0
       consumer_credits: 2.0
       intel_equivalent_tokens: 1000
+    skill_orchestration:
+      metering_mode: intel
+      intel_equivalent_tokens: 1000
   artifact:
     cache_hit_consumer_multiplier: 0.1
     cache_hit_provider_multiplier: 0.05
@@ -82,6 +85,9 @@ compute_surplus:
   max_precompute_per_cycle: 2
   pool_deposit_pct: 0.20
   deficit_burst_limit: 500
+  auto_balance_enabled: false
+  auto_balance_interval_minutes: 60
+  auto_recycle_on_surplus: true
   precompute_tasks:
     - type: artifact_warmup
       capability: llm_inference

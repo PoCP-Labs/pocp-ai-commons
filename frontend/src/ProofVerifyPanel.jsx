@@ -1,22 +1,22 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import ComputeAttributionPanel from "./ComputeAttributionPanel";
+import ContributionInsights from "./ContributionInsights";
 
 function truncateHash(value, len = 14) {
   if (!value || typeof value !== "string") return "—";
   return value.length <= len ? value : `${value.slice(0, len)}…`;
 }
 
-function ProofSettlementLayers({ proof, computeJobs }) {
+function ProofSettlementLayers({ proof }) {
   const mcp = proof?.mcp_invocation_context;
-  const compute = proof?.compute_attribution;
   const training = proof?.evidence?.raw?.training;
   const ctype = proof?.contribution_event?.contribution_type;
 
   const hasMcp = (mcp?.trace_count || 0) > 0;
-  const hasCompute = (compute?.receipt_count || 0) > 0 || (computeJobs?.job_count || 0) > 0;
   const hasTraining = ctype === "training" && training;
-  const trainingAttestationCount = compute?.training_attestation_count;
 
-  if (!hasMcp && !hasCompute && !hasTraining) return null;
+  if (!hasMcp && !hasTraining) return null;
 
   return (
     <div className="proof-layers">
@@ -34,31 +34,6 @@ function ProofSettlementLayers({ proof, computeJobs }) {
             <div className="proof-layers__meta">
               Receipt hashes: {mcp.capability_receipt_hashes.length} · verified{" "}
               {mcp.verified_receipt_count ?? 0}
-            </div>
-          )}
-        </div>
-      )}
-      {hasCompute && (
-        <div className="mini-card proof-layers__card">
-          <strong>Compute attribution</strong>
-          <div className="proof-layers__meta">
-            {compute?.receipt_count ?? 0} receipt(s) in proof
-            {compute?.verified_count != null && (
-              <span> · {compute.verified_count} verified</span>
-            )}
-            {(compute?.capabilities || []).length > 0 && (
-              <span> · {compute.capabilities.join(", ")}</span>
-            )}
-            {trainingAttestationCount != null && trainingAttestationCount > 0 && (
-              <span> · {trainingAttestationCount} training attestation(s)</span>
-            )}
-          </div>
-          {computeJobs?.job_count > 0 && (
-            <div className="proof-layers__meta">
-              Adapter jobs: {computeJobs.job_count}
-              {(computeJobs.adapters || []).length > 0 && (
-                <span> ({computeJobs.adapters.join(", ")})</span>
-              )}
             </div>
           )}
         </div>
@@ -81,12 +56,36 @@ function ProofSettlementLayers({ proof, computeJobs }) {
   );
 }
 
-export default function ProofVerifyPanel({ apiBase, contributionId, compact = false }) {
+export default function ProofVerifyPanel({
+  apiBase,
+  contributionId,
+  compact = false,
+  fetchJson: fetchJsonProp,
+  onSelectEntity,
+  entityMap,
+}) {
   const [proof, setProof] = useState(null);
   const [computeJobs, setComputeJobs] = useState(null);
   const [verifyResult, setVerifyResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const fetchJson = useMemo(() => {
+    if (fetchJsonProp) return fetchJsonProp;
+    return async (path, options = {}) => {
+      const res = await fetch(`${apiBase}${path}`, {
+        ...options,
+        headers: {
+          ...(options.body ? { "Content-Type": "application/json" } : {}),
+          ...(options.headers || {}),
+        },
+      });
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+      return res.json();
+    };
+  }, [apiBase, fetchJsonProp]);
 
   const fetchProof = useCallback(async () => {
     if (!contributionId) return;
@@ -190,7 +189,18 @@ export default function ProofVerifyPanel({ apiBase, contributionId, compact = fa
           )}
         </p>
       )}
-      <ProofSettlementLayers proof={proof} computeJobs={computeJobs} />
+      <ProofSettlementLayers proof={proof} />
+      <ComputeAttributionPanel
+        computeAttribution={proof?.compute_attribution}
+        computeJobs={computeJobs}
+        entityMap={entityMap}
+        onSelectEntity={onSelectEntity}
+      />
+      <ContributionInsights
+        contributionId={contributionId}
+        fetchJson={fetchJson}
+        onSelectEntity={onSelectEntity}
+      />
       {verifyResult && (
         <div className={`alert ${verifyResult.valid ? "alert--success" : "alert--error"}`}>
           {verifyResult.valid ? "Proof valid — hash chain and integrity checks passed." : "Proof verification failed."}

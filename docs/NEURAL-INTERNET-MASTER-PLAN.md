@@ -667,12 +667,13 @@ Cross-node inference（settlement v0.4）
 | δ | mesh, federation, LAN, anti_abuse |
 | v0.2 | unified PoCP Token, Artifact, IntelReceipt |
 | v0.3 | ComputePool, surplus recycle, balance API |
+| v0.4 | 自动 balance cron（`compute_balance_cron.py`） |
 
 ### 15.2 路线图
 
 | 阶段 | 目标 |
 |------|------|
-| **v0.4** | 自动 balance cron；Skill 多方 split 结算；federation Token 清算 |
+| **v0.4** | Skill 多方 split 结算；federation Token 清算 |
 | **v0.5** | 动态挂牌价；SLA timeout 降权；Postgres Artifact |
 | **v1.0** | 移动 Agent 宿主；可选 Protocol Token 治理；跨 Org 公共 market |
 
@@ -685,7 +686,8 @@ backend/services/
   compute_settlement.py     compute_mesh.py
   compute_federation.py       compute_pool.py
   compute_precompute.py       compute_utilization.py
-  compute_artifact.py         capability_execute.py
+  compute_artifact.py         compute_balance_cron.py
+  capability_execute.py
 backend/intelligence/       services/proof.py
 backend/routers/compute.py  routers/intelligence.py
 ```
@@ -739,7 +741,8 @@ backend/routers/compute.py  routers/intelligence.py
 6. NEURAL-INTERNET-SUPPLY-SPEC.md（供需摘要）
 7. COMPUTE-METERING-SPEC.md + ENTITY-MARKET-SPEC.md（经济）
 8. COMPUTE-BALANCE-SPEC.md（调节）
-9. genesis/zh-CN.md §10（创世纪表述）
+9. SETTLEMENT-REDEMPTION-SPEC.md（赎回 / 法币 / BTC 边界）
+10. genesis/zh-CN.md §10（创世纪表述）
 ```
 
 ## 附录 B — 术语表

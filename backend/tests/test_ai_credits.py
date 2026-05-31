@@ -40,7 +40,9 @@ class AICreditsBurnTests(unittest.TestCase):
 
         with patch("services.ai_chat.check_daily_ai_burn_limit"):
             with patch("services.ai_chat.append_ledger_record"):
-                result = asyncio.run(
+                with patch("services.ai_chat.emit_exchange_settled") as mock_exchange:
+                    mock_exchange.return_value = MagicMock(payload={"exchange_id": "ex_test"})
+                    result = asyncio.run(
                     chat_and_burn_credits(
                         db,
                         entity_id="entity-1",

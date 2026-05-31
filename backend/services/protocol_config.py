@@ -50,6 +50,9 @@ _DEFAULTS = {
         "idle_job_threshold": 0,
         "pool_deposit_pct": 0.20,
         "deficit_burst_limit": 500,
+        "auto_balance_enabled": False,
+        "auto_balance_interval_minutes": 60,
+        "auto_recycle_on_surplus": True,
     },
     "federation": {"default_trust_weight": 0.5},
 }

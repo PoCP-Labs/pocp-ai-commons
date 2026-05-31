@@ -16,7 +16,7 @@ from services.compute_jobs import get_job_record, update_job_record
 from services.compute_metering import estimate_token_usage, usage_from_adapter
 from services.compute_receipt import build_compute_receipt
 from services.compute_scheduler import ComputeJob, schedule_compute_job
-from services.compute_settlement import settle_compute_provider
+from services.federation_settlement import settle_compute_receipt
 from services.intel_receipt import build_intel_receipt
 from services.ollama_client import ollama_base_url, ollama_chat_model
 from services.remote_witness import run_witness
@@ -119,6 +119,7 @@ async def execute_llm_inference(
     model: str | None,
     prompt: str,
     system_content: str,
+    skill_entity_id: str | None = None,
 ) -> tuple[str, str, str, dict[str, Any] | None, dict[str, Any]]:
     """Schedule, execute (local / remote Entity / fallback), settle, return receipt."""
     job_id, schedule_receipt = await begin_llm_job(
@@ -218,6 +219,7 @@ async def execute_llm_inference(
         usage=usage,
         execution_mode=execution_mode,
         artifact_ref=artifact_ref,
+        skill_entity_id=skill_entity_id,
     )
     meta = {
         "job_id": job_id,
@@ -241,6 +243,7 @@ def complete_llm_job(
     usage: dict[str, Any] | None = None,
     execution_mode: str = "live_inference",
     artifact_ref: dict[str, Any] | None = None,
+    skill_entity_id: str | None = None,
 ) -> dict[str, Any] | None:
     if not job_id:
         return None
@@ -282,10 +285,12 @@ def complete_llm_job(
     )
     settlement = None
     if db is not None:
-        settlement = settle_compute_provider(
+        settlement = settle_compute_receipt(
             db,
             receipt,
             consumer_entity_id=consumer_entity_id or job.get("initiator_entity_id"),
+            selected_provider=sel or None,
+            skill_entity_id=skill_entity_id,
         )
         if settlement:
             receipt["settlement"] = settlement
@@ -370,11 +375,14 @@ async def execute_compute_job(
                     (receipt.get("integrity") or {}).get("receipt_hash")
                 ],
             )
-        settlement = settle_compute_provider(
+        settlement = settle_compute_receipt(
             db,
             receipt,
             consumer_entity_id=job.get("initiator_entity_id"),
+            selected_provider=selected or None,
         )
+        if settlement and settlement.get("settled") and intel_receipt:
+            intel_receipt["settlement"] = settlement
         if settlement:
             receipt["settlement"] = settlement
         update_job_record(

@@ -68,7 +68,40 @@ def build_compute_receipt(
         "receipt_hash": receipt_hash,
         "hash_algorithm": HASH_ALGORITHM,
     }
-    return body
+    return attach_provider_signature(body)
+
+
+def attach_provider_signature(receipt: dict[str, Any]) -> dict[str, Any]:
+    """Optional provider Ed25519 signature over receipt_hash (Phase 2b)."""
+    if os.getenv("POCP_SIGN_COMPUTE_RECEIPTS", "false").lower() != "true":
+        return receipt
+    from services.federation_crypto import get_node_public_key_hex, sign_message
+
+    integrity = dict(receipt.get("integrity") or {})
+    receipt_hash = integrity.get("receipt_hash")
+    if not receipt_hash:
+        return receipt
+    signature = sign_message(receipt_hash)
+    public_key = get_node_public_key_hex()
+    if signature and public_key:
+        integrity["provider_signature"] = signature
+        integrity["provider_public_key"] = public_key
+        integrity["signed_field"] = "receipt_hash"
+    out = dict(receipt)
+    out["integrity"] = integrity
+    return out
+
+
+def verify_provider_receipt_signature(receipt: dict[str, Any]) -> bool:
+    integrity = receipt.get("integrity") or {}
+    signature = integrity.get("provider_signature")
+    public_key = integrity.get("provider_public_key")
+    receipt_hash = integrity.get("receipt_hash")
+    if not signature or not public_key or not receipt_hash:
+        return False
+    from services.federation_crypto import verify_message
+
+    return verify_message(receipt_hash, signature, public_key)
 
 
 def verify_compute_receipt(receipt: dict[str, Any]) -> bool:

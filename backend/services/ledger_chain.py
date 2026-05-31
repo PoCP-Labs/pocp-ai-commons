@@ -168,12 +168,29 @@ def backfill_ledger_hashes(db: Session) -> int:
     return len(records)
 
 
+def _order_records_by_hash_chain(records: list[LedgerRecord]) -> list[LedgerRecord]:
+    """Order ledger rows by prev_hash linkage (not created_at) for verify."""
+    if not records:
+        return []
+    by_hash = {r.record_hash: r for r in records if r.record_hash}
+    genesis = [r for r in records if not r.prev_hash and r.record_hash]
+    if len(genesis) != 1:
+        return sorted(records, key=lambda r: (r.created_at, r.id))
+    ordered: list[LedgerRecord] = []
+    current = genesis[0]
+    seen: set[str] = set()
+    while current and current.record_hash not in seen:
+        seen.add(current.record_hash)
+        ordered.append(current)
+        next_row = next((by_hash[h] for h in by_hash if by_hash[h].prev_hash == current.record_hash), None)
+        current = next_row
+    if len(ordered) != len(records):
+        return sorted(records, key=lambda r: (r.created_at, r.id))
+    return ordered
+
+
 def verify_ledger_chain(db: Session) -> dict:
-    records = (
-        db.query(LedgerRecord)
-        .order_by(LedgerRecord.created_at.asc(), LedgerRecord.id.asc())
-        .all()
-    )
+    records = db.query(LedgerRecord).all()
     if not records:
         return {
             "valid": True,
@@ -183,6 +200,7 @@ def verify_ledger_chain(db: Session) -> dict:
             "genesis_hash": None,
             "tip_hash": None,
         }
+    ordered = _order_records_by_hash_chain(records)
     export_rows = [
         {
             "id": record.id,
@@ -193,6 +211,6 @@ def verify_ledger_chain(db: Session) -> dict:
             "hash_algorithm": record.hash_algorithm or LEGACY_HASH_ALGORITHM,
             "created_at": record.created_at,
         }
-        for record in records
+        for record in ordered
     ]
     return verify_ledger_records(export_rows)

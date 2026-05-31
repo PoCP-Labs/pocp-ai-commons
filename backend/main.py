@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import asyncio
 import logging
 import os
 
@@ -11,6 +12,7 @@ from routers.api import router
 from routers.auth import router as auth_router
 from routers.ai_chat import router as ai_chat_router
 from routers.verification import router as verification_router
+from routers.exchanges import router as exchanges_router
 from routers.export import router as export_router
 from routers.federation import router as federation_router
 from routers.code_attribution import router as code_attribution_router
@@ -22,6 +24,7 @@ from routers.capabilities import router as capabilities_router
 from routers.capability_registry import router as capability_registry_router
 from routers.community_partners import router as community_partners_router
 from routers.crypto import router as crypto_router
+from routers.wallet import router as wallet_router
 from genesis import ensure_genesis_entities
 from seed import seed_demo
 from middleware.read_only_mirror import ReadOnlyMirrorMiddleware
@@ -32,6 +35,44 @@ from services.trust_config import load_trusted_nodes
 from services.trust_ledger import record_trust_list_if_changed
 
 logger = logging.getLogger(__name__)
+
+
+async def _compute_auto_balance_loop() -> None:
+    from services.compute_balance_cron import (
+        auto_balance_enabled,
+        auto_balance_interval_minutes,
+        run_auto_balance_cycle,
+    )
+    from services.node_mode import is_read_only_mirror
+
+    interval_sec = auto_balance_interval_minutes() * 60
+    while True:
+        await asyncio.sleep(interval_sec)
+        if not auto_balance_enabled() or is_read_only_mirror():
+            continue
+        db = SessionLocal()
+        try:
+            result = run_auto_balance_cycle(db)
+            if result.get("status") == "completed":
+                db.commit()
+                recycled = sum(
+                    1
+                    for action in result.get("actions") or []
+                    if action.get("action") == "recycled"
+                )
+                if recycled:
+                    logger.info(
+                        "Compute auto-balance: targets=%s recycled=%s",
+                        result.get("targets"),
+                        recycled,
+                    )
+            else:
+                db.rollback()
+        except Exception as exc:
+            db.rollback()
+            logger.warning("Compute auto-balance cycle failed: %s", exc)
+        finally:
+            db.close()
 
 
 def _full_seed_enabled() -> bool:
@@ -92,12 +133,24 @@ async def lifespan(app: FastAPI):
             finally:
                 sync_db.close()
 
+    balance_task: asyncio.Task | None = None
+    if os.getenv("POCP_COMPUTE_AUTO_BALANCE", "").lower() in ("1", "true", "yes"):
+        balance_task = asyncio.create_task(_compute_auto_balance_loop())
+        logger.info("Compute auto-balance background loop started")
+
     yield
+
+    if balance_task is not None:
+        balance_task.cancel()
+        try:
+            await balance_task
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(
     title="PoCP AI Commons API",
-    version="0.3.0",
+    version="0.4.0",
     description=(
         "Proof of Contribution Protocol — "
         "humans, agents, and skills collaborating on verifiable contributions."
@@ -119,6 +172,7 @@ app.include_router(auth_router)
 app.include_router(ai_chat_router)
 app.include_router(verification_router)
 app.include_router(export_router)
+app.include_router(exchanges_router)
 app.include_router(federation_router)
 app.include_router(code_attribution_router)
 app.include_router(external_inspiration_router)
@@ -129,6 +183,15 @@ app.include_router(capabilities_router)
 app.include_router(capability_registry_router)
 app.include_router(compute_router)
 app.include_router(crypto_router)
+app.include_router(wallet_router)
+
+
+@app.get("/.well-known/pocp-node.json")
+def well_known_pocp_node(db: Session = Depends(get_db)):
+    """Instance-level node manifest — capability-first discovery."""
+    from services.node_manifest import build_instance_node_manifest
+
+    return build_instance_node_manifest(db)
 
 
 @app.get("/.well-known/agent.json")
@@ -148,7 +211,7 @@ def health():
         "status": "ok" if db_status == "ok" else "degraded",
         "service": "pocp-ai-commons",
         "protocol": "pocp-v0.1",
-        "version": "0.3.0",
+        "version": "0.4.0",
         "stage": "phase-a",
         "full_seed": _full_seed_enabled(),
         "crypto_suite": active_crypto_suite(),

@@ -18,7 +18,7 @@ const CONTRIBUTION_TYPES = [
   { value: "training", label: "Training (Gensyn schema)" },
 ];
 
-export default function SubmitFlow({ api, entities, tasks, currentEntityId, onComplete, onProofLink }) {
+export default function SubmitFlow({ api, entities, tasks, currentEntityId, onComplete, onProofLink, onSelectEntity }) {
   const humans = entities.filter((e) => e.entity_type === "human");
   const agents = entities.filter((e) => e.entity_type === "agent");
   const skills = entities.filter((e) => e.entity_type === "skill");
@@ -559,6 +559,16 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
         </div>
       )}
 
+      {contributionId && (step === "verify" || step === "done") && (
+        <ProofVerifyPanel
+          apiBase={api}
+          contributionId={contributionId}
+          compact={step !== "done"}
+          onSelectEntity={onSelectEntity}
+          entityMap={Object.fromEntries(entities.map((e) => [e.id, e]))}
+        />
+      )}
+
       {approvalResult && step === "done" && (
         <div className="panel" style={{ marginTop: 12, padding: 12 }}>
           <h3 style={{ fontSize: "0.9rem", margin: "0 0 8px", color: "var(--btc)" }}>Issuance Summary</h3>
@@ -569,9 +579,6 @@ export default function SubmitFlow({ api, entities, tasks, currentEntityId, onCo
             <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: 8 }}>
               AI witness scores recorded; finalizer Entity recorded in this block.
             </p>
-          )}
-          {contributionId && (
-            <ProofVerifyPanel apiBase={api} contributionId={contributionId} compact />
           )}
         </div>
       )}

@@ -307,7 +307,7 @@ PoCP 将从 GitHub **广泛引进、适配、记录**神经网络与智能体相
 | **图神经网络** | PyTorch Geometric ✅（结构分析 v0.1）、DGL | 贡献图谱分析（建议，不强制人工终审） |
 | **联邦算力** | 多节点 witness 路由 ✅（NN-5 原型） | `peer:{node_id}` 见证 + `/compute/witness` |
 | **信任协议模式** | OCTP、GARL、ForgeFed、SourceCred、MCP、pow.yaml 等 | 已纳入 `external_inspirations`；评估中映射见 [inspiration-mappings](../inspiration-mappings/README.md) |
-| **贡献结算层对标** | Bittensor、Gensyn、Akash、io.net、Gitcoin、II 等 | 已登记 round 8 benchmark；MCP Proof 层 `mcp_invocation_context`；训练贡献见 [TRAINING-CONTRIBUTION-SPEC.md](../TRAINING-CONTRIBUTION-SPEC.md) |
+| **贡献结算层对标** | Bittensor、Gensyn、Akash、io.net、Gitcoin、II 等 | 已登记 round 8 benchmark；MCP Proof 层 `mcp_invocation_context`；训练贡献见 [TRAINING-CONTRIBUTION-SPEC.md](../TRAINING-CONTRIBUTION-SPEC.md)；能力/结算 schema 见 [CAPABILITY-SCHEMA-v0.3.md](../protocol/CAPABILITY-SCHEMA-v0.3.md) · [SETTLEMENT-SCHEMA-v0.3.md](../protocol/SETTLEMENT-SCHEMA-v0.3.md) |
 
 引进原则：
 
@@ -654,7 +654,8 @@ PoCP 的战场在 **协议层、分布式算力层、分布式智力层**；交�
 算力层执行 → 智力层编排 → 协议层记住
 ```
 
-完整阐述见 [ARCHITECTURE.md](../ARCHITECTURE.md) · [PROTOCOL.md](../PROTOCOL.md) · [ROADMAP.md](../../ROADMAP.md)。
+完整阐述见 [ARCHITECTURE.md](../ARCHITECTURE.md) · [PROTOCOL.md](../PROTOCOL.md) · [ROADMAP.md](../../ROADMAP.md)。  
+**落地指南（7 天路径）：** [DISTRIBUTED-INTELLIGENCE-BUILD-GUIDE.md](../DISTRIBUTED-INTELLIGENCE-BUILD-GUIDE.md)
 
 ### 贡献神经网络
 

@@ -1,12 +1,15 @@
+import hashlib
 import os
 
 import httpx
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from genesis import LUMEN_0_ID
 from models.ai_usage import AIUsageLog
 from models.wallet import CreditTransaction, CreditType, Wallet
 from services.anti_abuse import check_daily_ai_burn_limit
+from services.exchange_spine import emit_exchange_settled
 from services.ledger_chain import append_ledger_record
 from services.llama_cpp_client import llama_cpp_base_url, llama_cpp_chat_enabled, llama_cpp_chat_model
 from services.ollama_client import ollama_base_url, ollama_chat_model
@@ -146,14 +149,13 @@ async def chat_and_burn_credits(
 
     reply, actual_provider, actual_model = await generate_ai_reply(message, provider, model)
     wallet.ai_credits -= cost
-    db.add(
-        CreditTransaction(
-            wallet_id=wallet.id,
-            amount=-cost,
-            credit_type=CreditType.ai_credits,
-            reason="AI chat usage",
-        )
+    chat_tx = CreditTransaction(
+        wallet_id=wallet.id,
+        amount=-cost,
+        credit_type=CreditType.ai_credits,
+        reason="AI chat usage",
     )
+    db.add(chat_tx)
     usage = AIUsageLog(
         entity_id=entity_id,
         wallet_id=wallet.id,
@@ -177,6 +179,26 @@ async def chat_and_burn_credits(
             "remaining_credits": wallet.ai_credits,
         },
     )
+    chat_provider_entity = os.getenv("POCP_CHAT_PROVIDER_ENTITY_ID", LUMEN_0_ID)
+    receipt_material = f"{entity_id}|{actual_provider}|{actual_model}|{cost}|{message[:128]}"
+    receipt_hash = f"sha256:{hashlib.sha256(receipt_material.encode()).hexdigest()}"
+    exchange_record = emit_exchange_settled(
+        db,
+        consumer_entity_id=entity_id,
+        provider_entity_ids=[chat_provider_entity],
+        exchange_kind="capability",
+        credit_transactions=[chat_tx],
+        receipt_hash=receipt_hash,
+        capability="reasoning",
+        usage={
+            "metering_mode": "flat",
+            "bc_debited": cost,
+            "provider": actual_provider,
+            "model": actual_model,
+        },
+        legacy_event_type="ai_credits_burned",
+        settlement_policy="ai_chat.v1",
+    )
     db.flush()
     return {
         "reply": reply,
@@ -184,4 +206,5 @@ async def chat_and_burn_credits(
         "remaining_credits": wallet.ai_credits,
         "provider": actual_provider,
         "model": actual_model,
+        "exchange_id": (exchange_record.payload or {}).get("exchange_id"),
     }

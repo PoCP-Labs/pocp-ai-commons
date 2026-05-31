@@ -175,7 +175,7 @@ Balance loop (continuous):
 | **AI Credits** | Primary balancing currency inside PoCP |
 | **ComputePool** | Org-level buffer |
 | **Fiat / stablecoin** | Funds **external adapter** Step 5 only (treasury) |
-| **Bitcoin** | Not required for balance; optional future redemption (see redemption research) |
+| **Bitcoin** | Not required for balance; optional future redemption ([SETTLEMENT-REDEMPTION-SPEC.md](./SETTLEMENT-REDEMPTION-SPEC.md) §6) |
 
 **Fiat enters when internal mesh is insufficient** — it buys **cloud compute**, not « stored distributed FLOPS ». Receipt still records the job for Proof.
 
@@ -210,8 +210,8 @@ Balance loop (continuous):
 | **v0.2** ✅ | Token metering, artifact cache, capacity reservation API | Shipped |
 | **v0.3** ✅ | `ComputePool` + surplus deposit / precompute recycle | Shipped — see below |
 | **v0.3** | Scheduler escalation metrics + external adapter policy flag | Partial |
-| **v0.4** | Pool auto-precompute cron; federation pool settlement | Planned |
-| **v1.0** | Governance-tuned balance parameters; optional treasury redemption | Planned |
+| **v0.4** | Pool auto-precompute cron; federation pool settlement | **Shipped** — see below |
+| **v1.0** | Governance-tuned balance parameters; optional treasury redemption ([SETTLEMENT-REDEMPTION-SPEC.md](./SETTLEMENT-REDEMPTION-SPEC.md) §4) | Planned |
 
 ### v0.3 code map (shipped)
 
@@ -233,8 +233,35 @@ GET /api/v1/compute/balance/summary
 # 2. Sponsor fills pool (optional)
 POST /api/v1/compute/pools/{org_id}/deposit  {"amount": 200}
 
-# 3. Recycle idle GPU → artifacts
+# 3. Recycle idle GPU → artifacts (manual)
 POST /api/v1/compute/surplus/recycle  {"organization_entity_id": "..."}
+
+# 4. Auto cycle (v0.4) — cron or API
+POST /api/v1/compute/balance/auto-run  {"force": true}
+GET  /api/v1/compute/balance/auto-status
+```
+
+### v0.4 auto-balance (shipped)
+
+| Component | Path |
+|-----------|------|
+| Auto cycle service | `backend/services/compute_balance_cron.py` |
+| Background loop | `POCP_COMPUTE_AUTO_BALANCE=true` in `main.py` lifespan |
+| External cron CLI | `python backend/scripts/compute_balance_cron.py --force` |
+| API | `POST /compute/balance/auto-run`, `GET /compute/balance/auto-status` |
+| Config | `pocp_rewards.yaml` → `auto_balance_enabled`, `auto_balance_interval_minutes` |
+
+**Enable background loop:**
+
+```bash
+POCP_COMPUTE_AUTO_BALANCE=true
+POCP_COMPUTE_AUTO_BALANCE_INTERVAL_MINUTES=60   # optional override
+```
+
+**System cron (without in-process loop):**
+
+```cron
+0 * * * * cd /opt/pocp-ai-commons/backend && python scripts/compute_balance_cron.py --force >> /var/log/pocp-balance.log 2>&1
 ```
 
 ---

@@ -5,7 +5,7 @@ AI Credits are **usage rights** inside PoCP AI Commons — not a token, not a sp
 ## What they are
 
 - A meter for AI Chat and similar AI-powered features
-- Earned through verified contribution (after human approval) and registration grants
+- Earned through verified contribution (policy auto-finalize) and registration grants
 - Burned when you use AI tools (default: 5 credits per chat message)
 
 ## What they are not
@@ -23,6 +23,8 @@ Contribution approved → additional CP + AI Credits issued
 Insufficient credits → chat blocked with clear error
 ```
 
+See [WALLET-GUIDE.md](./WALLET-GUIDE.md) for full API and audit flows.
+
 ## Configuration
 
 See `backend/config/pocp_rewards.yaml` and env vars in `.env.example`:
@@ -35,6 +37,8 @@ See `backend/config/pocp_rewards.yaml` and env vars in `.env.example`:
 
 - `POST /api/v1/ai/chat` — burns credits, returns `remaining_credits`
 - `GET /api/v1/ai/usage` — usage history for authenticated user
+- `GET /api/v1/wallets/me/summary` — balances + today stats
+- `POST /api/v1/wallets/me/quote` — pre-flight cost before chat
 
 ## Ledger
 

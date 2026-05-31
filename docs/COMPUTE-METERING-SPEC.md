@@ -179,11 +179,17 @@ consumer_credits = intel_units × consumer_rate_intel[service]
 One consumer debit; multiple provider credits from one InvocationTrace:
 
 ```text
-Human wallet  −= total_consumer_credits
-Skill Entity  += orchestration_share
-LLM Entity    += compute_share
-Witness Entity+= witness_share
+Human wallet  −= total_consumer_credits (T)
+Skill Entity  += T × skill_orchestration_pct   (default 10%)
+LLM Entity    += min(metering(LLM usage), T − skill − protocol)
+Protocol treasury += T × protocol_fee_pct     (default 5%, if treasury Entity exists)
+Remainder     → burn (ledger event)
 ```
+
+Implemented in `compute_settlement.settle_bilateral(..., skill_entity_id=...)` when
+`capability_execute` runs a Skill chain. Config: `compute_metering.split` in
+`pocp_rewards.yaml`. Receipt metadata includes `settlement.split` and an
+`IntelReceipt` with `service: skill_orchestration`.
 
 Shares must sum to ≤ total_consumer_credits; remainder burns (protocol fee) or returns to sponsor pool (config).
 
