@@ -1,9 +1,15 @@
-# PoCP AI Commons
+# PoCP Neural Commons Network
 
 **Earn AI access through verified contribution.**  
 **通过真实贡献，获得 AI 使用权。**
 
-PoCP AI Commons is the first open-source application of the **Proof of Contribution Protocol (PoCP)**.
+**PoCP Neural Commons Network** is a protocol-based distributed intelligence and compute network powered by verified contribution, tokenized measurement, and entity reputation.
+
+It connects humans, agents, LLMs, skills, tools, datasets, workflows, compute nodes, and organizations into a verifiable contribution network.
+
+Through CP, AI Credits, Compute Credits, and future protocol tokens, PoCP measures contribution, coordinates capability invocation, settles value, and builds entity reputation.
+
+**PoCP AI Commons** is the first open-source application scenario of this network — the first practical loop of the **Proof of Contribution Protocol (PoCP)**.
 
 It is designed to explore a new question for the age of AI:
 
@@ -12,6 +18,8 @@ It is designed to explore a new question for the age of AI:
 PoCP AI Commons is not just another AI chat platform.
 
 It is a contribution-based AI capability network where humans, agents, skills, models, tools, datasets, workflows, and organizations can participate in tasks, generate contribution records, receive verification, build reputation, and earn AI access.
+
+**Tokenized measurement does not mean immediate public token issuance.** In early versions, CP, AI Credits, Compute Credits, and PoCP Token accounts may be implemented as internal protocol accounting units. External issuance, transferability, staking, and governance must be designed separately with legal, security, and governance review.
 
 ---
 
@@ -135,6 +143,26 @@ Contribution → Verification → AI Credits → Reputation → Ledger
 ```
 
 See [NO-TOKEN-FIRST.md](./NO-TOKEN-FIRST.md).
+
+---
+
+## Neural Commons Architecture
+
+Target architecture for the distributed intelligence and compute network (PoCP AI Commons remains the first application):
+
+| Document | Purpose |
+|----------|---------|
+| [POCP-NEURAL-COMMONS-NETWORK.md](./POCP-NEURAL-COMMONS-NETWORK.md) | Network overview and layers |
+| [TOKEN-MEASUREMENT-LAYER.md](./TOKEN-MEASUREMENT-LAYER.md) | CP, AI Credits, Compute Credits, protocol token accounting |
+| [COMPUTE-INTELLIGENCE-TOKENOMICS.md](./COMPUTE-INTELLIGENCE-TOKENOMICS.md) | Compute and intelligence value flow |
+| [CAPABILITY-REGISTRY-SPEC.md](./CAPABILITY-REGISTRY-SPEC.md) | Capability registry and invocation |
+| [COMPUTE-NODE-SPEC.md](./COMPUTE-NODE-SPEC.md) | Compute node profiles and receipts |
+| [NEURAL-ROUTING-SPEC.md](./NEURAL-ROUTING-SPEC.md) | Neural routing and matching |
+| [SETTLEMENT-LAYER-SPEC.md](./SETTLEMENT-LAYER-SPEC.md) | Settlement and attribution |
+| [REPUTATION-GOVERNANCE-SPEC.md](./REPUTATION-GOVERNANCE-SPEC.md) | Reputation and governance |
+| [PR-PLAN-NEURAL-COMMONS.md](./PR-PLAN-NEURAL-COMMONS.md) | Suggested PR breakdown |
+| [docs/NEURAL-COMMONS-INTEGRATION-GUIDE.md](./docs/NEURAL-COMMONS-INTEGRATION-GUIDE.md) | Integration guide |
+| [docs/NEURAL-COMMONS-GLOSSARY.md](./docs/NEURAL-COMMONS-GLOSSARY.md) | Terminology |
 
 ---
 

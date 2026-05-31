@@ -24,6 +24,17 @@ PoCP AI Commons documentation is organized around the **Genesis Package** and th
 | [CONTRIBUTION-PROOF-PACKET-v0.1.md](./CONTRIBUTION-PROOF-PACKET-v0.1.md) | Portable proof packet spec |
 | [ENTITY-ONTOLOGY.md](./ENTITY-ONTOLOGY.md) | Entity types and roles |
 
+## Neural Commons target architecture
+
+| Document | Purpose |
+|----------|---------|
+| [../POCP-NEURAL-COMMONS-NETWORK.md](../POCP-NEURAL-COMMONS-NETWORK.md) | Network overview |
+| [NEURAL-COMMONS-INTEGRATION-GUIDE.md](./NEURAL-COMMONS-INTEGRATION-GUIDE.md) | How to integrate capabilities and compute |
+| [NEURAL-COMMONS-GLOSSARY.md](./NEURAL-COMMONS-GLOSSARY.md) | Terminology |
+| [../TOKEN-MEASUREMENT-LAYER.md](../TOKEN-MEASUREMENT-LAYER.md) | Token measurement layer |
+| [../NEURAL-ROUTING-SPEC.md](../NEURAL-ROUTING-SPEC.md) | Neural routing spec |
+| [../PR-PLAN-NEURAL-COMMONS.md](../PR-PLAN-NEURAL-COMMONS.md) | Suggested PR plan |
+
 ## Rights model
 
 | Document | Purpose |

@@ -445,4 +445,19 @@ Changes to this spec require a PR with rationale. Constitutional changes (entity
 
 ---
 
+## 14. Neural Commons Target Architecture (forward-looking)
+
+V0.1 implements the first application loop in **PoCP AI Commons**. The long-term target is the **PoCP Neural Commons Network** — a protocol-based distributed intelligence and compute network.
+
+See:
+
+- [POCP-NEURAL-COMMONS-NETWORK.md](./POCP-NEURAL-COMMONS-NETWORK.md)
+- [TOKEN-MEASUREMENT-LAYER.md](./TOKEN-MEASUREMENT-LAYER.md)
+- [NEURAL-ROUTING-SPEC.md](./NEURAL-ROUTING-SPEC.md)
+- [docs/NEURAL-COMMONS-INTEGRATION-GUIDE.md](./docs/NEURAL-COMMONS-INTEGRATION-GUIDE.md)
+
+**Tokenized measurement does not mean immediate public token issuance.** Early versions use internal protocol accounting (CP, AI Credits, Compute Credits). External token issuance, transferability, staking, and governance require separate legal, security, and governance review.
+
+---
+
 *PoCP Protocol Spec · V0.1 · Genesis*
