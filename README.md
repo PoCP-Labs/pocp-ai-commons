@@ -166,6 +166,29 @@ Target architecture for the distributed intelligence and compute network (PoCP A
 
 ---
 
+## Open Core Strategy
+
+PoCP follows an **Open Core** model.
+
+The protocol specifications, reference implementation, SDKs, and community tools are open source.
+
+Advanced anti-abuse intelligence, commercial neural routing, enterprise governance, managed compute scheduling, commercial API gateway, private deployment tooling, and advanced reputation / risk models may be provided under separate commercial terms.
+
+| Document | Purpose |
+|----------|---------|
+| [OPEN-CORE.md](./OPEN-CORE.md) | Open Core strategy overview |
+| [LICENSE-POLICY.md](./LICENSE-POLICY.md) | Licensing recommendations |
+| [COMMERCIAL.md](./COMMERCIAL.md) | Commercial boundary |
+| [SECURITY.md](./SECURITY.md) | Security policy and reporting |
+| [DATA-CONSENT.md](./DATA-CONSENT.md) | Data consent |
+| [ANTI-ABUSE-POLICY.md](./ANTI-ABUSE-POLICY.md) | Anti-abuse policy |
+| [REPOSITORY-BOUNDARY.md](./REPOSITORY-BOUNDARY.md) | Repository split boundaries |
+| [OPEN-SOURCE-ROADMAP.md](./OPEN-SOURCE-ROADMAP.md) | Open-source roadmap |
+| [COMMERCIAL-MODULES.md](./COMMERCIAL-MODULES.md) | Commercial module planning |
+| [docs/OPEN-CORE-INTEGRATION-GUIDE.md](./docs/OPEN-CORE-INTEGRATION-GUIDE.md) | Integration guide |
+
+---
+
 ## Genesis Package
 
 These four documents are the project's genesis block:

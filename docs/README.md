@@ -35,6 +35,17 @@ PoCP AI Commons documentation is organized around the **Genesis Package** and th
 | [../NEURAL-ROUTING-SPEC.md](../NEURAL-ROUTING-SPEC.md) | Neural routing spec |
 | [../PR-PLAN-NEURAL-COMMONS.md](../PR-PLAN-NEURAL-COMMONS.md) | Suggested PR plan |
 
+## Open Core strategy
+
+| Document | Purpose |
+|----------|---------|
+| [../OPEN-CORE.md](../OPEN-CORE.md) | Open Core model overview |
+| [OPEN-CORE-INTEGRATION-GUIDE.md](./OPEN-CORE-INTEGRATION-GUIDE.md) | How open vs commercial modules integrate |
+| [CURSOR-OPEN-CORE-EXECUTION.md](./CURSOR-OPEN-CORE-EXECUTION.md) | Cursor execution checklist |
+| [../LICENSE-POLICY.md](../LICENSE-POLICY.md) | License policy |
+| [../REPOSITORY-BOUNDARY.md](../REPOSITORY-BOUNDARY.md) | Future repository split |
+| [../SECURITY.md](../SECURITY.md) | Security policy |
+
 ## Rights model
 
 | Document | Purpose |
