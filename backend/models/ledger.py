@@ -22,4 +22,5 @@ class LedgerRecord(Base):
     payload: Mapped[dict | None] = mapped_column(JsonDocument, default=dict)
     prev_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     record_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    hash_algorithm: Mapped[str] = mapped_column(String(32), nullable=False, default="sha256")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

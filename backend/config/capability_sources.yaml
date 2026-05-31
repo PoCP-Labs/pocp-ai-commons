@@ -1,0 +1,59 @@
+# Capability source registry — external runtimes PoCP can register, import, and attribute.
+# See docs/CAPABILITY-INTEGRATION.md
+
+spec_version: "0.1"
+registry: capability_sources
+
+principle: >
+  PoCP registers and proves capability use; external runtimes (OpenClaw, MCP, LLM APIs)
+  execute skills. Everything connects through verified contribution.
+
+sources:
+  pocp_native:
+    display_name: PoCP Native
+    kind: internal
+    description: Skills and agents seeded or authored directly in PoCP AI Commons
+    agentskills_compat: false
+    auto_activate: true
+
+  agentskills:
+    display_name: AgentSkills
+    kind: manifest
+    description: SKILL.md folders (agentskills.io compatible)
+    agentskills_compat: true
+    auto_activate: false
+    docs_url: https://agentskills.io
+
+  openclaw:
+    display_name: OpenClaw
+    kind: gateway
+    description: OpenClaw bundled, managed, workspace, and ClawHub skills
+    agentskills_compat: true
+    auto_activate: false
+    docs_url: https://docs.openclaw.ai/tools/skills
+    load_precedence:
+      - workspace
+      - project_agent
+      - personal_agent
+      - managed
+      - bundled
+      - clawhub
+
+  mcp:
+    display_name: Model Context Protocol
+    kind: tool_server
+    description: MCP servers exposed as Tool entities with service endpoints
+    agentskills_compat: false
+    auto_activate: false
+
+  llm_provider:
+    display_name: LLM Provider
+    kind: model
+    description: Advisory verifiers and chat models (DeepSeek, OpenAI, Ollama, …)
+    agentskills_compat: false
+    auto_activate: true
+
+import_policy:
+  default_status: pending
+  require_maintainer: true
+  review_note: Imported capabilities stay pending until a human maintainer activates them.

@@ -11,9 +11,11 @@ from models.contribution import (
 from genesis import RAIN_ID
 from models.entity import Entity, EntityType
 from models.invocation import InvocationTrace
+from models.ledger import LedgerRecord
 from models.wallet import ReputationScore, Wallet
 
 CONTRIBUTION_HUB_PREFIX = "contribution:"
+LEDGER_NODE_PREFIX = "ledger:"
 
 # Participant roles shown on the invocation chain instead of separate hub edges.
 _INVOCATION_COVERED_ROLES = {ParticipantRole.executor, ParticipantRole.skill_provider}
@@ -21,9 +23,12 @@ _INVOCATION_COVERED_ROLES = {ParticipantRole.executor, ParticipantRole.skill_pro
 # Roles that point from participant entity toward the contribution hub.
 _HUB_INBOUND_ROLES = {
     ParticipantRole.creator: "submits",
+    ParticipantRole.witness: "witnesses",
     ParticipantRole.verifier: "verifies",
     ParticipantRole.reviewer: "reviews",
     ParticipantRole.sponsor: "sponsors",
+    ParticipantRole.tool_provider: "provides_tool",
+    ParticipantRole.data_provider: "provides_data",
 }
 def _contribution_hub_id(contribution_id: str) -> str:
     return f"{CONTRIBUTION_HUB_PREFIX}{contribution_id}"
@@ -132,6 +137,10 @@ def build_contribution_graph(db: Session) -> dict:
 
     contributions = (
         db.query(ContributionEvent)
+        .options(
+            joinedload(ContributionEvent.ai_verifications),
+            joinedload(ContributionEvent.human_reviews),
+        )
         .filter(
             ContributionEvent.status.in_(
                 [
@@ -192,6 +201,70 @@ def build_contribution_graph(db: Session) -> dict:
                 },
             )
 
+    for contrib in contributions:
+        hub_id = _contribution_hub_id(contrib.id)
+        if hub_id not in node_ids:
+            continue
+        for verification in contrib.ai_verifications:
+            llm_id = llm_entities_by_name.get((verification.model_provider or "").strip().lower())
+            if llm_id:
+                _append_edge(
+                    edges,
+                    {
+                        "source": llm_id,
+                        "target": hub_id,
+                        "relation": "witnesses",
+                        "contribution_id": contrib.id,
+                        "weight": verification.score or 0.0,
+                    },
+                )
+        for review in contrib.human_reviews:
+            if review.approved and review.reviewer_id in node_ids:
+                _append_edge(
+                    edges,
+                    {
+                        "source": review.reviewer_id,
+                        "target": hub_id,
+                        "relation": "final_review",
+                        "contribution_id": contrib.id,
+                        "weight": 1.0,
+                    },
+                )
+
+    if contrib_ids:
+        ledger_rows = (
+            db.query(LedgerRecord)
+            .filter(LedgerRecord.contribution_id.in_(contrib_ids))
+            .order_by(LedgerRecord.created_at)
+            .all()
+        )
+        for record in ledger_rows:
+            ledger_node_id = f"{LEDGER_NODE_PREFIX}{record.id}"
+            if ledger_node_id not in node_ids:
+                nodes.append(
+                    {
+                        "id": ledger_node_id,
+                        "entity_type": "ledger",
+                        "name": record.event_type.replace("_", " ")[:24],
+                        "reputation": 0,
+                        "cp_balance": 0,
+                        "ai_credits": 0,
+                    }
+                )
+                node_ids.add(ledger_node_id)
+            hub_id = _contribution_hub_id(record.contribution_id)
+            if hub_id in node_ids:
+                _append_edge(
+                    edges,
+                    {
+                        "source": hub_id,
+                        "target": ledger_node_id,
+                        "relation": "recorded_in",
+                        "contribution_id": record.contribution_id,
+                        "weight": 1.0,
+                    },
+                )
+
     for trace in traces:
         last_source = None
         for step in trace.steps:
@@ -222,10 +295,64 @@ def build_contribution_graph(db: Session) -> dict:
                 },
             )
 
+    from services.external_inspiration import append_inspiration_graph_edges
+
+    append_inspiration_graph_edges(
+        db,
+        edges=edges,
+        nodes=nodes,
+        node_ids=node_ids,
+        entity_map=entity_map,
+        contributions=contributions,
+        append_edge=_append_edge,
+    )
+
+    from services.federation_community import append_federation_peer_graph_edges
+
+    append_federation_peer_graph_edges(
+        db,
+        edges=edges,
+        entity_map=entity_map,
+        append_edge=_append_edge,
+    )
+
+    from services.federation_community import append_federated_import_graph_edges
+
+    append_federated_import_graph_edges(
+        db,
+        nodes=nodes,
+        node_ids=node_ids,
+        edges=edges,
+        entity_map=entity_map,
+        append_edge=_append_edge,
+    )
+
+    from services.oss_entity_registry import append_oss_entity_graph_edges
+
+    append_oss_entity_graph_edges(
+        db,
+        edges=edges,
+        entity_map=entity_map,
+        append_edge=_append_edge,
+    )
+
+    from services.community_partner import append_partner_graph_edges
+
+    append_partner_graph_edges(
+        db,
+        edges=edges,
+        entity_map=entity_map,
+        append_edge=_append_edge,
+    )
+
     contribution_nodes = sum(1 for n in nodes if n["entity_type"] == "contribution")
+    federation_import_nodes = sum(1 for n in nodes if n["entity_type"] == "federation_import")
+    ledger_nodes = sum(1 for n in nodes if n["entity_type"] == "ledger")
     return {
         "nodes": nodes,
         "edges": edges,
         "entity_count": len(entities),
         "contribution_node_count": contribution_nodes,
+        "federation_import_node_count": federation_import_nodes,
+        "ledger_node_count": ledger_nodes,
     }

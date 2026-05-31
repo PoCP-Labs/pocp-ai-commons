@@ -1,89 +1,103 @@
-# Portable Proof and Federation Surface
+# Portable Proof & Federation
 
-PoCP has three related public surfaces that should be read together:
+How PoCP moves **verified contribution memory** between nodes without requiring a central operator. External narrative: contribution infrastructure — not crypto/Web3.
 
-1. `GET /api/v1/graph` shows the local contribution relationship graph.
-2. `GET /api/v1/contributions/{contribution_id}/proof` exports one contribution as a portable proof packet.
-3. `POST /api/v1/federation/import-proof` imports an approved proof packet from a trusted peer node.
+See also: [FEDERATION-v0.1.md](./FEDERATION-v0.1.md) (when published) · [CONTRIBUTION-PROOF-PACKET-v0.1.md](./CONTRIBUTION-PROOF-PACKET-v0.1.md) · [ENTITY-EQUALITY.md](./ENTITY-EQUALITY.md)
 
-The graph is the live local view. The proof packet is the portable object. Federation is the trust boundary where another node decides whether that portable object can affect local reputation.
+---
 
-## Relationship
+## Portable proof packet
 
-```text
-local ledger + participants + invocations
-        |
-        v
-GET /api/v1/graph
-        |
-        | contribution-scoped edges are copied into
-        v
+A contribution proof is a self-contained JSON document exportable from any node:
+
+```http
 GET /api/v1/contributions/{id}/proof
-        |
-        | integrity.proof_hash may be signed by the source node
-        v
-POST /api/v1/federation/import-proof
-        |
-        | trusted import applies reputation only, not local AI Credits
-        v
-federated reputation by portable_id
 ```
 
-## Graph Surface
+Key sections:
 
-`services/graph.py` builds the node-local graph from:
+| Section | Purpose |
+|---------|---------|
+| `contribution` | Event metadata, evidence, status |
+| `verification` | Witness scores, consensus, policy verdict |
+| `integrity` | Canonical hash, crypto suite, hash algorithm |
+| `ledger_inclusion` | SPV path into ledger Merkle root |
+| `graph_merkle_inclusion` | SPV path into collaboration graph |
+| `federation` | Node signatures (classic + optional PQC hybrid) |
 
-- entities, owner links, and creator links;
-- approved, AI-verified, and submitted contribution participants;
-- invocation traces, including LLM provider nodes.
-
-Each contribution-related edge carries `contribution_id`. That identifier is the bridge from the broad graph view to a specific portable proof packet.
-
-## Proof Packet Surface
-
-`services/proof.py` builds a `pocp_contribution_proof` packet for one contribution. The packet includes:
-
-- contribution event metadata;
-- entity identity snapshots and participant roles;
-- evidence content hash and raw evidence;
-- AI advisory verification and human review records;
-- `contribution_graph.edges` for the contribution-local graph;
-- rights, reputation, and ledger audit material;
-- `integrity.proof_hash`.
-
-When `POCP_NODE_PRIVATE_KEY` is configured, the packet also includes a `federation` block. The source node signs `integrity.proof_hash`, so a peer node can verify that the exported proof was not changed after signing.
-
-## Federation Surface
-
-`backend/routers/federation.py` exposes the public federation contract:
-
-- `GET /api/v1/federation/node` advertises node metadata, public key, and export/import endpoints.
-- `GET /api/v1/federation/trust` returns configured trusted peer nodes.
-- `POST /api/v1/federation/import-proof` accepts a portable contribution proof packet.
-- `GET /api/v1/federation/reputation?portable_id=...` returns reputation aggregated around a portable identity.
-
-`services/federation_import.py` currently imports only approved proof packets. It resolves participants by `portable_id`, verifies the optional or required signature, applies trust-weighted reputation, and records a `federation_import` ledger event. It does not mint local AI Credits for imported work.
-
-## Stable Interop Rules
-
-- Local UUIDs are node-local. Cross-node identity should use `metadata.portable_id`.
-- A graph edge that needs to travel should be inside a contribution proof packet, not inferred only from `GET /api/v1/graph`.
-- Peer nodes should verify `integrity.proof_hash` before importing signed proofs.
-- Imported proofs affect reputation according to local trust policy; local rights issuance remains local.
-
-## Minimal Flow
+Offline verification:
 
 ```bash
-# Source node: inspect the contribution-local proof and optional signature.
-curl http://localhost:8100/api/v1/contributions/{contribution_id}/proof
-
-# Target node: import the approved proof packet from a trusted source node.
-curl -X POST http://localhost:8101/api/v1/federation/import-proof \
-  -H "Content-Type: application/json" \
-  -d '{"source_node_id":"community-a","proof":{...}}'
-
-# Target node: read the imported reputation by portable identity.
-curl "http://localhost:8101/api/v1/federation/reputation?portable_id=github:rain"
+python backend/scripts/audit_node.py proof --file proof.json
+curl -X POST http://localhost:8000/api/v1/proof/verify -d @proof.json
 ```
 
-See also [CONTRIBUTION-PROOF-PACKET-v0.1.md](./CONTRIBUTION-PROOF-PACKET-v0.1.md), [FEDERATION-v0.1.md](./FEDERATION-v0.1.md), [FEDERATION-DEMO.md](./FEDERATION-DEMO.md), and [CORE-TECH-STACK.md](./CORE-TECH-STACK.md).
+---
+
+## Federation trust model
+
+Federation is **opt-in trust between nodes**, not global consensus mining.
+
+1. **Publisher node** — origin of contribution, signs proof and anchor
+2. **Consumer node** — imports proof if publisher is in `POCP_TRUSTED_NODES`
+3. **Mirror / audit node** — read-only; verifies chain + anchor without mutating state
+
+```bash
+python backend/scripts/audit_node.py remote --url https://peer.example.com
+python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8100 --federation http://127.0.0.1:8101
+```
+
+---
+
+## Anchor & cosign
+
+`GET /api/v1/ledger/anchor` publishes:
+
+- `merkle_root` — ledger records commitment
+- `graph_merkle_root` — collaboration graph commitment
+- `ledger_valid` — local chain verify result
+- `peer_attestations` — optional federated cosignatures (`ENABLE_ANCHOR_COSIGN`)
+
+Peers that share the same anchor hash have aligned **public memory** without sharing a database.
+
+---
+
+## Crypto suite negotiation
+
+Nodes advertise readiness:
+
+```http
+GET /api/v1/crypto/readiness
+```
+
+Federation import may reject proofs below `POCP_MIN_CRYPTO_SUITE`. Hybrid suite (`pocp-crypto-v0.2-hybrid`) adds ML-DSA alongside Ed25519.
+
+See [QUANTUM-READINESS.md](./QUANTUM-READINESS.md).
+
+---
+
+## Import flow (high level)
+
+```text
+Node A: submit → verify → finalize → export proof
+Node B: POST /federation/import/proof → validate signatures + SPV → partial reputation edge
+```
+
+Import does **not** require human approval on Node B — policy on the importing node decides acceptance.
+
+---
+
+## Operator checklist
+
+- [ ] Configure `POCP_NODE_ID`, signing keys, trusted peers
+- [ ] Enable anchor cosign for multi-operator demos
+- [ ] Run `federation_demo_test.py` or Phase A acceptance with `--federation`
+- [ ] Re-sign legacy proofs after crypto suite upgrade: `scripts/resign_proofs.py`
+
+---
+
+## Related
+
+- [inspiration-mappings/bitcoin.md](./inspiration-mappings/bitcoin.md) — verify-don't-trust mapping
+- [deploy/FEDERATION-SECOND-NODE.md](../deploy/FEDERATION-SECOND-NODE.md)
+- `docker-compose.federation.yml`

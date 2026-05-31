@@ -23,6 +23,7 @@ services:
     build: ./backend
     ports:
       - "8100:8000"
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
     environment:
       PORT: "8000"
       DATABASE_URL: postgresql+psycopg://pocp:pocp@postgres-a:5432/pocp_a
@@ -30,8 +31,22 @@ services:
       POCP_NODE_ID: node-a
       POCP_NODE_PRIVATE_KEY: ffbbefd4d5e615574e01bd7a89ce12aa10aa416a0939281938c142a59f5d0e43
       POCP_NODE_PUBLIC_KEY: 10bf1077744a098c56503c15dd5caef931b764fcaf9a08febc4ed1031e40e67e
-      POCP_WAIT_FOR_DB: "true"
+      POCP_CRYPTO_SUITE: pocp-crypto-v0.2-hybrid
+      POCP_MIN_CRYPTO_SUITE: pocp-crypto-v0.2-hybrid
+      POCP_REQUIRE_PQC_SIGNATURE: "true"
+      POCP_NODE_PQC_PRIVATE_KEY: 50f1aad1c21870d89b32c33b75ad7666c313aca0ae8b20486ca5240a563de7c8
+      POCP_NODE_PQC_PUBLIC_KEY: 26c3ea06eae3d672175add0f824e90f8ac3a5238f8ae44dced71130bfec21c21
+      POCP_TRUSTED_NODES: >-
+        [{"node_id":"node-b","base_url":"http://backend-b:8000","public_key":"736f142b13c5e4f6a9d77595559ff1531afeb41c21386bf93d7d0bc6006e93ba","pqc_public_key":"7d5ec6167d94cd375fecba2a3205b0794805ca4a98a4c7d0fbd5266387fdb220","trust_weight":0.8}]
+      ENABLE_PEER_COMPUTE: "true"
+      ENABLE_PEER_MCP: "true"
+      POCP_ALLOW_PEER_WITNESS: "true"
       ENABLE_DEV_LOGIN: "true"
+      ENABLE_MOCK_VERIFIER: "true"
+      ENABLE_AUTO_FINALIZATION: "true"
+      ENABLE_CREWAI_WITNESS: "true"
+      CREWAI_WITNESS_LLM_PROVIDER: mock
+      POCP_WAIT_FOR_DB: "true"
     volumes:
       - ./backend:/app
     depends_on:
@@ -58,6 +73,7 @@ services:
     build: ./backend
     ports:
       - "8101:8000"
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
     environment:
       PORT: "8000"
       DATABASE_URL: postgresql+psycopg://pocp:pocp@postgres-b:5432/pocp_b
@@ -66,11 +82,17 @@ services:
       POCP_NODE_MODE: read_only_mirror
       POCP_NODE_PRIVATE_KEY: 1c54bc9c167fc063b4ffa373f4d28f18ec2bb3493711cc805974fe70f8e0035d
       POCP_NODE_PUBLIC_KEY: 736f142b13c5e4f6a9d77595559ff1531afeb41c21386bf93d7d0bc6006e93ba
+      POCP_CRYPTO_SUITE: pocp-crypto-v0.2-hybrid
+      POCP_MIN_CRYPTO_SUITE: pocp-crypto-v0.2-hybrid
+      POCP_REQUIRE_PQC_SIGNATURE: "true"
+      POCP_NODE_PQC_PRIVATE_KEY: 20adc47e689f2e674434e54f51f57654de9eca96fbaea8a6d5a0c0aa07d7af2e
+      POCP_NODE_PQC_PUBLIC_KEY: 7d5ec6167d94cd375fecba2a3205b0794805ca4a98a4c7d0fbd5266387fdb220
       POCP_TRUSTED_NODES: >-
-        [{"node_id":"node-a","base_url":"http://backend-a:8000","public_key":"10bf1077744a098c56503c15dd5caef931b764fcaf9a08febc4ed1031e40e67e","trust_weight":0.8}]
+        [{"node_id":"node-a","base_url":"http://backend-a:8000","public_key":"10bf1077744a098c56503c15dd5caef931b764fcaf9a08febc4ed1031e40e67e","pqc_public_key":"26c3ea06eae3d672175add0f824e90f8ac3a5238f8ae44dced71130bfec21c21","trust_weight":0.8}]
       POCP_REQUIRE_IMPORT_SIGNATURE: "true"
       POCP_VERIFY_REMOTE_LEDGER: "true"
-      POCP_FEDERATION_SYNC_ON_STARTUP: "true"
+      POCP_FEDERATION_SYNC_ON_STARTUP: "false"
+      POCP_ALLOW_PEER_WITNESS: "true"
       POCP_WAIT_FOR_DB: "true"
       ENABLE_DEV_LOGIN: "true"
     volumes:

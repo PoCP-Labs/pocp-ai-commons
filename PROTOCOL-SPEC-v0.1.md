@@ -155,8 +155,8 @@ Append-only audit event.
 draft
   → submitted          (contributor submits)
   → ai_verified        (AI advisory review recorded)
-  → approved           (human reviewer approves)
-  → rejected           (human reviewer rejects; terminal)
+  → approved           (entity-equal policy finalizes; any Entity type may delegate)
+  → rejected           (policy/finalizer rejects; terminal)
 
 ai_verified may also → rejected
 submitted may skip ai_verified only in dev mode (NOT in production)
@@ -226,6 +226,33 @@ Default V0.1 values (override per task):
 
 All issuances create `credit_transactions` and `ledger_records`.
 
+### 5.1 Rights Rules (`pocp.rights_rules.v0.1`)
+
+Instance config: `backend/config/pocp_rewards.yaml`
+
+| Field | Meaning |
+|-------|---------|
+| `spec_version` | Rules version embedded in proof packets |
+| `rights.bc` | AI Credits — spendable, non-transferable |
+| `rights.cp` | Contribution Points — non-spendable proof |
+| `contribution_defaults` | Base amounts per entity type × role weight |
+
+API: `GET /api/v1/intelligence/protocol/rights-rules`
+
+### 5.2 Contribution-to-Rights Conversion
+
+Proof block schema: `pocp.contribution_to_rights_conversion.v0.1`
+
+Contains `planned_allocations` (recomputable from rules) and `applied_rewards` (ledger snapshot on approval).
+
+### 5.3 Capability Receipt (`pocp.capability_receipt.v0.1`)
+
+Per **InvocationTrace** step — records capability kind, endpoint, optional request/response hashes.
+
+Stored in `invocation_steps.metadata`; exported in agent receipts and proof packets.
+
+See [docs/VALUE-EXCHANGE-PROTOCOL.md](./docs/VALUE-EXCHANGE-PROTOCOL.md).
+
 ---
 
 ## 6. REST API (V0.1)
@@ -260,8 +287,9 @@ Base path: `/api/v1`
 | POST | `/entities` | Register entity (+ auto-create wallet for humans) |
 | POST | `/tasks` | Create task |
 | POST | `/contributions` | Submit contribution |
-| POST | `/contributions/{id}/verify` | Record AI advisory review |
-| POST | `/contributions/{id}/approve` | Human approve (issues rewards) |
+| POST | `/contributions/{id}/auto-verify` | Multi-witness verify + optional auto-finalize |
+| POST | `/contributions/{id}/finalize` | Traceable finalization (any Entity type per policy) |
+| POST | `/contributions/{id}/approve` | Legacy alias for `/finalize` |
 
 ### Health
 
@@ -309,28 +337,27 @@ curl -X POST http://localhost:8000/api/v1/contributions \
     "participants":[{"entity_id":"<rain-uuid>","role":"creator","weight":1.0}]
   }'
 
-# 4. AI verify (advisory)
-curl -X POST http://localhost:8000/api/v1/contributions/<contrib-id>/verify \
-  -H "Content-Type: application/json" \
-  -d '{"model_provider":"gpt-4o","score":0.88,"feedback":"Good task match and evidence"}'
+# 4. Auto-verify (multi-witness + optional auto-finalize)
+curl -X POST http://localhost:8000/api/v1/contributions/<contrib-id>/auto-verify
 
-# 5. Human approve
-curl -X POST http://localhost:8000/api/v1/contributions/<contrib-id>/approve \
+# 5. Finalize (optional manual — legacy /approve alias)
+curl -X POST http://localhost:8000/api/v1/contributions/<contrib-id>/finalize \
   -H "Content-Type: application/json" \
-  -d '{"reviewer_id":"<reviewer-uuid>","feedback":"Approved"}'
+  -d '{"reviewer_id":"<finalizer-entity-uuid>","feedback":"Approved"}'
 ```
 
 ---
 
 ## 8. Invariants (Must Hold)
 
-1. Every `approved` contribution has exactly one human review with `approved=true`.
-2. Every `approved` contribution has at least one AI verification record (production).
+1. Every `approved` contribution has traceable finalization (`finalizer_entity_id`, `policy_id`, `decision_id` in ledger).
+2. Every `approved` contribution has at least one witness verification record (production).
 3. `ledger_records` are append-only; no updates or deletes.
 4. `cp_balance` and `ai_credits` change only via `credit_transactions`.
-5. Non-human entities never receive AI Credits in V0.1 (reputation only).
-6. Human reviewers must have `entity_type=human`.
+5. Non-human entities may receive AI Credits when `entity_equal.enabled` in `pocp_rewards.yaml` (Agent/Skill executors).
+6. **Any Entity type** may finalize when instance policy allows (entity-equal; no human gate).
 7. AI Credits are non-transferable in V0.1.
+8. Daily CP / AI Credits issuance capped by `issuance_budget` in `pocp_rewards.yaml` (Bitcoin-style discipline).
 
 ---
 
@@ -339,8 +366,8 @@ curl -X POST http://localhost:8000/api/v1/contributions/<contrib-id>/approve \
 | Control | Implementation |
 |---------|----------------|
 | Starter credits cap | Fixed grant on human registration |
-| No self-approval | Reviewer ≠ primary contributor |
-| Rate limit | Max N submissions per entity per day (TBD) |
+| No self-approval | Removed — entity-equal policy; anti-sybil via witness diversity |
+| Global issuance budget | `issuance_budget` in `pocp_rewards.yaml` + `GET /issuance/budget` |
 | Evidence required | `evidence` JSON non-empty on submit |
 | Appeal | Rejected contributions can re-submit (new event) |
 
@@ -357,6 +384,9 @@ curl -X POST http://localhost:8000/api/v1/contributions/<contrib-id>/approve \
 | Ledger | `backend/models/ledger.py` |
 | API routes | `backend/routers/api.py` |
 | Verify + approve logic | `backend/services/contribution.py` |
+| Rights rules + conversion | `backend/services/rights_conversion.py`, `config/pocp_rewards.yaml` |
+| Capability receipts | `backend/services/capability_receipt.py` |
+| Finalization policy | `backend/services/finalization.py`, `config/finalization_policy.yaml` |
 | Graph builder | `backend/services/graph.py` |
 | Frontend shell | `frontend/src/` |
 
@@ -367,8 +397,8 @@ curl -X POST http://localhost:8000/api/v1/contributions/<contrib-id>/approve \
 - [x] Entity registry (Human, Agent, Skill, Organization)
 - [x] Task CRUD (create + list)
 - [x] Contribution submission with participants
-- [x] AI verify endpoint (advisory)
-- [x] Human approve endpoint (rewards)
+- [x] Auto-verify + entity-equal finalize (rewards)
+- [x] Finalize endpoint (+ legacy `/approve` alias)
 - [x] Wallet + CP + AI Credits
 - [x] Registration grant (100 AI Credits for new humans)
 - [x] Self-approval blocked

@@ -50,7 +50,7 @@ def build_verifier_prompt(context: dict) -> str:
     return f"""
 You are Clarion-0, an AI advisory verifier for PoCP AI Commons.
 You are a Reviewer Assistant / Contribution Verifier Agent.
-You do not approve or reject contributions. You only provide structured advisory review for human reviewers.
+You do not approve or reject contributions. You only provide structured advisory review for policy finalization.
 
 Evaluate:
 - task match
@@ -67,7 +67,7 @@ Clarion-0 review guardrails:
 - Name uncertainty plainly.
 - Do not inflate rewards when evidence is weak.
 - Flag plagiarism, spam, unsafe content, unverifiable claims, license issues, and self-review risks.
-- Keep final authority with human reviewers.
+- Finalization authority belongs to published policy + witness quorum, not to this prompt.
 
 Return JSON only:
 {{
@@ -85,7 +85,7 @@ Return JSON only:
   "proof_draft": {{
     "summary": "string",
     "evidence": ["string"],
-    "recommended_status": "needs_human_review"
+    "recommended_status": "ready_for_policy_finalize"
   }}
 }}
 

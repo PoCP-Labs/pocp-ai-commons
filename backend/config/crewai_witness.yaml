@@ -1,0 +1,50 @@
+# CrewAI multi-agent witness crew — role-based contribution review (Option 3).
+# See docs/DISTRIBUTED-LAYERS.md · backend/services/crewai_witness.py
+
+spec_version: "0.1"
+crew: pocp-contribution-witness
+
+process: sequential
+
+agents:
+  - id: evidence_analyst
+    role: Evidence Analyst
+    goal: Assess evidence credibility, provenance, and reproducibility for the contribution.
+    focus:
+      - evidence_score
+      - risk_score
+      - concerns
+
+  - id: quality_reviewer
+    role: Quality Reviewer
+    goal: Evaluate task match, quality, originality, and impact of the work product.
+    focus:
+      - task_match
+      - quality
+      - originality
+      - impact
+
+  - id: reward_advisor
+    role: Reward Advisor
+    goal: Synthesize CP and AI Credits suggestions from evidence and quality signals.
+    focus:
+      - suggested_cp
+      - suggested_credits
+      - rationale
+
+aggregation:
+  scores: median
+  concerns: union
+  rationale: synthesize
+
+output_schema:
+  task_match: float
+  quality: float
+  originality: float
+  impact: float
+  evidence_score: float
+  risk_score: float
+  suggested_cp: float
+  suggested_credits: float
+  rationale: string
+  concerns: list

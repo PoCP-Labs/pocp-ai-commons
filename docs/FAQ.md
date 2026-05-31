@@ -16,16 +16,16 @@ See [AI-CREDITS-GUIDE.md](./AI-CREDITS-GUIDE.md).
 
 ## Does AI approve contributions?
 
-**No.** AI verifiers provide **advisory** review only (scores, feedback, suggested rewards). **Human reviewers** make final approval decisions.
+**No.** AI verifiers provide **advisory** review only (scores, feedback, suggested rewards). **Finalization** is policy-automated: witness quorum + traceable delegate (any Entity type — Human, Agent, LLM, …).
 
-See [HUMAN-REVIEW-GUIDE.md](./HUMAN-REVIEW-GUIDE.md).
+See [ENTITY-EQUALITY.md](./ENTITY-EQUALITY.md) · [HUMAN-REVIEW-GUIDE.md](./HUMAN-REVIEW-GUIDE.md) (optional human-as-finalizer deployments).
 
 ## What is the first loop?
 
 ```text
 Login → Wallet (starter AI Credits) → AI Chat
-→ Submit contribution → AI witness review → Human approve
-→ CP + AI Credits → Ledger + Graph
+→ Submit contribution → Multi-witness verify → Policy auto-finalize
+→ CP + AI Credits → Ledger + Graph Merkle → Portable proof
 ```
 
 ## What is not in v0.1?

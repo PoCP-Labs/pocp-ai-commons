@@ -265,7 +265,7 @@ PoCP 网络：  多方贡献 → 分布式见证 → 可验证 proof → 权利�
 ```
 
 工程重心：`backend/intelligence/`、`services/proof.py`、`services/federation_*` — 而非堆 Dashboard 与积分 UI。  
-详见 [PROTOCOL-STACK.md](../PROTOCOL-STACK.md) · `GET /api/v1/intelligence/protocol/stack`
+详见 [PROTOCOL.md](../PROTOCOL.md) · [ARCHITECTURE.md](../ARCHITECTURE.md) · `GET /api/v1/intelligence/protocol/stack`
 
 | 神经网络 | PoCP 网络 |
 |----------|-----------|
@@ -281,7 +281,7 @@ PoCP 网络：  多方贡献 → 分布式见证 → 可验证 proof → 权利�
 ```text
 Human —uses→ Agent —calls→ Skill —invokes_llm→ LLM
 Verifier —verifies→ Contribution
-Reviewer —reviews→ Contribution
+Policy delegate —finalizes→ Contribution
 Contribution → CP / AI Credits / Reputation → 更多贡献
 ```
 
@@ -291,7 +291,7 @@ Contribution → CP / AI Credits / Reputation → 更多贡献
 
 网络的算力可以很强，智力可以很丰富，但记忆必须可审计、连接必须可验证、权利必须跟贡献走 — 这才是 PoCP 作为**公共 AI 能力网络**的方向。
 
-详见 [CONTRIBUTION-NEURAL-NETWORK.md](../CONTRIBUTION-NEURAL-NETWORK.md) · [DISTRIBUTED-LAYERS.md](../DISTRIBUTED-LAYERS.md)（协议层 · 分布式算力 · 分布式智力）· **[DISTRIBUTED-COMPUTE-PRIMER.md](../DISTRIBUTED-COMPUTE-PRIMER.md)**（算力层：接入 · 调度 · 进 Proof · 与智力层结合）。
+详见 [ARCHITECTURE.md](../ARCHITECTURE.md) · [PROTOCOL.md](../PROTOCOL.md) · [ROADMAP.md](../../ROADMAP.md)。
 
 ### 从 GitHub 广泛引进神经网络技术
 
@@ -332,9 +332,9 @@ PoCP 将从 GitHub **广泛引进、适配、记录**神经网络与智能体相
 
 **联邦 intelligence v0.2：** sync 时拉取 intelligence export，在 import payload 的 `protocol_excerpt` 中保留 `invocation_trace` 与 `finalization`。
 
-**MCP 工具导入：** `POST /api/v1/capabilities/import/mcp` — stub / live / peer / external 调用；见 [CAPABILITY-INTEGRATION.md](../CAPABILITY-INTEGRATION.md)。
+**MCP 工具导入：** `POST /api/v1/capabilities/import/mcp` — stub / live / peer / external 调用；见 [API-SPEC.md](../API-SPEC.md)。
 
-**Phase A 落地（进行中）：** 三阶段路线 [ROADMAP-THREE-PHASES.md](../ROADMAP-THREE-PHASES.md) — 一条命令验收 `scripts/run-phase-a.ps1` / `run_phase_a_acceptance.py`；联邦 CI `.github/workflows/phase-a-federation.yml`；staging 模板 `backend/.env.staging.example`。
+**MVP 落地：** 见 [SPRINT_ALPHA.md](../SPRINT_ALPHA.md) · [LOCAL-SETUP.md](../LOCAL-SETUP.md) · `scripts/smoke_test.py`。
 
 ---
 
@@ -479,7 +479,7 @@ PoCP 区分两件事，**不要混为一谈**：
 
 终局主体可以是：
 
-* 个人 Reviewer；
+* 任意 Entity 类型的 **policy delegate**（Human、Agent、LLM、Organization 等）；
 * 组织角色或维护者；
 * **被组织章程授权的 Agent Entity**；
 * 见证 quorum、CP 阈值等**已发布、可版本化**的自动终局策略；
@@ -653,13 +653,54 @@ PoCP 的战场在 **协议层、分布式算力层、分布式智力层**；交�
 算力层执行 → 智力层编排 → 协议层记住
 ```
 
-完整阐述见 [INTELLECTUAL-EQUALITY.md](../INTELLECTUAL-EQUALITY.md) · [DISTRIBUTED-LAYERS.md](../DISTRIBUTED-LAYERS.md) · [PROTOCOL-STACK.md](../PROTOCOL-STACK.md) · **[DISTRIBUTED-COMPUTE-PRIMER.md](../DISTRIBUTED-COMPUTE-PRIMER.md)**（分布式算力入门：接入 / 调度 / Proof / 智力层挂接）。
+完整阐述见 [ARCHITECTURE.md](../ARCHITECTURE.md) · [PROTOCOL.md](../PROTOCOL.md) · [ROADMAP.md](../../ROADMAP.md)。
 
 ### 贡献神经网络
 
 PoCP 是 **可验证的贡献神经网络** — Entity 为神经元，Contribution Event 为信号，Ledger 为记忆，InvocationTrace 为前向传播。**AI 是见证与协作者，不是网络唯一的大脑；人类是意义与责任的锚点。**
 
-Pilot 验证的不是「100 个注册用户」，而是 **≥30 活跃 Entity、跨类型协作、可导出 Proof Packet、算力与见证可分布式运行**。见 [PILOT-LAUNCH-CHECKLIST.md](../PILOT-LAUNCH-CHECKLIST.md)。
+Pilot 验证的不是「100 个注册用户」，而是 **≥30 活跃 Entity、跨类型协作、可导出 Proof Packet、算力与见证可分布式运行**。算力层支撑论证见 [DISTRIBUTED-COMPUTE-SUPPORT-ARGUMENT.md](../DISTRIBUTED-COMPUTE-SUPPORT-ARGUMENT.md)；清单见 [PILOT-LAUNCH-CHECKLIST.md](../PILOT-LAUNCH-CHECKLIST.md)。
+
+### 分布式 Entity 经济循环
+
+PoCP 与中心化算力中心的根本区别，不在于「有没有 Token」，而在于 **谁卖、谁赚、谁证明**：
+
+```text
+中心化：用户 ──► 大平台 GPU API ──► 只有平台发 Token / 收 margin
+PoCP：  Entity 卖算力/智力 ──► 赚取结算 Token ──► 消费者用 Token 购买
+        每笔交易 ──► Receipt ──► Proof ──► Ledger
+```
+
+**统一 PoCP Token（计量 = 结算）：**
+
+PoCP 使用 **一种 Token** — Wallet 里的余额（数据库字段 `ai_credits`，对外统称 **PoCP Token**）：
+
+```text
+LLM 用量（prompt/completion tokens）→ 按模型系数折算 → PoCP Token 扣/加
+智力服务（witness/match）→ 固定 PoCP Token 价
+Wallet 余额 = 赚、花、存、买的唯一单位
+```
+
+| 概念 | 说明 |
+|------|------|
+| **LLM tokens** | adapter 报告的用量（Receipt 里记录） |
+| **PoCP Token** | Wallet 计量 + 结算 + 储备（1 Token = 1 `ai_credits`） |
+| **CP** | 贡献证明，不可 spend，不是 Token |
+
+```text
+贡献 → 验证 → 获得 PoCP Token + CP
+     → 消费算力/智力（扣 PoCP Token）
+     → 提供算力/智力（赚 PoCP Token）
+     → Receipt 同时记录 llm_tokens 与 pocp_tokens
+```
+
+与 [NO-TOKEN-FIRST.md](../../NO-TOKEN-FIRST.md) 不矛盾：PoCP Token 是**协议内使用权**，不是可场外炒作的协议币。
+
+完整规格：**[NEURAL-INTERNET-MASTER-PLAN.md](../NEURAL-INTERNET-MASTER-PLAN.md)**（分布式神经互联网完整方案 v1.0）· [NEURAL-INTERNET-SUPPLY-SPEC.md](../NEURAL-INTERNET-SUPPLY-SPEC.md) · [COMPUTE-METERING-SPEC.md](../COMPUTE-METERING-SPEC.md) · [ENTITY-MARKET-SPEC.md](../ENTITY-MARKET-SPEC.md) · [DISTRIBUTED-TOKEN-RESEARCH.md](../DISTRIBUTED-TOKEN-RESEARCH.md) · [COMPUTE-BALANCE-SPEC.md](../COMPUTE-BALANCE-SPEC.md)（供需动态平衡）
+
+**Operator flow（算力闲置时）：** 见 [COMPUTE-BALANCE-SPEC.md](../COMPUTE-BALANCE-SPEC.md) — `GET /compute/balance/summary` → `POST /compute/surplus/recycle`
+
+> **一种 PoCP Token：LLM 用量折算，Wallet 扣加，Receipt 证明。**
 
 ---
 

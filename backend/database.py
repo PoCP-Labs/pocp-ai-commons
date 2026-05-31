@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 SQLITE_BASELINE_REVISION = "72f32ab86a41"
 SQLITE_LEDGER_HASH_REVISION = "a1b2c3d4e5f6"
 SQLITE_HEAD_STRUCTURAL_REVISION = "b2c3d4e5f6a7"
+SQLITE_HEAD_REVISION = "g9h0i1j2k3l4"
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
@@ -138,17 +139,44 @@ def _needs_sqlite_bootstrap() -> bool:
 
 
 def _sqlite_detect_revision() -> str:
+    """Infer Alembic revision from existing SQLite schema (legacy bootstrap / drift reconcile)."""
     inspector = inspect(engine)
     table_names = set(inspector.get_table_names())
+    if "entities" not in table_names:
+        return SQLITE_BASELINE_REVISION
+
+    if "compute_jobs" in table_names:
+        return SQLITE_HEAD_REVISION
+
+    ledger_columns: set[str] = set()
+    if "ledger_records" in table_names:
+        ledger_columns = {column["name"] for column in inspector.get_columns("ledger_records")}
+
+    if "hash_algorithm" in ledger_columns:
+        return "b1c2d3e4f5a6"
+
+    if "external_inspiration_records" in table_names:
+        if "invocation_steps" in table_names:
+            step_columns = {column["name"] for column in inspector.get_columns("invocation_steps")}
+            if "metadata" in step_columns:
+                return "a8b9c0d1e2f3"
+        return "f7a8b9c0d1e2"
+
+    if "reputation_audit_entries" in table_names:
+        return "e6f7a8b9c0d1"
+
+    if "agent_feedback" in table_names:
+        return "d5e6f7a8b9c0"
+
+    if "code_attribution_records" in table_names:
+        return "c4d5e6f7a8b9"
+
     if "federated_imports" in table_names:
         return SQLITE_HEAD_STRUCTURAL_REVISION
 
-    if "ledger_records" not in table_names:
-        return SQLITE_BASELINE_REVISION
-
-    ledger_columns = {column["name"] for column in inspector.get_columns("ledger_records")}
     if {"prev_hash", "record_hash"}.issubset(ledger_columns):
         return SQLITE_LEDGER_HASH_REVISION
+
     return SQLITE_BASELINE_REVISION
 
 

@@ -21,16 +21,27 @@ from models.invocation import InvocationTrace
 from models.ledger import LedgerRecord
 from models.wallet import CreditTransaction, ReputationScore, Wallet
 from services.evidence import POCP_META_KEY, evidence_types, hash_evidence, standardize_evidence_items
+from services.crypto_suite import SUITE_V01_CLASSIC, active_crypto_suite, build_signature_block
 from services.federation_crypto import get_node_public_key_hex, sign_message
 from services.provenance import provenance_from_evidence
 from services.attribution_merkle import build_attribution_merkle_proof
 from services.code_attribution_bridge import build_code_attribution_context
 from services.expert_cards import expert_cards_from_contribution
+from services.external_inspiration import build_external_inspirations_context
+from services.community_partner import build_community_partner_context
+from services.federation_community import build_federation_import_context
+from services.graph import build_contribution_graph
+from services.graph_merkle import build_contribution_graph_inclusion
+from services.ledger_merkle import build_inclusion_bundle
+from services.rights_conversion import build_contribution_to_rights_conversion
+from services.capability_receipt import build_step_capability_receipts
+from services.compute_attribution import build_compute_attribution_block
+from services.finalization import build_proof_finalization_block
 
 POCP_PROOF_SPEC_VERSION = "0.1"
 POCP_PROOF_TYPE = "pocp_contribution_proof"
 POCP_PROOF_SCHEMA = "pocp.contribution_proof.v0.1"
-POCP_HASH_ALGORITHM = "sha256"
+from services.crypto_suite import active_hash_algorithm
 
 PROOF_LAYER_COVERAGE = [
     "entity_identity",
@@ -41,10 +52,18 @@ PROOF_LAYER_COVERAGE = [
     "expert_cards",
     "code_attribution_context",
     "attribution_merkle_proof",
+    "external_inspirations_context",
+    "community_partner_context",
+    "federation_import_context",
     "human_ai_verification_state",
+    "finalization",
+    "invocation_trace",
+    "compute_attribution",
     "contribution_graph",
     "contribution_to_rights_conversion",
     "ledger_memory",
+    "ledger_merkle_inclusion",
+    "graph_merkle_inclusion",
 ]
 
 
@@ -177,6 +196,18 @@ def build_contribution_proof_packet(db: Session, contribution_id: str) -> dict |
                 }
             )
 
+    applied_rewards = None
+    for record in reversed(ledgers):
+        if record.event_type == "contribution_approved":
+            applied_rewards = (record.payload or {}).get("rewards")
+            break
+
+    rights_conversion = build_contribution_to_rights_conversion(
+        contribution,
+        entities,
+        applied_rewards=applied_rewards,
+    )
+
     packet = {
         "spec_version": POCP_PROOF_SPEC_VERSION,
         "proof_type": POCP_PROOF_TYPE,
@@ -223,6 +254,13 @@ def build_contribution_proof_packet(db: Session, contribution_id: str) -> dict |
         "expert_cards": expert_cards_from_contribution(db, contribution),
         "code_attribution_context": build_code_attribution_context(evidence),
         "attribution_merkle_proof": build_attribution_merkle_proof(evidence),
+        "external_inspirations_context": build_external_inspirations_context(evidence),
+        "community_partner_context": build_community_partner_context(db, contribution, evidence),
+        "federation_import_context": build_federation_import_context(
+            db,
+            contribution_id=contribution.id,
+            primary_entity_id=contribution.primary_entity_id,
+        ),
         "verification": {
             "ai_advisory": [
                 {
@@ -245,8 +283,52 @@ def build_contribution_proof_packet(db: Session, contribution_id: str) -> dict |
                 }
                 for review in contribution.human_reviews
             ],
-            "rule": "AI advises; humans approve; ledger remembers.",
+            "entity_finalizations": [
+                {
+                    "id": review.id,
+                    "finalizer_entity_id": review.reviewer_id,
+                    "approved": review.approved,
+                    "feedback": review.feedback,
+                    "created_at": review.created_at,
+                }
+                for review in contribution.human_reviews
+            ],
+            "rule": "Entity-equal finalization: witness quorum + policy delegate; no human gate required.",
         },
+        "finalization": build_proof_finalization_block(contribution, ledgers),
+        "contribution_to_rights_conversion": rights_conversion,
+        "invocation_trace": {
+            "traces": [
+                {
+                    "id": trace.id,
+                    "initiator_id": trace.initiator_id,
+                    "task_id": trace.task_id,
+                    "contribution_id": trace.contribution_id,
+                    "model_provider": trace.model_provider,
+                    "status": trace.status.value,
+                    "created_at": trace.created_at,
+                    "steps": [
+                        {
+                            "step_order": step.step_order,
+                            "source_entity_id": step.source_entity_id,
+                            "target_entity_id": step.target_entity_id,
+                            "action": step.action,
+                            "metadata": step.metadata_ or {},
+                        }
+                        for step in trace.steps
+                    ],
+                    "capability_receipts": build_step_capability_receipts(trace.id, trace.steps, entities),
+                    "compute_receipts": [
+                        (step.metadata_ or {}).get("compute_receipt")
+                        for step in trace.steps
+                        if (step.metadata_ or {}).get("compute_receipt")
+                    ],
+                }
+                for trace in invocations
+            ],
+            "trace_count": len(invocations),
+        },
+        "compute_attribution": build_compute_attribution_block(db, contribution.id, invocations),
         "contribution_graph": {
             "nodes": [_entity_snapshot(e) for e in entities.values()],
             "edges": graph_edges,
@@ -305,6 +387,7 @@ def build_contribution_proof_packet(db: Session, contribution_id: str) -> dict |
                     "payload": record.payload or {},
                     "prev_hash": record.prev_hash,
                     "record_hash": record.record_hash,
+                    "hash_algorithm": getattr(record, "hash_algorithm", None) or "sha256",
                     "created_at": record.created_at,
                 }
                 for record in ledgers
@@ -313,25 +396,60 @@ def build_contribution_proof_packet(db: Session, contribution_id: str) -> dict |
         },
     }
 
+    all_ledger_hashes = [
+        row.record_hash
+        for row in (
+            db.query(LedgerRecord)
+            .filter(LedgerRecord.record_hash.isnot(None))
+            .order_by(LedgerRecord.created_at.asc(), LedgerRecord.id.asc())
+            .all()
+        )
+        if row.record_hash
+    ]
+    approval_hash = next(
+        (
+            record.record_hash
+            for record in reversed(ledgers)
+            if record.event_type == "contribution_approved" and record.record_hash
+        ),
+        None,
+    )
+    if approval_hash and all_ledger_hashes:
+        packet["ledger_merkle_inclusion"] = build_inclusion_bundle(all_ledger_hashes, approval_hash)
+
+    full_graph = build_contribution_graph(db)
+    graph_inclusion = build_contribution_graph_inclusion(full_graph["edges"], contribution.id)
+    if graph_inclusion:
+        packet["graph_merkle_inclusion"] = graph_inclusion
+
     packet["integrity"] = {
         "evidence_hash": content_hash,
         "ledger_tip_hash": packet["ledger_audit"]["record_hashes"][-1]
         if packet["ledger_audit"]["record_hashes"]
         else None,
-        "hash_algorithm": POCP_HASH_ALGORITHM,
+        "crypto_suite": active_crypto_suite(),
+        "hash_algorithm": active_hash_algorithm(),
         "canonicalization": "json-sort-keys-compact-excludes-generated_at-federation-proof_hash",
     }
     packet["integrity"]["proof_hash"] = _stable_hash(packet)
 
-    public_key = get_node_public_key_hex()
     proof_hash = packet["integrity"]["proof_hash"]
-    signature = sign_message(proof_hash) if public_key else None
-    if public_key and signature:
-        packet["federation"] = {
-            "node_id": os.getenv("POCP_NODE_ID", "unknown"),
-            "public_key": public_key,
-            "signature": signature,
-            "signed_field": "integrity.proof_hash",
-        }
+    federation_block = build_signature_block(
+        proof_hash,
+        signed_field="integrity.proof_hash",
+    )
+    if federation_block:
+        packet["federation"] = federation_block
+    elif get_node_public_key_hex():
+        # Fallback if build_signature_block returns None despite configured classic key
+        signature = sign_message(proof_hash)
+        if signature:
+            packet["federation"] = {
+                "node_id": os.getenv("POCP_NODE_ID", "unknown"),
+                "crypto_suite": SUITE_V01_CLASSIC,
+                "public_key": get_node_public_key_hex(),
+                "signature": signature,
+                "signed_field": "integrity.proof_hash",
+            }
 
     return _jsonable(packet)

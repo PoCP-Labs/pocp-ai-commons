@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Index, Integer, String
+from db_types import JsonDocument
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
@@ -52,5 +53,6 @@ class InvocationStep(Base):
     source_entity_id: Mapped[str] = mapped_column(String(36), ForeignKey("entities.id"))
     target_entity_id: Mapped[str] = mapped_column(String(36), ForeignKey("entities.id"))
     action: Mapped[str] = mapped_column(String(64), nullable=False)
+    metadata_: Mapped[dict | None] = mapped_column("metadata", JsonDocument, nullable=True)
 
     trace: Mapped["InvocationTrace"] = relationship("InvocationTrace", back_populates="steps")

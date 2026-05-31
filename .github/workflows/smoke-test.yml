@@ -42,7 +42,21 @@ jobs:
           done
 
       - name: Run unit tests
-        run: python -m unittest discover -s tests -p "test_*.py"
+        env:
+          POCP_CRYPTO_SUITE: pocp-crypto-v0.2-hybrid
+          POCP_NODE_PQC_PRIVATE_KEY: 50f1aad1c21870d89b32c33b75ad7666c313aca0ae8b20486ca5240a563de7c8
+          POCP_NODE_PQC_PUBLIC_KEY: 26c3ea06eae3d672175add0f824e90f8ac3a5238f8ae44dced71130bfec21c21
+        run: python -m pytest tests/ -q --tb=line
 
-      - name: Run smoke test
-        run: python scripts/smoke_test.py http://127.0.0.1:8765
+      - name: Run Phase A acceptance (single node)
+        run: python scripts/run_phase_a_acceptance.py http://127.0.0.1:8765 --skip-optional
+
+      - name: Pilot metrics snapshot
+        run: python scripts/pilot_metrics.py http://127.0.0.1:8765 --json > pilot-metrics.json
+
+      - name: Upload pilot metrics artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pilot-metrics
+          path: backend/pilot-metrics.json
+          if-no-files-found: error

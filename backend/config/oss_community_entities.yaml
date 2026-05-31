@@ -1,0 +1,81 @@
+# Open-source community entities — projects PoCP integrates or learns from.
+# Synced to Entity table on startup via services/oss_entity_registry.py
+# See docs/OSS-ENTITY-REGISTRY.md
+
+spec_version: "0.1"
+registry: oss_community_entities
+relationship_default: open_source_integration
+
+entities:
+  huggingface:
+    entity_id: pocp-oss-huggingface
+    entity_type: organization
+    display_name: Hugging Face
+    portable_id: github:huggingface
+    github_url: https://github.com/huggingface
+    homepage_url: https://huggingface.co
+    status: active
+    summary: Model hub and Transformers ecosystem for local embeddings and inference adapters.
+
+  langchain:
+    entity_id: pocp-oss-langchain
+    entity_type: community
+    display_name: LangChain
+    portable_id: github:langchain-ai/langchain
+    github_url: https://github.com/langchain-ai/langchain
+    status: evaluating
+    summary: Agent tooling ecosystem; LangGraph adopted for StudyAgent runtime.
+
+  model_context_protocol:
+    entity_id: pocp-oss-mcp
+    entity_type: community
+    display_name: Model Context Protocol (MCP)
+    portable_id: github:modelcontextprotocol
+    github_url: https://github.com/modelcontextprotocol
+    status: active
+    summary: Tool server protocol — MCP servers imported as Tool entities via /capabilities/import/mcp.
+
+  fastapi:
+    entity_id: pocp-oss-fastapi
+    entity_type: tool
+    display_name: FastAPI
+    portable_id: github:fastapi/fastapi
+    github_url: https://github.com/fastapi/fastapi
+    status: active
+    summary: HTTP transport for PoCP API — thin binding, not protocol core.
+
+  pytorch:
+    entity_id: pocp-oss-pytorch
+    entity_type: tool
+    display_name: PyTorch
+    portable_id: github:pytorch/pytorch
+    github_url: https://github.com/pytorch/pytorch
+    status: active
+    summary: Optional backend for PyG GNN advisory module.
+
+  agentskills:
+    entity_id: pocp-oss-agentskills
+    entity_type: community
+    display_name: Agent Skills (SKILL.md)
+    portable_id: github:agentskills/spec
+    github_url: https://github.com/anthropics/skills
+    status: active
+    summary: SKILL.md format for capability import into PoCP Skill entities.
+
+  openclaw:
+    entity_id: pocp-oss-openclaw
+    entity_type: community
+    display_name: OpenClaw
+    portable_id: github:openclaw/openclaw
+    github_url: https://github.com/openclaw/openclaw
+    status: evaluating
+    summary: Agent manifest patterns referenced in capability import.
+
+  llama_cpp:
+    entity_id: pocp-oss-llama-cpp
+    entity_type: llm
+    display_name: llama.cpp
+    portable_id: github:ggml-org/llama.cpp
+    github_url: https://github.com/ggml-org/llama.cpp
+    status: evaluating
+    summary: Local GGML inference — planned witness adapter for edge nodes.

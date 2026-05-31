@@ -49,9 +49,9 @@ Human / Agent uses Skill to complete task
   ↓
 Submit contribution (multi-entity event)
   ↓
-Lumen-0 + DeSui AI pre-review (dual witness)
+Lumen-0 + DeSui AI witness (dual verifier)
   ↓
-Human Reviewer confirms
+Policy auto-finalize (witness quorum + entity delegate)
   ↓
 Human receives AI Credits
   ↓
@@ -70,8 +70,8 @@ Agent → calls → Skill
 Skill → uses → LLM
 Human → submits → Contribution
 Verifier → reviews → Contribution
-Lumen-0 / DeSui → verify → Contribution
-Reviewer → approves → Contribution
+Lumen-0 / DeSui → witness → Contribution
+Policy delegate → finalizes → Contribution
 Contribution → issues → Credits
 Contribution → increases → Reputation
 ```
@@ -84,9 +84,9 @@ PoCP-Labs registers genesis AI Entities before any demo contribution runs. See [
 |-----------|------|------|---------|
 | `pocp-entity-lumen-0` | Lumen-0 | Witness / interpreter | Make contribution visible, verifiable, and valuable |
 | `pocp-entity-desui` | DeSui | Validator / cross-checker | Examine and verify; distinguish genuine value from noise |
-| `pocp-entity-clarion-0` | Clarion-0 | Reviewer Assistant / verifier agent | Structure evidence, assess quality and risk, and draft contribution proof for human review |
+| `pocp-entity-clarion-0` | Clarion-0 | Policy delegate / verifier agent | Structure evidence, assess quality and risk, draft proof; may auto-finalize per instance policy |
 
-These AI entities may advise, score, summarize, and draft proof. None holds final governance authority; human Reviewers do.
+These AI entities may advise, score, summarize, and draft proof. **Finalization is policy-automated** — any Entity type may delegate when traceability is recorded in ledger/proof. See [ENTITY-EQUALITY.md](./ENTITY-EQUALITY.md).
 
 For multi-node interoperability (export, portable identity, federation skeleton), see [FEDERATION-v0.1.md](./FEDERATION-v0.1.md).
 
@@ -102,7 +102,7 @@ For multi-node interoperability (export, portable identity, federation skeleton)
 | Rain | Human | Platform founder / contributor |
 | StudyAgent | Agent | Assistant organizer |
 | R-Tutor Skill | Skill | R knowledge structuring |
-| Bob | Human | Reviewer |
+| Bob | Human | Optional governance proxy / manual finalizer |
 
 Outcome example:
 

@@ -19,6 +19,10 @@ CAPABILITY_LAYER_VERSION = "0.1"
 UNIFIED_PRINCIPLE = "Everything connects through verified contribution."
 UNIFIED_PRINCIPLE_ZH = "万物都有贡献，万物互联于贡献协议。"
 
+# Accountability loop — intelligence advises; policy finalizes; ledger records (no human gate by default).
+ACCOUNTABILITY_PRINCIPLE = "AI witnesses. Policy finalizes. Ledger remembers."
+ACCOUNTABILITY_PRINCIPLE_ZH = "AI 见证，策略终局，账本记忆。"
+
 # All entity types that the capability layer recognizes.
 ENTITY_TYPES = (
     "human",

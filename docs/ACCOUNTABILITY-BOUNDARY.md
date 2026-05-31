@@ -2,7 +2,7 @@
 
 **Purpose:** PoCP **defaults to maximum automation**. Restrictions exist only where portable trust requires **traceable attribution** — not to preserve manual UI or slow agent progress.
 
-See also: [PROTOCOL-STACK.md](./PROTOCOL-STACK.md) · [genesis/zh-CN.md](./genesis/zh-CN.md) §6
+See also: [PROTOCOL.md](./PROTOCOL.md) · [ARCHITECTURE.md](./ARCHITECTURE.md) · [genesis/zh-CN.md](./genesis/zh-CN.md) §6
 
 ---
 

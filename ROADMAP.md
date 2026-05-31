@@ -18,6 +18,8 @@ Contribution → Verification → CP → AI Credits → AI Use → More Contribu
 
 For the protocol-architecture evolution that sits underneath these phases, see [docs/ARCHITECTURE-EVOLUTION.md](./docs/ARCHITECTURE-EVOLUTION.md).
 
+For **Epic tracking** (contribution network → optional token path), see [docs/TOKEN-PATHWAY-EPICS.md](./docs/TOKEN-PATHWAY-EPICS.md).
+
 ## Phase 0 — Genesis
 
 Goal: Define the project and make it understandable.
@@ -90,34 +92,47 @@ Success condition:
 
 > A real user can log in, receive AI Credits, use AI Chat, contribute, receive verification, earn more Credits, and continue using AI.
 
-## Phase 3 — Pilot
+## Phase 3 — Pilot (Three-Layer Entity Network)
 
-Goal: Run a small real-world pilot.
+Goal: Prove the **protocol + distributed compute + distributed intelligence** stack with a small real network — not merely a human signup count.
 
-Target users:
+See [docs/INTELLECTUAL-EQUALITY.md](./docs/INTELLECTUAL-EQUALITY.md) · [docs/DISTRIBUTED-LAYERS.md](./docs/DISTRIBUTED-LAYERS.md) · [docs/PILOT-LAUNCH-CHECKLIST.md](./docs/PILOT-LAUNCH-CHECKLIST.md).
 
-- Students
-- Early developers
-- Open-source contributors
-- Public-good volunteers
-- Community builders
+Target participants (Entity types):
 
-Pilot size:
+- Human Entities — students, developers, reviewers, sponsors
+- Agent Entities — StudyAgent and community agents
+- Skill Entities — imported or bundled skills
+- LLM Witness Entities — Lumen-0, DeSui, local Ollama, peer witnesses
+- Optional: Organization, Tool, Dataset Entities
+
+Pilot scale (three-layer metrics):
 
 ```text
-30–100 users
+≥30 active Entities (across ≥4 entity types)
 10–30 contribution tasks
-50–200 contribution events
+50–200 approved contribution events
+≥50 exportable Contribution Proof Packets
+≥30 InvocationTrace records (avg chain depth ≥3: Human→Agent→Skill→LLM)
+≥2 compute/witness providers (e.g. local Ollama + 1 peer or vLLM node)
+≥1 cross-node proof import (Epic D — when second operator ready)
+≥3 distinct finalizer Entities (any type — Human, Agent, LLM, …)
 ```
 
 Metrics:
 
-- How many users return after first use?
+- Active Entity count and type diversity (not human registrations alone)
+- Return rate: Entities with 2+ contribution-related events in 7 days
+- Proof packet export and (optional) federation import success
+- Witness quorum coverage (local + remote adapters)
 - Do AI Credits motivate real contribution?
-- Do human reviewers find AI verification useful?
 - Are CP and Credits perceived as fair?
-- Are there signs of abuse or gaming?
-- Does AI access help users contribute more?
+- Abuse and gaming signals
+- Does distributed witness compute reduce single-vendor dependency?
+
+Success condition:
+
+> A multi-Entity contribution network runs end-to-end: distributed witness compute, intelligence orchestration, portable proof, ledger + graph Merkle memory, and visible graph relationships — with traceable policy finalization, not a privileged human gate.
 
 ## Phase 4 — Contribution Graph
 

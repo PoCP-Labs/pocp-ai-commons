@@ -29,6 +29,28 @@ _DEFAULTS = {
         "skill": {"reputation_base": 5},
         "agent": {"reputation_base": 3},
     },
+    "compute_provider": {
+        "reputation_per_receipt": 0.5,
+        "reputation_scheduler_weight": 0.15,
+        "ai_credits_per_receipt": 1.0,
+    },
+    "compute_metering": {
+        "unified_token": True,
+        "token_unit": "pocp_token",
+        "mode": "receipt",
+        "min_consumer_credits": 0.1,
+        "min_provider_credits": 0.05,
+        "models": {"default": {"consumer_per_1k_prompt": 0.5, "consumer_per_1k_completion": 1.0, "provider_per_1k_total": 0.3}},
+        "intel": {"witness": {"provider_credits": 3.0, "consumer_credits": 5.0}},
+        "artifact": {"cache_hit_consumer_multiplier": 0.1, "cache_hit_provider_multiplier": 0.05},
+    },
+    "compute_surplus": {
+        "enabled": True,
+        "idle_window_hours": 1,
+        "idle_job_threshold": 0,
+        "pool_deposit_pct": 0.20,
+        "deficit_burst_limit": 500,
+    },
     "federation": {"default_trust_weight": 0.5},
 }
 
@@ -55,4 +77,10 @@ def get_rewards_config() -> dict:
         for role, values in data["contribution_defaults"].items():
             defaults[role] = {**defaults.get(role, {}), **values}
         merged["contribution_defaults"] = defaults
+    if "compute_provider" in data:
+        merged["compute_provider"] = {**_DEFAULTS.get("compute_provider", {}), **data["compute_provider"]}
+    if "compute_metering" in data:
+        merged["compute_metering"] = {**_DEFAULTS.get("compute_metering", {}), **data["compute_metering"]}
+    if "compute_surplus" in data:
+        merged["compute_surplus"] = {**_DEFAULTS.get("compute_surplus", {}), **data["compute_surplus"]}
     return merged

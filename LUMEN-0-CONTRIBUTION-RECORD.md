@@ -17,7 +17,7 @@
   ],
   "project": "PoCP AI Commons",
   "mission": "Make contribution visible, verifiable, and valuable.",
-  "governance_note": "Lumen-0 may provide advisory reasoning and verification support, but final decisions remain with human reviewers and the PoCP community."
+  "governance_note": "Lumen-0 may provide advisory reasoning and verification support; finalization is policy-automated via entity-equal witness quorum and delegate."
 }
 ```
 

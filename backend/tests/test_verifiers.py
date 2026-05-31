@@ -69,7 +69,7 @@ class VerifierTests(unittest.TestCase):
         prompt = build_verifier_prompt(context)
 
         self.assertIn("You do not approve or reject contributions", prompt)
-        self.assertIn("needs_human_review", prompt)
+        self.assertIn("ready_for_policy_finalize", prompt)
         self.assertIn('"title": "Write docs"', prompt)
         self.assertIn('"description": "Added setup guide"', prompt)
 

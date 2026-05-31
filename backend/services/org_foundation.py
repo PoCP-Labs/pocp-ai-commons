@@ -8,11 +8,12 @@ from models.organization import Organization
 
 POCP_ORG_NAME = "PoCP AI Commons"
 
+GENESIS_MANIFESTO_PRIMARY = "GENESIS.md"
+
 GENESIS_MANIFESTO_PATHS = [
-    "docs/genesis/zh-CN.md",
-    "docs/genesis/en.md",
     "GENESIS.md",
     "docs/genesis/README.md",
+    "docs/genesis/zh-CN.md",
 ]
 
 
@@ -32,7 +33,8 @@ def ensure_pocp_org_foundation(db: Session) -> None:
             "founded_by_name": rain.name,
             "primary_sponsor_entity_id": rain.id,
             "genesis_manifesto_paths": GENESIS_MANIFESTO_PATHS,
-            "genesis_manifesto_primary": "docs/genesis/zh-CN.md",
+            "genesis_manifesto_primary": GENESIS_MANIFESTO_PRIMARY,
+            "platform_language": "en",
         }
     )
     org_entity.metadata_ = org_meta
@@ -69,11 +71,12 @@ def ensure_pocp_org_foundation(db: Session) -> None:
     rain_meta["roles"] = roles
     rain_meta["org_founded"] = POCP_ORG_NAME
     rain_meta["org_entity_id"] = org_entity.id
-    rain_meta["genesis_manifesto_primary"] = "docs/genesis/zh-CN.md"
+    rain_meta["genesis_manifesto_primary"] = GENESIS_MANIFESTO_PRIMARY
+    rain_meta["platform_language"] = "en"
     rain.metadata_ = rain_meta
     rain.description = (
         "Founder of PoCP AI Commons; primary sponsor who established the organization "
-        "and drafted the Genesis manifesto (底层宣言)."
+        "and drafted the Genesis manifesto (canonical: GENESIS.md)."
     )
 
     db.flush()

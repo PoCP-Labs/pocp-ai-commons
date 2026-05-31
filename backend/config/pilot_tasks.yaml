@@ -1,0 +1,144 @@
+# Entity Network Pilot — task templates (Epic B)
+# Seed: python backend/scripts/seed_pilot_tasks.py
+# See docs/PILOT-ONBOARDING.md
+
+spec_version: "0.1"
+sponsor_org_name: PoCP AI Commons
+
+tasks:
+  - slug: r-matrix-notes
+    title: "[Pilot] R matrix and vector study notes"
+    type: study
+    study_agent_allowed: true
+    suggested_cp: "15-25"
+    suggested_ai_credits: "40-80"
+    description: |
+      Produce structured study notes on R matrix and vector operations: definitions, example code,
+      practice problems, and common mistakes. Prefer the StudyAgent path (Human + Agent + Skill + LLM).
+    acceptance:
+      - Includes example code for vector/matrix creation and operations
+      - At least 3 practice problems with reference answers
+      - evidence includes study_agent.trace_id when using the Agent path
+
+  - slug: local-setup-docs
+    title: "[Pilot] Improve LOCAL-SETUP documentation"
+    type: documentation
+    study_agent_allowed: false
+    suggested_cp: "10-20"
+    suggested_ai_credits: "30-50"
+    description: |
+      Read docs/LOCAL-SETUP.md, fix or extend setup steps (English first per LANGUAGE-POLICY.md),
+      and submit a PR link plus a short summary of what changed.
+    acceptance:
+      - evidence includes PR or commit link
+      - Summary explains which setup pain point was addressed
+      - Approved by an independent Human Reviewer
+
+  - slug: reviewer-recruit
+    title: "[Pilot] Onboard 3 Human Reviewer entities"
+    type: community
+    study_agent_allowed: false
+    suggested_cp: "20-30"
+    suggested_ai_credits: "50-100"
+    description: |
+      Invite 3 independent Reviewers to complete a first review (no self-review). Record entity names
+      and the first reviewed contribution id for each.
+    acceptance:
+      - evidence lists 3 Reviewers (dev-login or GitHub entity identifiers)
+      - Each has at least one approve or reject action
+      - Contributor cannot act as Reviewer on their own submission
+
+  - slug: import-agentskill
+    title: "[Pilot] Import and activate an AgentSkill"
+    type: capability
+    study_agent_allowed: false
+    suggested_cp: "15-25"
+    suggested_ai_credits: "40-60"
+    description: |
+      Import a SKILL.md via POST /capabilities/import/agentskills, activate the Skill entity,
+      and complete one execute call.
+    acceptance:
+      - Imported Skill visible in catalog
+      - evidence includes skill entity_id and execute result summary
+      - maintainer bound to the contributing Human entity
+
+  - slug: studyagent-topic
+    title: "[Pilot] StudyAgent completes a knowledge topic"
+    type: study
+    study_agent_allowed: true
+    suggested_cp: "20-30"
+    suggested_ai_credits: "60-100"
+    description: |
+      Run POST /intelligence/agents/study/run with submit_contribution=true; choose a topic (≥20 chars).
+    acceptance:
+      - InvocationTrace depth ≥ 3
+      - contribution reaches auto-verify
+      - Human Reviewer final approval
+
+  - slug: open-source-doc-fix
+    title: "[Pilot] Fix a README or PROTOCOL documentation typo"
+    type: documentation
+    study_agent_allowed: false
+    suggested_cp: "5-15"
+    suggested_ai_credits: "20-40"
+    description: |
+      Fix a documentation error in PoCP-Labs/pocp-ai-commons (or your fork) and open a PR.
+    acceptance:
+      - PR link and diff summary in evidence
+      - Not formatting-only churn
+      - Independent Reviewer confirmation
+
+  - slug: witness-ollama
+    title: "[Pilot] Enable local Ollama witness and verify once"
+    type: compute
+    study_agent_allowed: false
+    suggested_cp: "25-40"
+    suggested_ai_credits: "50-80"
+    description: |
+      Enable ENABLE_OLLAMA_VERIFIER on your node, run auto-verify on a contribution, and record the witness provider.
+    acceptance:
+      - GET /intelligence/compute/status shows ollama active
+      - ai_verifications include ollama or local provider
+      - evidence describes configuration (no secrets)
+
+  - slug: multi-entity-contribution
+    title: "[Pilot] Submit a contribution with ≥4 entity types"
+    type: collaboration
+    study_agent_allowed: true
+    suggested_cp: "25-35"
+    suggested_ai_credits: "70-120"
+    description: |
+      One Contribution Event with participants spanning Human, Agent, Skill, and LLM
+      (Organization sponsor optional).
+    acceptance:
+      - participants cover ≥4 entity_type values
+      - Passes AI witness + human review
+      - proof packet exportable
+
+  - slug: volunteer-knowledge
+    title: "[Pilot] Public-interest knowledge brief"
+    type: study
+    study_agent_allowed: true
+    suggested_cp: "15-30"
+    suggested_ai_credits: "40-90"
+    description: |
+      Write an original short guide on basic AI literacy or digital skills for the public
+      (≥800 words or equivalent structure).
+    acceptance:
+      - Original content with clear structure
+      - Target audience stated
+      - Passes quality review
+
+  - slug: federation-proof-export
+    title: "[Pilot] Export and verify a Contribution Proof Packet"
+    type: protocol
+    study_agent_allowed: false
+    suggested_cp: "10-20"
+    suggested_ai_credits: "30-50"
+    description: |
+      For an approved contribution, GET /contributions/{id}/proof, verify integrity.proof_hash;
+      optionally import on a second federation node.
+    acceptance:
+      - evidence includes first 16 chars of proof_hash and contribution_id
+      - GET /ledger/verify returns valid=true
+      - If running federation demo, record Node B import result

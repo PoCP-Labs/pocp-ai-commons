@@ -13,6 +13,9 @@ from services.attribution_merkle import build_attribution_merkle_proof, verify_a
 from services.code_attribution_bridge import build_code_attribution_context
 from services.evidence_validate import validate_evidence_full
 from services.expert_cards import expert_cards_from_contribution
+from services.external_inspiration import get_inspirations_for_contribution
+from services.community_partner import get_contribution_partner_context
+from services.federation_community import get_contribution_federation_context
 from services.portable_reputation import (
     build_portable_reputation_by_id,
     build_portable_reputation_by_portable_id,
@@ -96,6 +99,26 @@ def contribution_evidence_check(contribution_id: str, db: Session = Depends(get_
 def contribution_code_attribution_context(contribution_id: str, db: Session = Depends(get_db)):
     contribution = _load_contribution(db, contribution_id)
     return build_code_attribution_context(contribution.evidence)
+
+
+@router.get("/contributions/{contribution_id}/external-inspirations")
+def contribution_external_inspirations(contribution_id: str, db: Session = Depends(get_db)):
+    contribution = _load_contribution(db, contribution_id)
+    result = get_inspirations_for_contribution(db, contribution.evidence)
+    result["contribution_id"] = contribution_id
+    return result
+
+
+@router.get("/contributions/{contribution_id}/community-partners")
+def contribution_community_partners(contribution_id: str, db: Session = Depends(get_db)):
+    contribution = _load_contribution(db, contribution_id)
+    return get_contribution_partner_context(db, contribution)
+
+
+@router.get("/contributions/{contribution_id}/federation-context")
+def contribution_federation_context(contribution_id: str, db: Session = Depends(get_db)):
+    contribution = _load_contribution(db, contribution_id)
+    return get_contribution_federation_context(db, contribution)
 
 
 @router.get("/entities/{entity_id}/reputation/portable")

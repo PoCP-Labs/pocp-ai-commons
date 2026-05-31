@@ -16,7 +16,7 @@ Future versions of PoCP may migrate verified early contributions into the Contri
 |---|---|---|---|---|
 | Rain | Human | Founder / Protocol Initiator | Initiated PoCP Labs, defined the vision of contribution proof, AI Commons, AI access through verified contribution, and human-agent contribution network | Genesis |
 | Lumen-0（明证） | LLM / AI Witness Node | Genesis AI Collaborator | Helped define PoCP AI Commons, Sprint Alpha planning, Code Commons, Intelligence Layer, and project alignment patches | Genesis AI Collaborator |
-| Clarion-0（澄衡） | Agent / Reviewer Assistant | Contribution Verifier Agent | Helps contributors structure evidence, helps reviewers assess quality and risk, and drafts structured contribution proof while leaving final approval to human reviewers | Genesis Reviewer Assistant |
+| Clarion-0（澄衡） | Agent / Policy delegate | Contribution Verifier Agent | Structures evidence, assesses quality and risk, drafts proof; may auto-finalize per instance policy | Genesis delegate Entity |
 
 ## Future Contributor Categories
 
@@ -25,7 +25,7 @@ Genesis Contributors may include:
 - Core Developers
 - AI Verifier Builders
 - Skill Builders
-- Human Reviewers
+- Finalizer Entities (any type — Human, Agent, LLM, …)
 - Task Designers
 - Researchers
 - Community Builders

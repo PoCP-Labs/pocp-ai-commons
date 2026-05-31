@@ -1,6 +1,16 @@
 spec_version: "0.1"
+schema: "pocp.rights_rules.v0.1"
 registration:
   ai_credits: 100
+entity_equal:
+  enabled: true
+  description: "All Entity types may receive rights per role — not human-only"
+issuance_budget:
+  enabled: true
+  daily_cp_cap: 5000
+  daily_bc_cap: 20000
+  per_contribution_cp_cap: 200
+  per_contribution_bc_cap: 500
 rights:
   bc:
     version: "bc_v0_1"
@@ -17,9 +27,71 @@ contribution_defaults:
     cp_base: 20
     ai_credits_base: 80
     reputation_base: 10
-  skill:
-    reputation_base: 5
   agent:
     reputation_base: 3
+    ai_credits_base: 15
+  skill:
+    reputation_base: 5
+    ai_credits_base: 8
+  llm:
+    reputation_base: 2
+    ai_credits_base: 5
+compute_provider:
+  reputation_per_receipt: 0.5
+  reputation_scheduler_weight: 0.15
+  ai_credits_per_receipt: 1.0
 federation:
   default_trust_weight: 0.5
+compute_metering:
+  unified_token: true
+  token_unit: pocp_token
+  mode: token
+  fallback_estimator: chars/4
+  max_estimated_tokens: 32000
+  min_consumer_credits: 0.1
+  min_provider_credits: 0.05
+  estimated_provider_discount: 0.5
+  models:
+    default:
+      consumer_per_1k_prompt: 0.5
+      consumer_per_1k_completion: 1.0
+      provider_per_1k_total: 0.3
+      base_consumer: 0.0
+      base_provider: 0.0
+  intel:
+    witness:
+      metering_mode: intel
+      provider_credits: 3.0
+      consumer_credits: 5.0
+      intel_equivalent_tokens: 1500
+    matching:
+      provider_credits: 1.0
+      consumer_credits: 2.0
+      intel_equivalent_tokens: 1000
+  artifact:
+    cache_hit_consumer_multiplier: 0.1
+    cache_hit_provider_multiplier: 0.05
+  split:
+    skill_orchestration_pct: 0.10
+    protocol_fee_pct: 0.05
+compute_surplus:
+  enabled: true
+  idle_window_hours: 1
+  idle_job_threshold: 0
+  max_providers_per_cycle: 3
+  max_precompute_per_cycle: 2
+  pool_deposit_pct: 0.20
+  deficit_burst_limit: 500
+  precompute_tasks:
+    - type: artifact_warmup
+      capability: llm_inference
+      model: surplus-precompute
+      prompts:
+        - "Summarize verified contribution in one sentence."
+        - "List three ways distributed compute reduces AI inequality."
+    - type: embedding_warmup
+      capability: embeddings
+      model: surplus-embed
+      texts:
+        - "contribution graph node"
+        - "compute provider entity"

@@ -1,0 +1,144 @@
+name: Quantum Crypto
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "backend/services/crypto_suite.py"
+      - "backend/services/pqc_dsa.py"
+      - "backend/services/ledger_chain.py"
+      - "backend/tests/test_quantum_crypto.py"
+      - ".github/workflows/quantum-crypto.yml"
+  pull_request:
+    paths:
+      - "backend/services/crypto_suite.py"
+      - "backend/services/pqc_dsa.py"
+      - "backend/services/ledger_chain.py"
+      - "backend/tests/test_quantum_crypto.py"
+
+jobs:
+  quantum-crypto-stub:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Hybrid crypto unit tests (dev stub)
+        env:
+          POCP_CRYPTO_SUITE: pocp-crypto-v0.2-hybrid
+          POCP_NODE_PQC_PRIVATE_KEY: 50f1aad1c21870d89b32c33b75ad7666c313aca0ae8b20486ca5240a563de7c8
+          POCP_NODE_PQC_PUBLIC_KEY: 26c3ea06eae3d672175add0f824e90f8ac3a5238f8ae44dced71130bfec21c21
+        run: python -m pytest tests/test_quantum_crypto.py -q --tb=short
+
+      - name: SHA-3 ledger suite tests
+        env:
+          POCP_CRYPTO_SUITE: pocp-crypto-v0.3-hash
+          POCP_NODE_PQC_PRIVATE_KEY: 50f1aad1c21870d89b32c33b75ad7666c313aca0ae8b20486ca5240a563de7c8
+          POCP_NODE_PQC_PUBLIC_KEY: 26c3ea06eae3d672175add0f824e90f8ac3a5238f8ae44dced71130bfec21c21
+        run: python -m pytest tests/test_quantum_crypto.py::SuiteRegistryTests -q
+
+  liboqs-optional:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system deps for liboqs
+        run: sudo apt-get update && sudo apt-get install -y cmake libssl-dev
+
+      - name: Install Python deps + liboqs-python
+        run: |
+          pip install -r requirements.txt
+          pip install liboqs-python
+
+      - name: ML-DSA production path (when liboqs available)
+        run: |
+          python -c "
+          import oqs
+          from services.pqc_dsa import liboqs_available, liboqs_mechanism, verify_pqc, PQC_SIG_TARGET
+          assert liboqs_available(), 'liboqs not available'
+          mech = liboqs_mechanism()
+          print('Mechanism:', mech)
+          msg = b'pocp-ci-ml-dsa-test'
+          with oqs.Signature(mech) as signer:
+              signer.generate_keypair()
+              sig = signer.sign(msg).hex()
+              pub = signer.export_public_key().hex()
+          assert verify_pqc('pocp-ci-ml-dsa-test', PQC_SIG_TARGET, pub, sig)
+          print('ML-DSA-65 roundtrip OK')
+          "
+
+  hybrid-smoke-api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Start API with hybrid crypto
+        env:
+          DATABASE_URL: sqlite:///./data/pocp_quantum_ci.db
+          POCP_WAIT_FOR_DB: "false"
+          ENABLE_DEV_LOGIN: "true"
+          POCP_CRYPTO_SUITE: pocp-crypto-v0.2-hybrid
+          POCP_NODE_PQC_PRIVATE_KEY: 50f1aad1c21870d89b32c33b75ad7666c313aca0ae8b20486ca5240a563de7c8
+          POCP_NODE_PQC_PUBLIC_KEY: 26c3ea06eae3d672175add0f824e90f8ac3a5238f8ae44dced71130bfec21c21
+        run: |
+          uvicorn main:app --host 127.0.0.1 --port 8766 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8766/health && break
+            sleep 1
+          done
+
+      - name: Crypto readiness endpoint
+        run: |
+          curl -sf http://127.0.0.1:8766/api/v1/crypto/readiness | python -c "
+          import json, sys
+          r = json.load(sys.stdin)
+          assert r['active_crypto_suite'] == 'pocp-crypto-v0.2-hybrid', r
+          assert r['hybrid_signing_enabled'] is True, r
+          print('readiness OK:', r['quantum_readiness'])
+          "
+
+      - name: Ledger anchor declares hybrid suite
+        run: |
+          curl -sf http://127.0.0.1:8766/api/v1/ledger/anchor | python -c "
+          import json, sys
+          a = json.load(sys.stdin)
+          fed = a.get('federation') or {}
+          assert fed.get('crypto_suite') == 'pocp-crypto-v0.2-hybrid', a
+          assert 'pqc' in (fed.get('signatures') or {}), a
+          assert a.get('graph_merkle_root'), 'missing graph_merkle_root'
+          print('anchor hybrid OK, graph root:', a['graph_merkle_root'][:16])
+          "

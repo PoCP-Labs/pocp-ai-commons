@@ -76,10 +76,10 @@ We are building the first working loop:
 
 ```text
 A person completes a contribution task
-→ AI gives advisory review
-→ human reviewer confirms
+→ multi-witness AI advisory review
+→ policy auto-finalize
 → system issues CP and AI Credits
-→ contribution enters the ledger
+→ contribution enters ledger + graph
 ```
 
 ## Join Us

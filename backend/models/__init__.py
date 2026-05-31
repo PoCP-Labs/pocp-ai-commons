@@ -3,6 +3,8 @@ from models.agent_feedback import AgentFeedback
 from models.reputation_audit import ReputationAuditEntry
 from models.ai_usage import AIUsageLog
 from models.code_attribution import CodeAttributionRecord
+from models.external_inspiration import ExternalInspirationRecord
+from models.compute_job import ComputeJobRecord
 from models.contribution import (
     AiVerifierResult,
     ContributionEvent,
@@ -41,4 +43,6 @@ __all__ = [
     "AIUsageLog",
     "FederatedImport",
     "CodeAttributionRecord",
+    "ExternalInspirationRecord",
+    "ComputeJobRecord",
 ]

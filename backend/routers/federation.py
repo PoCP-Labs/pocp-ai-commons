@@ -11,10 +11,17 @@ from database import get_db
 from models.federation import FederatedImport
 from schemas.federation import FederationNodeOut, ImportEventPayload, TrustListOut, TrustedNode
 from services.federation_crypto import get_node_public_key_hex
+from services.crypto_suite import active_crypto_suite, get_node_pqc_public_key_hex
 from services.federation_import import import_federated_event, import_from_proof_packet
 from services.federation_peers import probe_peer
 from services.federation_reputation import get_federated_reputation
 from services.federation_sync import sync_all_trusted_peers
+from services.federation_community import (
+    federation_import_graph_summary,
+    list_entity_federation_imports,
+    list_federation_peer_entities,
+    list_peer_node_imports,
+)
 from services.node_mode import node_mode
 from services.trust_config import load_trusted_nodes, trust_list_hash, trusted_nodes_source
 
@@ -57,6 +64,8 @@ def get_node_info():
         node_id=_NODE_ID,
         spec_version=_SPEC_VERSION,
         public_key=get_node_public_key_hex(),
+        pqc_public_key=get_node_pqc_public_key_hex(),
+        crypto_suite=active_crypto_suite(),
         node_mode=node_mode(),
         public_endpoints=[
             f"{backend_url}/api/v1/ledger/export",
@@ -64,10 +73,14 @@ def get_node_info():
             f"{backend_url}/api/v1/contributions/{{id}}/proof",
             f"{backend_url}/api/v1/ledger/verify",
             f"{backend_url}/api/v1/ledger/anchor",
+            f"{backend_url}/api/v1/crypto/readiness",
+            f"{backend_url}/api/v1/crypto/suites",
             f"{backend_url}/api/v1/federation/imports",
             f"{backend_url}/api/v1/federation/reputation?portable_id={{portable_id}}",
             f"{backend_url}/api/v1/federation/peers/health",
             f"{backend_url}/api/v1/federation/sync",
+            f"{backend_url}/api/v1/intelligence/federation/export/{{contribution_id}}",
+            f"{backend_url}/api/v1/intelligence/protocol",
         ],
     )
 
@@ -89,6 +102,41 @@ def peers_health():
         "peer_count": len(peers),
         "peers": [{"node_id": p.node_id, "trust_weight": p.trust_weight, **probe_peer(p.base_url)} for p in peers],
     }
+
+
+@router.get("/peers/entities")
+def federation_peer_entities(db: Session = Depends(get_db)):
+    """Community entities representing local and trusted federation peer nodes."""
+    entities = list_federation_peer_entities(db)
+    return {
+        "compat": "pocp.federation_community.v0.1",
+        "local_node_id": _NODE_ID,
+        "peer_count": len([e for e in entities if not e.get("is_local")]),
+        "entities": entities,
+    }
+
+
+@router.get("/imports/graph-summary")
+def federated_imports_graph_summary(db: Session = Depends(get_db)):
+    return {
+        "compat": "pocp.federation_import_graph.v0.1",
+        **federation_import_graph_summary(db),
+    }
+
+
+@router.get("/peers/{node_id}/imports")
+def peer_node_imports(node_id: str, limit: int = 50, db: Session = Depends(get_db)):
+    return list_peer_node_imports(db, node_id, limit=limit)
+
+
+@router.get("/entities/{entity_id}/imports")
+def entity_federation_imports(entity_id: str, limit: int = 50, db: Session = Depends(get_db)):
+    from models.entity import Entity
+
+    entity = db.get(Entity, entity_id)
+    if not entity:
+        raise HTTPException(status_code=404, detail="Entity not found")
+    return list_entity_federation_imports(db, entity_id, limit=limit)
 
 
 @router.post("/sync", response_model=SyncOut)

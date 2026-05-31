@@ -35,7 +35,7 @@ GENESIS_ENTITY_SPECS: list[dict] = [
             "mission": "Make contribution visible, verifiable, and valuable.",
             "governance_note": (
                 "Lumen-0 may provide advisory reasoning and verification support, "
-                "but final decisions remain with human reviewers and the PoCP community."
+                "Entity-equal finalization: policy-automated; witnesses advise, any Entity may finalize under policy."
             ),
         },
     },
@@ -74,7 +74,7 @@ GENESIS_ENTITY_SPECS: list[dict] = [
         "description": "Reviewer Assistant and Contribution Verifier Agent",
         "metadata_": {
             "alt_name": "Chengheng",
-            "name_meaning": "Clear signal and balanced judgment — clarifying contribution evidence for human review",
+            "name_meaning": "Clear signal and balanced judgment — clarifying contribution evidence for entity-equal finalization",
             "roles": [
                 "reviewer_assistant",
                 "contribution_verifier_agent",
@@ -92,7 +92,7 @@ GENESIS_ENTITY_SPECS: list[dict] = [
             "governance_note": (
                 "Clarion-0 may provide rubrics, summaries, risk flags, suggested CP, "
                 "and structured proof drafts. Final approval remains with accountable "
-                "human reviewers and PoCP governance."
+                "Entity-equal network governance — no human final gate."
             ),
         },
         "agent_config": {
@@ -146,7 +146,7 @@ GENESIS_ENTITY_SPECS: list[dict] = [
             "project": "PoCP AI Commons",
             "created_by": "PoCP-Labs",
             "attribution_status": "inferred",
-            "governance_note": "pocp-helper connects modules; does not replace human review.",
+            "governance_note": "pocp-helper connects modules; finalization is policy-automated.",
         },
         "agent_config": {"role": "integration_helper", "capabilities": ["auth", "ai_chat", "frontend", "ci"]},
     },
@@ -169,16 +169,19 @@ GENESIS_ENTITY_SPECS: list[dict] = [
             ],
             "project": "PoCP AI Commons",
             "org_founded": "PoCP AI Commons",
-            "genesis_manifesto_primary": "docs/genesis/zh-CN.md",
+            "genesis_manifesto_primary": "GENESIS.md",
+            "platform_language": "en",
             "created_by": "PoCP-Labs",
             "attribution_status": "confirmed",
             "governance_note": (
                 "Rain founded PoCP AI Commons, sponsors the network, and authored the Genesis "
-                "manifesto; human reviewers (e.g. Bob as governance proxy) hold final approval."
+                "manifesto; entity-equal auto-finalization under published policy."
             ),
         },
     },
 ]
+
+GENESIS_ENTITY_IDS = frozenset(spec["id"] for spec in GENESIS_ENTITY_SPECS)
 
 
 def ensure_genesis_entities(db: Session) -> None:

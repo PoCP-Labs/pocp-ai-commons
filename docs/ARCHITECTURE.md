@@ -24,7 +24,7 @@ flowchart TB
   subgraph Services
     CONTRIB[Contribution Service]
     VERIFY[Verifier Adapters]
-    CLARION[Clarion Human Review Assistant]
+    CLARION[Clarion Finalization Assistant]
     LEDGER[Ledger Chain]
     GRAPH[Graph Service]
     ABUSE[Anti-Abuse]
@@ -51,12 +51,12 @@ Login → Human Entity + Wallet (100 AI Credits)
      → AI Chat (burns Credits)
      → Contribution submit (evidence required)
      → AI auto-verify (advisory, multi-verifier consensus)
-     → Human approve (final)
+     → Policy auto-finalize (entity-equal; traceable delegate)
      → CP + AI Credits issued
-     → Ledger + Graph updated
+     → Ledger + Graph Merkle updated
 ```
 
-**Principle:** AI is a witness, not a ruler. Verifiers advise; humans approve.
+**Principle:** AI is a witness, not a ruler. Witnesses advise; policy finalizes traceably.
 
 ## Entity model
 
@@ -83,11 +83,15 @@ MVP focus: **Human + Agent + Skill**. Genesis LLMs: Lumen-0 (witness), DeSui (va
 - **proof.py** — portable Contribution Proof Packets
 - **graph.py** — contribution relationship graph
 - **anti_abuse.py** — limits, self-approval block, evidence checks
-- **clarion.py** — human reviewer advisory packets
+- **clarion.py** — finalization advisory packets (evidence structure, risk notes)
 
 ## Intelligence Capability Layer
 
-See [INTELLIGENCE-LAYER.md](./INTELLIGENCE-LAYER.md). Engines are partially implemented across services; not a separate microservice yet.
+Experimental advisory modules live under `backend/intelligence/` (`protocol.py`, `engines.py`, `kernel.py`). See [PROTOCOL.md](./PROTOCOL.md) and [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+External API: `backend/routers/intelligence.py` — `/api/v1/intelligence/*`.
+
+Contribution submission and auto-verify now route through the capability kernel.
 
 ## Federation
 

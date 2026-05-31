@@ -1,6 +1,6 @@
 """Clarion-0 reviewer assistant service.
 
-Clarion-0 prepares advisory review packets for human reviewers. It never changes
+Clarion-0 prepares advisory finalization packets. It never changes
 contribution status and never grants approval.
 """
 

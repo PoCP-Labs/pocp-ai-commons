@@ -22,6 +22,7 @@ class ParticipantRole(str, enum.Enum):
     executor = "executor"
     reviewer = "reviewer"
     verifier = "verifier"
+    witness = "witness"
     tool_provider = "tool_provider"
     data_provider = "data_provider"
     skill_provider = "skill_provider"

@@ -1,0 +1,309 @@
+# Community partner outreach — active discovery in OSS & distributed communities.
+# Each partner is a community Entity with offered/sought capabilities.
+# See docs/COMMUNITY-PARTNER-OUTREACH.md
+
+spec_version: "0.1"
+registry: community_partners
+
+outreach_policy:
+  principle: >
+    PoCP actively seeks partners in open-source and distributed communities —
+    not token-first gatekeepers. Partnerships are Entity records with capabilities,
+    trust alignment, and human outreach channels.
+  status_flow:
+    - prospect
+    - outreach
+    - in_conversation
+    - active_partner
+    - federation_peer
+    - integrated
+    - paused
+    - declined
+
+community_kinds:
+  - oss_project
+  - distributed_network
+  - compute_collective
+  - protocol_community
+  - education_community
+  - governance_community
+
+partners:
+  forgefed:
+    display_name: ForgeFed Federation
+    entity_id: pocp-entity-inspiration-forgefed
+    inspiration_slug: forgefed
+    community_kind: distributed_network
+    portable_id: github:ForgeFed/ForgeFed
+    github_url: https://github.com/ForgeFed/ForgeFed
+    partnership_status: active_partner
+    outreach_priority: high
+    alignment: [no_token_first, portable_identity, federation]
+    summary: >
+      ActivityPub-based forge federation — natural fit for PoCP portable proof
+      and multi-operator contribution networks.
+    capabilities_offered:
+      - capability: federation_import
+        label: Cross-forge federation protocol
+      - capability: agent_runtime
+        label: Distributed project collaboration
+    capabilities_sought:
+      - capability: witness
+        label: Verifiable contribution proofs on federated events
+      - capability: llm_inference
+        label: Advisory AI witness at edge nodes
+    outreach:
+      channel: github
+      contact_url: https://github.com/ForgeFed/ForgeFed/discussions
+      template_doc: docs/outreach/forgefed-proof-profile.md
+      next_action: Propose PoCP proof packet as optional federation payload profile
+
+  fediverse:
+    display_name: Fediverse (ActivityPub)
+    entity_id: pocp-entity-partner-fediverse
+    community_kind: distributed_network
+    portable_id: activitypub:core
+    homepage_url: https://activitypub.rocks/
+    partnership_status: prospect
+    outreach_priority: high
+    alignment: [no_token_first, distributed_community, openness]
+    summary: Decentralized social graph — outreach for contribution visibility and portable reputation.
+    capabilities_offered:
+      - capability: federation_import
+        label: Social graph distribution of public-good announcements
+    capabilities_sought:
+      - capability: witness
+        label: Signed contribution attestations shareable as ActivityPub objects
+    outreach:
+      channel: fedi
+      template_doc: docs/outreach/fediverse-contribution-note.md
+      next_action: Draft ActivityPub Note type for PoCP contribution proof summaries
+
+  ollama:
+    display_name: Ollama Community
+    entity_id: pocp-entity-partner-ollama
+    community_kind: compute_collective
+    portable_id: github:ollama/ollama
+    github_url: https://github.com/ollama/ollama
+    homepage_url: https://ollama.com
+    partnership_status: in_conversation
+    outreach_priority: high
+    alignment: [local_first, no_token_first, compute_sharing]
+    summary: Local LLM runtime — partner for distributed compute_profile adapters.
+    capabilities_offered:
+      - capability: llm_inference
+        label: Local model inference on contributor hardware
+      - capability: embeddings
+        label: Embedding models for semantic matching
+    capabilities_sought:
+      - capability: witness
+        label: ComputeReceipt attribution for shared inference
+    outreach:
+      channel: github
+      contact_url: https://github.com/ollama/ollama/discussions
+      template_doc: docs/outreach/ollama-compute-profile.md
+      next_action: Publish PoCP compute_profile Ollama adapter spec in docs
+
+  huggingface:
+    display_name: Hugging Face Hub
+    entity_id: pocp-oss-huggingface
+    oss_slug: huggingface
+    community_kind: oss_project
+    portable_id: github:huggingface
+    github_url: https://github.com/huggingface
+    partnership_status: active_partner
+    outreach_priority: medium
+    alignment: [open_models, reproducibility]
+    summary: Model hub for embeddings and inference — integrated via neural network registry.
+    capabilities_offered:
+      - capability: llm_inference
+        label: Hosted and local model artifacts
+      - capability: embeddings
+        label: Sentence-transformers and semantic models
+    capabilities_sought:
+      - capability: witness
+        label: Model-card linked contribution evidence
+    outreach:
+      channel: github
+      next_action: Link HF model cards in contribution evidence standard examples
+
+  mcp:
+    display_name: Model Context Protocol
+    entity_id: pocp-oss-mcp
+    oss_slug: model_context_protocol
+    community_kind: protocol_community
+    portable_id: github:modelcontextprotocol
+    github_url: https://github.com/modelcontextprotocol
+    partnership_status: integrated
+    outreach_priority: high
+    alignment: [tool_composability, agent_skills]
+    summary: MCP servers imported as Tool entities — active capability bridge.
+    capabilities_offered:
+      - capability: mcp_host
+        label: Standard tool server protocol
+      - capability: agent_runtime
+        label: Agent tool invocation graphs
+    capabilities_sought:
+      - capability: witness
+        label: Tool-use receipts in invocation traces
+    outreach:
+      channel: github
+      next_action: Expand bundled MCP capability import catalog
+
+  chaoss:
+    display_name: CHAOSS Community
+    entity_id: pocp-entity-inspiration-chaoss
+    inspiration_slug: chaoss
+    community_kind: governance_community
+    portable_id: github:chaoss/community
+    github_url: https://github.com/chaoss/community
+    homepage_url: https://chaoss.community/
+    partnership_status: in_conversation
+    outreach_priority: medium
+    alignment: [transparency, community_health, no_token_first]
+    summary: Community health metrics — partner for open inspiration and audit transparency.
+    capabilities_offered:
+      - capability: witness
+        label: Community health metric frameworks
+    capabilities_sought:
+      - capability: federation_import
+        label: Cross-project contribution transparency reports
+    outreach:
+      channel: chaoss
+      contact_url: https://chaoss.community/
+      next_action: Map PoCP inspiration registry to CHAOSS transparency vocabulary
+
+  openoctp:
+    display_name: Open Contribution Trust Protocol
+    entity_id: pocp-entity-inspiration-octp
+    inspiration_slug: octp
+    community_kind: protocol_community
+    portable_id: github:openoctp/spec
+    github_url: https://github.com/openoctp/spec
+    partnership_status: integrated
+    outreach_priority: high
+    alignment: [provenance, ai_assisted_work, no_token_first]
+    summary: Provenance envelope integrated — seek co-maintainer outreach for spec alignment.
+    capabilities_offered:
+      - capability: evidence_provenance
+        label: Creation-mode and expert-citation envelopes
+    capabilities_sought:
+      - capability: witness
+        label: Cross-protocol verification claims
+    outreach:
+      channel: github
+      contact_url: https://github.com/openoctp/spec/issues
+      next_action: Propose pocp.provenance octp-compatible-v0.2 extensions
+
+  agentskills:
+    display_name: Agent Skills (SKILL.md)
+    entity_id: pocp-oss-agentskills
+    oss_slug: agentskills
+    community_kind: oss_project
+    portable_id: github:agentskills/spec
+    github_url: https://github.com/anthropics/skills
+    partnership_status: active_partner
+    outreach_priority: medium
+    alignment: [skill_composability, open_agents]
+    summary: SKILL.md import into PoCP Skill entities via capability layer.
+    capabilities_offered:
+      - capability: agent_runtime
+        label: Portable skill definitions
+    capabilities_sought:
+      - capability: witness
+        label: Skill invocation attribution in proof packets
+    outreach:
+      channel: github
+      next_action: Co-document PoCP Skill entity mapping with Agent Skills spec
+
+  matrix:
+    display_name: Matrix.org
+    entity_id: pocp-entity-partner-matrix
+    community_kind: distributed_network
+    portable_id: github:matrix-org/matrix-spec
+    github_url: https://github.com/matrix-org/matrix-spec
+    homepage_url: https://matrix.org/
+    partnership_status: prospect
+    outreach_priority: medium
+    alignment: [distributed_community, federated_messaging]
+    summary: Federated messaging for reviewer coordination and community outreach rooms.
+    capabilities_offered:
+      - capability: federation_import
+        label: Room-based contribution coordination across homeservers
+    capabilities_sought:
+      - capability: witness
+        label: Signed review decisions as portable events
+    outreach:
+      channel: matrix
+      next_action: Define #pocp-commons outreach room template for pilot operators
+
+  ipfs:
+    display_name: IPFS / libp2p
+    entity_id: pocp-entity-partner-ipfs
+    community_kind: distributed_network
+    portable_id: github:ipfs/ipfs
+    github_url: https://github.com/ipfs/ipfs
+    homepage_url: https://ipfs.tech/
+    partnership_status: prospect
+    outreach_priority: low
+    alignment: [content_addressing, openness]
+    summary: Content-addressed evidence storage for portable proof artifacts.
+    capabilities_offered:
+      - capability: federation_import
+        label: CID-linked evidence in contribution packets
+    capabilities_sought:
+      - capability: witness
+        label: Immutable evidence hash anchoring
+    outreach:
+      channel: github
+      next_action: Document optional IPFS CID field in evidence standard v0.2 draft
+
+  education_commons:
+    display_name: Open Education Commons (pilot)
+    entity_id: pocp-entity-partner-edu-commons
+    community_kind: education_community
+    portable_id: pocp:partner:edu-commons-pilot
+    partnership_status: outreach
+    outreach_priority: high
+    alignment: [no_token_first, public_good, sprint_alpha]
+    summary: Schools and study groups as early PoCP pilot operators — seek 3–5 partner campuses.
+    capabilities_offered:
+      - capability: agent_runtime
+        label: StudyAgent learning loops
+      - capability: witness
+        label: Human reviewer pools for student contributions
+    capabilities_sought:
+      - capability: llm_inference
+        label: Sponsored AI Credits for verified student work
+    outreach:
+      channel: email
+      template_doc: docs/outreach/zh-CN-education-pilot.md
+      next_action: Publish pilot partner onboarding checklist in docs/PILOT-PARTNERS.md
+
+  meritocrab:
+    display_name: Meritocrab (pattern partner)
+    entity_id: pocp-entity-inspiration-meritocrab
+    inspiration_slug: meritocrab
+    community_kind: oss_project
+    portable_id: github:hydai/meritocrab
+    github_url: https://github.com/hydai/meritocrab
+    partnership_status: integrated
+    outreach_priority: low
+    alignment: [advisory_ai, human_review]
+    summary: Patterns integrated off-chain — optional upstream collaboration on verifier plugins.
+    capabilities_offered:
+      - capability: witness
+        label: External HTTP verifier plugin model
+    capabilities_sought:
+      - capability: federation_import
+        label: Cross-repo reputation portability
+    outreach:
+      channel: github
+      next_action: Share PoCP Clarion unified packet as reference implementation
+
+declined_partners:
+  agent-commons:
+    display_name: Agent Commons
+    entity_id: pocp-entity-inspiration-agent-commons
+    partnership_status: declined
+    reason: Token-first economics — incompatible with NO-TOKEN-FIRST.md unless off-chain fork

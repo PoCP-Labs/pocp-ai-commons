@@ -247,7 +247,7 @@ See [docs/ACCOUNTABILITY-BOUNDARY.md](./docs/ACCOUNTABILITY-BOUNDARY.md).
 
 The network may have strong compute and rich intelligence, but memory must be auditable, links must be verifiable, and rights must follow contribution — that is PoCP as a **public AI capability network**.
 
-See [docs/CONTRIBUTION-NEURAL-NETWORK.md](./docs/CONTRIBUTION-NEURAL-NETWORK.md).
+See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) and [ROADMAP.md](./ROADMAP.md).
 
 ---
 
@@ -531,7 +531,7 @@ PoCP invests at the **protocol, distributed compute, and distributed intelligenc
 Compute executes → Intelligence orchestrates → Protocol remembers
 ```
 
-Full treatment: [INTELLECTUAL-EQUALITY.md](./docs/INTELLECTUAL-EQUALITY.md) · [DISTRIBUTED-LAYERS.md](./docs/DISTRIBUTED-LAYERS.md) · [PROTOCOL-STACK.md](./docs/PROTOCOL-STACK.md).
+Full treatment: [ARCHITECTURE.md](./docs/ARCHITECTURE.md) · [PROTOCOL.md](./docs/PROTOCOL.md) · [ROADMAP.md](./ROADMAP.md).
 
 ### Contribution neural network
 

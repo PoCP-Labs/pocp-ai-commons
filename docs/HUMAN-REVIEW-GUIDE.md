@@ -1,6 +1,6 @@
-# Human Review Guide
+# Finalization Guide (Human Review — Optional Instance Policy)
 
-**Default PoCP stance:** automate as much as the instance policy allows. Human review is one valid finalization pattern — not a protocol requirement for every contribution.
+> **Production default:** entity-equal auto-finalization per [ENTITY-EQUALITY.md](./ENTITY-EQUALITY.md). This guide covers optional human-as-finalizer deployments.
 
 See [ACCOUNTABILITY-BOUNDARY.md](./ACCOUNTABILITY-BOUNDARY.md).
 

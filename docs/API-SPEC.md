@@ -40,6 +40,11 @@ Providers: `mock`, `openai`, `deepseek` (when API keys configured).
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/v1/entities` | List entities |
+| GET | `/api/v1/entities/ontology` | Canonical Entity type × role ontology |
+| GET | `/api/v1/entities/{id}/ontology` | Ontology slice for one entity |
+| POST | `/api/v1/entities/tool` | Register Tool entity (auth required) |
+| POST | `/api/v1/entities/dataset` | Register Dataset entity (auth required) |
+| POST | `/api/v1/entities/workflow` | Register Workflow entity (auth required) |
 | GET | `/api/v1/tasks` | List tasks |
 | POST | `/api/v1/tasks` | Create task (authorized sponsor) |
 
@@ -78,6 +83,42 @@ Manual verify endpoint exists but is disabled by default; use `auto-verify`.
 | GET | `/api/v1/federation/node` | Node metadata |
 | POST | `/api/v1/federation/import-proof` | Import proof from trusted node |
 | GET | `/api/v1/federation/imports` | List imports |
+
+## Intelligence Capability Layer
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/intelligence/protocol` | Unified contribution protocol descriptor |
+| GET | `/api/v1/intelligence/status` | Capability module registry |
+| GET | `/api/v1/intelligence/entities/{id}/profile` | Entity wallet, reputation, contribution stats |
+| POST | `/api/v1/intelligence/entities/register` | Register contribution-capable entity (Tool, Dataset, etc.) |
+| GET | `/api/v1/intelligence/contributions/{id}/packet` | Full advisory intelligence packet |
+| GET | `/api/v1/intelligence/federation/export/{contribution_id}` | Cross-node intelligence + proof bundle |
+| POST | `/api/v1/intelligence/federation/ingest-preview` | Advisory summary of received federation packet |
+| GET | `/api/v1/intelligence/governance/summary` | Advisory governance snapshot |
+| POST | `/api/v1/intelligence/match` | Recommend agents/skills (v0.3 semantic matching, advisory) |
+
+## Crypto Agility / Quantum Readiness
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/crypto/suites` | Registered crypto suites (classic + hybrid) |
+| GET | `/api/v1/crypto/readiness` | Node quantum-readiness snapshot |
+| GET | `/api/v1/crypto/suites/{suite_id}` | Single suite specification |
+
+See [QUANTUM-READINESS.md](./QUANTUM-READINESS.md).
+
+## Distributed Compute / Intelligence Mesh
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/v1/intelligence/entities/{id}/compute/register` | Register Entity ComputeProfile |
+| GET | `/api/v1/compute/providers` | List Entity compute providers |
+| POST | `/api/v1/compute/jobs` | Schedule compute job (advisory + receipt) |
+| GET | `/api/v1/compute/jobs/{id}` | Job status + ComputeReceipt |
+| POST | `/api/v1/compute/entities/{id}/heartbeat` | Provider liveness |
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for compute and intelligence modules (experimental APIs).
 
 ## Auth header
 

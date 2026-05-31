@@ -1,0 +1,229 @@
+# GitHub neural network & agent technology registry for PoCP.
+# See docs/NEURAL-NETWORK-GITHUB-ADOPTION.md
+
+spec_version: "0.1"
+registry: neural_network_sources
+default_license_preference:
+  - MIT
+  - Apache-2.0
+  - BSD-3-Clause
+
+adoption_policy:
+  automation_first: true
+  traceable_finalization: true
+  token_first_projects: declined
+  record_in_ledger: true
+
+categories:
+  llm_inference: LLM runtime / API for witness and chat
+  embeddings: Semantic match, dedup, skill retrieval
+  agent_runtime: Multi-step agent orchestration
+  agent_interop: Agent-to-agent discovery and task delegation (A2A)
+  agent_trust: Identity, sponsor accountability, peer handshake
+  graph_ml: Graph neural network analytics (advisory)
+  training: Fine-tune / RL (research only)
+
+sources:
+  openai_api:
+    display_name: OpenAI API
+    category: llm_inference
+    github_url: https://github.com/openai/openai-python
+    license: MIT
+    integration_round: 1
+    status: active
+    pocp_modules:
+      - backend/services/verifiers/openai_verifier.py
+      - backend/services/ai_chat.py
+
+  deepseek_api:
+    display_name: DeepSeek API
+    category: llm_inference
+    github_url: https://github.com/deepseek-ai/DeepSeek-V3
+    license: MIT
+    integration_round: 1
+    status: active
+    pocp_modules:
+      - backend/services/verifiers/deepseek_verifier.py
+
+  ollama:
+    display_name: Ollama
+    category: llm_inference
+    github_url: https://github.com/ollama/ollama
+    license: MIT
+    integration_round: 2
+    status: active
+    pocp_modules:
+      - backend/services/verifiers/ollama_verifier.py
+      - backend/services/ollama_client.py
+      - backend/services/ai_chat.py
+      - backend/services/embedding_match.py
+    env:
+      - OLLAMA_BASE_URL
+      - OLLAMA_MODEL
+      - OLLAMA_EMBED_MODEL
+      - ENABLE_OLLAMA_VERIFIER
+      - ENABLE_OLLAMA_EMBEDDINGS
+    notes: Local witness node; optional nomic-embed-text for skill match
+
+  vllm:
+    display_name: vLLM
+    category: llm_inference
+    github_url: https://github.com/vllm-project/vllm
+    license: Apache-2.0
+    integration_round: 3
+    status: active
+    pocp_modules:
+      - backend/services/verifiers/vllm_verifier.py
+      - backend/services/vllm_client.py
+      - backend/services/ai_chat.py
+    env:
+      - VLLM_BASE_URL
+      - VLLM_MODEL
+      - ENABLE_VLLM_VERIFIER
+    notes: OpenAI-compatible high-throughput community witness nodes
+
+  llama_cpp:
+    display_name: llama.cpp
+    category: llm_inference
+    github_url: https://github.com/ggml-org/llama.cpp
+    license: MIT
+    integration_round: 3
+    status: active
+    env:
+      - LLAMA_CPP_BASE_URL
+      - LLAMA_CPP_MODEL
+      - ENABLE_LLAMA_CPP_VERIFIER
+    pocp_modules:
+      - backend/services/verifiers/llama_cpp_verifier.py
+      - backend/services/llama_cpp_client.py
+      - backend/services/ai_chat.py
+    notes: OpenAI-compatible edge/CPU witness via llama-server
+
+  huggingface_transformers:
+    display_name: Hugging Face Transformers
+    category: embeddings
+    github_url: https://github.com/huggingface/transformers
+    license: Apache-2.0
+    integration_round: 2
+    status: adapter_planned
+    pocp_modules:
+      - backend/intelligence/engines.py
+    notes: Skill/task matching, optional local models
+
+  sentence_transformers:
+    display_name: sentence-transformers
+    category: embeddings
+    github_url: https://github.com/UKPLab/sentence-transformers
+    license: Apache-2.0
+    integration_round: 2
+    status: active
+    pocp_modules:
+      - backend/services/sentence_embedder.py
+      - backend/services/embedding_match.py
+      - backend/services/contribution_dedup.py
+    env:
+      - ENABLE_SENTENCE_TRANSFORMERS
+      - POCP_EMBEDDING_MODEL
+    notes: CPU semantic match, dedup hints; optional pip install sentence-transformers
+
+  langgraph:
+    display_name: LangGraph
+    category: agent_runtime
+    github_url: https://github.com/langchain-ai/langgraph
+    license: MIT
+    integration_round: 3
+    status: active
+    pocp_modules:
+      - backend/services/agent_runtimes/study_agent_runtime.py
+      - backend/services/study_agent.py
+      - backend/routers/intelligence.py
+    env:
+      - ENABLE_LANGGRAPH_STUDY_AGENT
+      - STUDY_AGENT_LLM_PROVIDER
+    notes: StudyAgent executor; state-machine fallback without pip install; full graph when langgraph installed
+
+  autogen:
+    display_name: Microsoft AutoGen
+    category: agent_runtime
+    github_url: https://github.com/microsoft/autogen
+    license: MIT
+    integration_round: 3
+    status: evaluating
+
+  crewai:
+    display_name: CrewAI
+    category: agent_runtime
+    github_url: https://github.com/crewAIInc/crewAI
+    license: MIT
+    integration_round: 3
+    status: active
+    pocp_modules:
+      - backend/services/crewai_witness.py
+      - backend/services/verifiers/crewai_witness_verifier.py
+    env:
+      - ENABLE_CREWAI_WITNESS
+      - ENABLE_CREWAI_WITNESS_USE_LIBRARY
+      - CREWAI_WITNESS_URL
+      - CREWAI_WITNESS_LLM_PROVIDER
+    notes: Multi-agent witness crew; native role crew default, optional pip install crewai
+
+  pytorch_geometric:
+    display_name: PyTorch Geometric
+    category: graph_ml
+    github_url: https://github.com/pyg-team/pytorch_geometric
+    license: MIT
+    integration_round: 3
+    status: active
+    pocp_modules:
+      - backend/services/graph.py
+      - backend/services/graph_analytics.py
+    notes: Structural analytics v0.1 live; full GNN advisory planned
+
+  dgl:
+    display_name: Deep Graph Library
+    category: graph_ml
+    github_url: https://github.com/dmlc/dgl
+    license: Apache-2.0
+    integration_round: 3
+    status: evaluating
+
+  a2a_protocol:
+    display_name: Agent2Agent (A2A)
+    category: agent_interop
+    github_url: https://github.com/a2aproject/A2A
+    license: Apache-2.0
+    integration_round: 2
+    status: active
+    pocp_modules:
+      - backend/services/a2a_agent_card.py
+      - backend/services/a2a_task_bridge.py
+      - backend/services/contribution_submit.py
+      - backend/routers/intelligence.py
+      - backend/main.py
+    notes: >
+      Agent Card + JSON-RPC SendMessage/GetTask/ListTasks map to Contribution +
+      InvocationTrace. See docs/inspiration-mappings/a2a.md.
+
+  agent_governance_toolkit:
+    display_name: Agent Governance Toolkit (AgentMesh)
+    category: agent_trust
+    github_url: https://github.com/microsoft/agent-governance-toolkit
+    license: Apache-2.0
+    integration_round: 2
+    status: active
+    pocp_modules:
+      - backend/services/peer_trust.py
+      - backend/services/peer_compute.py
+      - backend/services/federation_import.py
+      - backend/services/verifiers/peer_witness_verifier.py
+      - backend/services/compute_executor.py
+      - backend/services/peer_mcp.py
+      - backend/routers/intelligence.py
+    notes: >
+      Sponsor-bound identity, peer handshake, Merkle audit patterns.
+      Human finalization remains PoCP gate. Benchmark BI-2.
+
+declined:
+  agent_commons_token:
+    github_url: https://github.com/agentcommons/agent-commons
+    reason: Token-first economics; see NO-TOKEN-FIRST.md

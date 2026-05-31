@@ -7,6 +7,8 @@ class FederationNodeOut(BaseModel):
     node_id: str
     spec_version: str
     public_key: str | None = None
+    pqc_public_key: str | None = None
+    crypto_suite: str | None = None
     node_mode: str = "full"
     public_endpoints: list[str] = Field(default_factory=list)
 
@@ -15,6 +17,7 @@ class TrustedNode(BaseModel):
     node_id: str
     base_url: str
     public_key: str | None = None
+    pqc_public_key: str | None = None
     trust_weight: float = 0.5
 
 

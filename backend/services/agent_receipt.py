@@ -14,6 +14,7 @@ from typing import Any
 from sqlalchemy.orm import Session, joinedload
 
 from models.invocation import InvocationTrace
+from services.capability_receipt import build_step_capability_receipts
 from services.federation_crypto import get_node_public_key_hex, sign_message, verify_message
 
 RECEIPT_SPEC_VERSION = "pocp.agent_receipt.v0.1"
@@ -47,9 +48,11 @@ def build_receipt_payload(trace: InvocationTrace) -> dict:
                 "source_entity_id": step.source_entity_id,
                 "target_entity_id": step.target_entity_id,
                 "action": step.action,
+                "metadata": step.metadata_ or {},
             }
             for step in trace.steps
         ],
+        "capability_receipts": build_step_capability_receipts(trace.id, list(trace.steps), {}),
     }
 
 

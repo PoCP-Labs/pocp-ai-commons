@@ -1,6 +1,8 @@
 # PoCP Genesis Manifesto — Translations
 
-The canonical English text lives at [`GENESIS.md`](../../GENESIS.md) in the repository root.
+The **canonical English** text lives at [`GENESIS.md`](../../GENESIS.md) in the repository root.
+
+The **running platform** (UI, API defaults, seed metadata) is also **English-first** — see [LANGUAGE-POLICY.md](../LANGUAGE-POLICY.md).
 
 | Language | File | Status |
 |----------|------|--------|
@@ -14,5 +16,6 @@ The canonical English text lives at [`GENESIS.md`](../../GENESIS.md) in the repo
 ## Translation notes
 
 - **Proper nouns** (`PoCP`, `Lumen-0`, `DeSui`, `Mingzheng`, `Disi`) and **JSON entity records** stay unchanged across all versions.
+- **§10 Intellectual equality / 智力平权与三层架构** — added in English ([GENESIS.md](../../GENESIS.md)) and Chinese ([zh-CN.md](./zh-CN.md)); full treatment in [INTELLECTUAL-EQUALITY.md](../INTELLECTUAL-EQUALITY.md). Other translations may follow via PR.
 - **Arabic** renders right-to-left on GitHub; code blocks and JSON remain LTR.
 - Improvements welcome via PR — see [GOOD_FIRST_ISSUES.md](../../GOOD_FIRST_ISSUES.md) § Translate GENESIS.md.

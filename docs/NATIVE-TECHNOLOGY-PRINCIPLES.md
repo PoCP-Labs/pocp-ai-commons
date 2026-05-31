@@ -1,183 +1,74 @@
-# PoCP Native Technology Principles
+# Native Technology Principles
 
-PoCP must not become a bundle of unrelated technologies.
+What PoCP treats as **first-class protocol technology** vs borrowed patterns vs explicit non-goals.
 
-It may use databases, APIs, LLMs, cryptographic hashes, queues, graph views, and frontend frameworks, but those are implementation materials. They are not the essence of PoCP.
+See also: [NO-TOKEN-FIRST.md](../NO-TOKEN-FIRST.md) · [ACCOUNTABILITY-BOUNDARY.md](./ACCOUNTABILITY-BOUNDARY.md) · [ENTITY-EQUALITY.md](./ENTITY-EQUALITY.md)
 
-PoCP's essence must be native protocol primitives for the AI era.
+---
 
-## Core Position
+## Native primitives (build here)
 
-PoCP is not:
+| Primitive | Meaning |
+|-----------|---------|
+| **Entity** | First-class contributor/witness/finalizer — any intelligent subject |
+| **Contribution event** | Verifiable work unit with evidence and multi-Entity attribution |
+| **Witness consensus** | Advisory multi-verifier scores; does not alone change rights |
+| **Policy finalization** | Automated, traceable verdict → CP / AI Credits / reputation |
+| **Ledger memory** | Append-only hash-linked record of rights-changing events |
+| **Graph memory** | Collaboration relationships with Merkle-commitment |
+| **Portable proof** | Exportable packet verifiable without trusting the exporter |
+| **Federation opt-in** | Nodes choose which peers and policies to accept |
 
-- an AI wrapper;
-- a task board plus points;
-- a reputation plugin;
-- a ledger demo;
-- a graph visualization;
-- a bundle of SaaS features.
+These are PoCP-native — not wrappers around a single vendor API or chain.
 
-PoCP is a contribution-native protocol.
+---
 
-Its core technical question is:
+## Borrowed patterns (respect in code, don't sell as product)
 
-> How can human-AI collaboration become verifiable contribution, and how can verified contribution produce rights, reputation, trust, and governance?
+| Source | PoCP use | External narrative |
+|--------|----------|-------------------|
+| Bitcoin | Hash chain, Merkle, SPV audit, issuance discipline | Contribution verification — not currency |
+| MCP / A2A | Tool and agent interop | Capability receipts into Entity model |
+| ERC-8004-style feedback | Agent reputation signals | Advisory; not on-chain identity |
+| SourceCred | Graph weight hints | Advisory propagation only |
 
-## Native Primitives
+Mappings live under [docs/inspiration-mappings/](./inspiration-mappings/).
 
-PoCP should develop its own primitives. Frameworks may host them, but must not define them.
+---
 
-### 1. Entity
+## Automation defaults
 
-An `Entity` is a first-class intelligent participant.
+1. **Entity-equal finalization** — no human protocol gate ([ENTITY-EQUALITY.md](./ENTITY-EQUALITY.md))
+2. **Witnesses advise; policy finalizes** — Clarion-0 and LLM witnesses never alone approve
+3. **Traceability on rights changes** — who/which policy finalized is always recorded
+4. **Instance sovereignty** — operators may opt into stricter human delegates locally
 
-It may be a human, Agent, Skill, model, tool, dataset, workflow, organization, or community.
+---
 
-This is not a normal user table. It is PoCP's identity primitive for mixed human-AI collaboration.
+## Anti-patterns (reject)
 
-### 2. Contribution Event
+| Anti-pattern | Why |
+|--------------|-----|
+| Token-first launch | Violates [NO-TOKEN-FIRST.md](../NO-TOKEN-FIRST.md) |
+| Human-only finalization in protocol spec | Blocks Agent/LLM-native networks |
+| Trust operator DB without verify | Breaks portable proof story |
+| Auto-approve on tool success alone | Skips witness + policy layer |
+| Permanent admin mint | Bypasses ledger + issuance budget |
 
-A `Contribution Event` is the atomic unit of value creation.
+---
 
-It records who contributed what, for which task, with which evidence, through which collaborators, and under which review state.
+## Engineering checklist for new features
 
-This is PoCP's native object, like a webpage for the PC Internet or an app interaction for the Mobile Internet.
+- [ ] Does it produce or consume **evidence**?
+- [ ] Does it route through **Entity** attribution?
+- [ ] If it changes CP/BC/reputation, is there a **ledger row**?
+- [ ] Can a third party **verify offline** (proof or audit CLI)?
+- [ ] Is automation default with **optional** human delegate documented?
 
-### 3. Contribution Participant
+---
 
-A contribution is rarely created by one actor.
+## Related
 
-`Contribution Participant` records the roles, weights, and evidence of every involved entity: creator, executor, reviewer, verifier, skill provider, model provider, tool provider, sponsor, coordinator, or data provider.
-
-This is PoCP's native attribution primitive.
-
-### 4. Evidence Hash
-
-PoCP must not rely only on claims.
-
-Evidence should be content-addressed whenever possible, so contribution proof can travel across systems without losing integrity.
-
-This is PoCP's native proof material primitive.
-
-### 5. Human-AI Verification State
-
-PoCP's verification state is not simple moderation.
-
-It encodes a governance boundary:
-
-```text
-AI advises.
-Humans approve.
-Ledger remembers.
-```
-
-AI can score, summarize, flag risk, ask questions, and draft proof. Human reviewers make final approval decisions.
-
-This is PoCP's native judgment primitive.
-
-### 6. Contribution Proof Packet
-
-A `Contribution Proof Packet` is a portable proof object.
-
-It bundles:
-
-- contribution event;
-- entity identity snapshots;
-- participant roles and weights;
-- evidence hash;
-- AI advisory verification;
-- human review;
-- contribution graph edges;
-- rights and reputation changes;
-- ledger hashes;
-- proof hash.
-
-This is PoCP's native portability primitive.
-
-### 7. Contribution Graph
-
-PoCP's graph is not just visualization.
-
-It is the living network of contribution relationships:
-
-```text
-Human → Agent → Skill → Tool → Task → Contribution → Review → Rights
-```
-
-This is PoCP's native trust and discovery primitive.
-
-### 8. Contribution-to-Rights Conversion
-
-PoCP should define how verified contribution becomes CP, AI Credits, reputation, reviewer eligibility, task priority, and future governance weight.
-
-This is not a payment module. It is PoCP's native allocation primitive.
-
-### 9. Ledger Memory
-
-PoCP records important protocol events in a tamper-evident ledger.
-
-The ledger is not the whole protocol. It is the memory layer for contribution, verification, and rights issuance.
-
-This is PoCP's native audit primitive.
-
-## Design Rule
-
-When adding a feature, ask:
-
-> Does this strengthen a PoCP-native primitive, or does it merely add another app feature?
-
-Prefer:
-
-- protocol objects over UI-only state;
-- portable proof over local-only records;
-- contribution graph edges over isolated logs;
-- explicit roles over vague activity;
-- human-AI verification boundaries over black-box scoring;
-- rights generated by verified contribution over arbitrary points;
-- ledger memory over silent mutation.
-
-## What Must Become Original
-
-PoCP's originality should concentrate in these areas:
-
-1. Contribution Event semantics.
-2. Participant role and weight attribution.
-3. Evidence hash and proof packet format.
-4. Human-AI verification state machine.
-5. Contribution Graph and trust algorithms.
-6. Contribution-to-rights conversion rules.
-7. Federation of contribution proofs across communities.
-
-These are the areas where PoCP should become protocol, not product glue.
-
-## Implementation Principle
-
-Use existing infrastructure where it is not the point.
-
-Invent carefully where the protocol needs a new primitive.
-
-For example:
-
-- Use SQL/Postgres for storage, but define PoCP-native events.
-- Use FastAPI for transport, but expose PoCP-native proof packets.
-- Use LLMs for advisory review, but enforce PoCP-native human final authority.
-- Use hashes for integrity, but hash PoCP-native evidence and ledger records.
-- Use graph views for display, but build them from PoCP-native participation and invocation edges.
-
-## North Star
-
-PoCP should become the protocol that lets anyone ask:
-
-```text
-Who contributed what?
-With whom?
-Using which intelligent capabilities?
-What proves it?
-Who verified it?
-What rights followed?
-Can this proof travel?
-```
-
-If the system can answer these questions natively, PoCP is not a collage of tools.
-
-It is a new contribution protocol.
+- [ARCHITECTURE-EVOLUTION.md](./ARCHITECTURE-EVOLUTION.md)
+- [CORE-TECH-STACK.md](./CORE-TECH-STACK.md)
+- [PROTOCOL-SPEC-v0.1.md](../PROTOCOL-SPEC-v0.1.md)

@@ -70,6 +70,35 @@ def main() -> None:
     pocp_commons = next((e for e in orgs if e["name"] == "PoCP AI Commons"), None)
     assert pocp_commons, "Seed organization missing"
 
+    ontology = req("GET", "/api/v1/entities/ontology")
+    assert len(ontology["entity_types"]) == 9
+    assert "witness" in ontology["participant_roles"]
+    assert "llm_inference" in ontology.get("compute_capabilities", [])
+    print("OK entity ontology")
+
+    compute_providers = req("GET", "/api/v1/compute/providers")
+    if compute_providers.get("provider_count", 0) >= 1:
+        print(f"OK compute providers={compute_providers['provider_count']}")
+    else:
+        print("SKIP compute providers (optional — not required for Genesis MVP)")
+
+    tool_ids = {e["id"] for e in entities if e["entity_type"] == "tool"}
+    dataset_ids = {e["id"] for e in entities if e["entity_type"] == "dataset"}
+    assert "pocp-entity-r-docs-tool" in tool_ids, "Demo tool entity missing — run upgrade_demo_topology or reset DB"
+    assert "pocp-entity-r-matrix-dataset" in dataset_ids, "Demo dataset entity missing"
+
+    contributions = req("GET", "/api/v1/contributions")
+    demo = next(
+        (c for c in contributions if "matrix" in (c.get("description") or "").lower()),
+        None,
+    )
+    if demo and demo.get("participants"):
+        roles = {p["role"] for p in demo["participants"]}
+        assert "witness" in roles, f"Demo missing witness role: {roles}"
+        assert "tool_provider" in roles, f"Demo missing tool_provider: {roles}"
+        assert "data_provider" in roles, f"Demo missing data_provider: {roles}"
+        print(f"OK demo topology roles={len(roles)}")
+
     outsider = req(
         "POST",
         "/api/v1/auth/dev-login",
@@ -146,28 +175,10 @@ def main() -> None:
         assert exc.code == 403
 
     auto = req("POST", f"/api/v1/contributions/{contrib['id']}/auto-verify", token=token)
-    assert auto["status"] in ("ai_verified", "submitted")
+    assert auto["status"] == "approved", f"expected auto-finalize to approve, got {auto['status']}"
+    assert auto.get("finalization", {}).get("applied") or auto["status"] == "approved"
     assert "consensus" in auto
-    print(f"OK auto-verify status={auto['status']}")
-
-    try:
-        req(
-            "POST",
-            f"/api/v1/contributions/{contrib['id']}/approve",
-            {"reviewer_id": entity_id, "feedback": "self approve"},
-            token=token,
-        )
-        raise AssertionError("Self-approval should be rejected")
-    except urllib.error.HTTPError as exc:
-        assert exc.code == 400
-
-    approved = req(
-        "POST",
-        f"/api/v1/contributions/{contrib['id']}/approve",
-        {"reviewer_id": bob_entity_id, "feedback": "Smoke test approved"},
-        token=bob_token,
-    )
-    assert approved["status"] == "approved"
+    print(f"OK auto-verify + auto-finalize status={auto['status']}")
 
     ledger = req("GET", "/api/v1/ledger")
     assert any(r["event_type"] == "contribution_approved" for r in ledger)
@@ -187,7 +198,9 @@ def main() -> None:
     assert proof["contribution_event"]["id"] == contrib["id"]
     assert proof["integrity"]["proof_hash"]
     assert proof["integrity"]["evidence_hash"] == contrib["evidence"]["_pocp"]["content_hash"]
-    assert proof["verification"]["human_reviews"], "approved contribution should include human review"
+    assert proof.get("finalization") or proof["verification"].get("entity_finalizations"), (
+        "approved contribution should include entity finalization"
+    )
     assert proof["rights_and_reputation"]["credit_transactions"], "approved contribution should include rights issuance"
     print(f"OK contribution proof {proof['integrity']['proof_hash'][:12]}")
 
@@ -217,7 +230,7 @@ def main() -> None:
         else:
             raise
 
-    print("OK Sprint Alpha loop: login → chat → auto-verify → approve → proof → ledger → federation")
+    print("OK Genesis MVP loop: login → chat → auto-verify → finalize → proof → ledger")
 
 
 if __name__ == "__main__":

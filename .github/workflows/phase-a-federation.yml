@@ -1,0 +1,64 @@
+name: Phase A Federation Acceptance
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "backend/**"
+      - "docker-compose.federation.yml"
+      - ".github/workflows/phase-a-federation.yml"
+      - "scripts/run-phase-a.sh"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "docker-compose.federation.yml"
+  workflow_dispatch:
+
+jobs:
+  federation-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Start federation stack
+        run: |
+          docker compose -f docker-compose.federation.yml up -d --build
+          echo "Waiting for node-a and node-b (first boot may take several minutes)…"
+          for i in $(seq 1 180); do
+            if curl -sf http://127.0.0.1:8100/health >/dev/null && curl -sf http://127.0.0.1:8101/health >/dev/null; then
+              echo "Both nodes ready after ${i} attempts"
+              break
+            fi
+            if [ "$i" -eq 180 ]; then
+              echo "Timeout waiting for federation health"
+              docker compose -f docker-compose.federation.yml logs --tail=80
+              exit 1
+            fi
+            sleep 3
+          done
+
+      - name: Run Phase A federation acceptance
+        run: |
+          python backend/scripts/run_phase_a_acceptance.py \
+            http://127.0.0.1:8100 \
+            --federation http://127.0.0.1:8101 \
+            --skip-optional
+
+      - name: Federation logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.federation.yml logs --tail=120
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.federation.yml down -v

@@ -1,0 +1,79 @@
+# Distributed compute node registry — witness / inference endpoints per node.
+# See docs/DISTRIBUTED-LAYERS.md
+
+spec_version: "0.1"
+registry: compute_nodes
+
+local_node:
+  node_id: ${POCP_NODE_ID:-pocp-node-local}
+  roles:
+    - witness
+    - embedding
+    - agent_runtime
+  adapters:
+    - name: mock
+      status: active
+      kind: llm_inference
+    - name: ollama
+      status: env_gated
+      kind: llm_inference
+      env: ENABLE_OLLAMA_VERIFIER
+    - name: vllm
+      status: env_gated
+      kind: llm_inference
+      env: ENABLE_VLLM_VERIFIER
+    - name: llama_cpp
+      status: env_gated
+      kind: llm_inference
+      env: ENABLE_LLAMA_CPP_VERIFIER
+    - name: crewai
+      status: env_gated
+      kind: multi_agent_witness
+      env: ENABLE_CREWAI_WITNESS
+    - name: openai
+      status: env_gated
+      kind: llm_inference
+      env: OPENAI_API_KEY
+    - name: deepseek
+      status: env_gated
+      kind: llm_inference
+      env: DEEPSEEK_API_KEY
+    - name: sentence_transformers
+      status: env_gated
+      kind: embeddings
+      env: ENABLE_SENTENCE_TRANSFORMERS
+
+# Federated inference routing (NN-5) — inherit trusted_nodes when enabled
+peer_compute:
+  enabled: false
+  inherit_trusted_nodes: true
+  routing: round_robin
+  mcp_routing: portable_id
+  nodes: []
+  # Example:
+  # - node_id: node-b
+  #   base_url: http://127.0.0.1:8101
+  #   default_provider: mock
+  #   trust_weight: 0.8
+
+# Optional campus LAN discovery (Phase δ) — advisory only
+lan_discovery:
+  enabled: false
+  mdns: false
+  mdns_service_type: "_pocp-compute._tcp.local."
+  static_peers: []
+  # Example:
+  # - node_id: lab-gpu-1
+  #   base_url: http://192.168.1.42:8100
+  #   label: "CS Lab Ollama"
+
+routing_policy:
+  witness:
+    strategy: multi_provider_consensus
+    prefer_local: true
+    include_peer_witness: true
+  embeddings:
+    strategy: first_available
+    order:
+      - sentence_transformers
+      - ollama

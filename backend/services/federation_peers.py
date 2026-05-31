@@ -73,8 +73,31 @@ def verify_remote_ledger(base_url: str, expected_tip_hash: str | None = None) ->
         raise ValueError("Remote ledger tip_hash does not match proof ledger_tip_hash")
 
 
+def verify_remote_ledger_record(base_url: str, record_hash: str | None) -> None:
+    """Ensure remote ledger chain is valid and contains the signed approval record."""
+    if not record_hash:
+        raise ValueError("Proof missing ledger record hash for verification")
+    root = base_url.rstrip("/")
+    verify = _get_json(f"{root}/api/v1/ledger/verify")
+    if not verify.get("valid"):
+        raise ValueError(f"Remote ledger invalid at {root}")
+    export = _get_json(f"{root}/api/v1/ledger/export")
+    known = {row.get("record_hash") for row in export.get("records", []) if row.get("record_hash")}
+    if record_hash not in known:
+        raise ValueError(f"Remote ledger missing approval record_hash {record_hash[:16]}…")
+
+
 def fetch_proof(base_url: str, contribution_id: str) -> dict:
     return _get_json(f"{base_url.rstrip('/')}/api/v1/contributions/{contribution_id}/proof")
+
+
+def fetch_federation_intelligence(base_url: str, contribution_id: str) -> dict | None:
+    """Fetch intelligence + proof bundle from a peer (optional during sync)."""
+    root = base_url.rstrip("/")
+    try:
+        return _get_json(f"{root}/api/v1/intelligence/federation/export/{contribution_id}")
+    except Exception:
+        return None
 
 
 def post_import_proof(target_base_url: str, source_node_id: str, proof: dict) -> dict:

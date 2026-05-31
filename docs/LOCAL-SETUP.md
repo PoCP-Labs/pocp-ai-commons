@@ -70,6 +70,26 @@ See `backend/.env.example`. Key settings:
 | `ENABLE_DEV_LOGIN` | Local dev login (default true) |
 | `FRONTEND_URL` | OAuth redirect target (default http://localhost:3000) |
 
+## Dev login personas (dashboard)
+
+On http://localhost:3000, use the **persona** dropdown next to **Dev Login**:
+
+| Persona | Use for |
+|---------|---------|
+| **Rain** | Founder (`pocp-entity-rain`), org sponsor, Genesis manifesto author |
+| **Bob** | Governance proxy, optional human finalizer on demo contribution |
+| **New guest** | Random Human entity (explore signup flow) |
+
+Equivalent API:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/auth/dev-login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"rain","email":"rain@example.com"}'
+```
+
+Production public sites should set `ENABLE_DEV_LOGIN=false` and use GitHub OAuth only. See [LANGUAGE-POLICY.md](./LANGUAGE-POLICY.md).
+
 ## Common issues (Windows)
 
 **Port 8000 already in use:** Stop the old process or use another port:
@@ -83,13 +103,23 @@ Stop-Process -Id <PID> -Force
 
 **Docker not running:** Use Option A (SQLite) or start Docker Desktop first.
 
+**Backend container restart loop:** Check logs with `docker compose logs backend --tail 50`. Common cause: entity `id` longer than 36 characters in seed data (fixed for inspiration entities as `pocp-insp-*`). Reset if needed: `docker compose down` then `docker compose up --build`.
+
+**`docker compose up --build` slow or TLS timeout:** Docker Hub mirror/network issue; retry or build without `--build` if images exist.
+
+**Inspiration entities missing after upgrade:** Restart backend after pulling; startup runs `ensure_inspiration_entities`.
+
 ## Public deployment
 
 To expose the full stack on the internet (HTTPS, production Compose, Caddy), see [PUBLIC-DEPLOY.md](./PUBLIC-DEPLOY.md).
 
+For a **30–100 user pilot** after staging works, see [PILOT-LAUNCH-CHECKLIST.md](./PILOT-LAUNCH-CHECKLIST.md).
+
 ## Next steps
 
 - [Public Deploy](./PUBLIC-DEPLOY.md)
+- [Pilot Launch Checklist](./PILOT-LAUNCH-CHECKLIST.md)
 - [API Spec](./API-SPEC.md)
 - [Architecture](./ARCHITECTURE.md)
 - [Sprint Alpha](./SPRINT_ALPHA.md)
+- [Roadmap](../ROADMAP.md)

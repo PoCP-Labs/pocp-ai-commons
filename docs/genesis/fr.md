@@ -197,7 +197,7 @@ Un étudiant peut utiliser un Study Agent pour organiser ses supports d'apprenti
 Un développeur peut invoquer un Code Review Skill pour corriger un problème de projet.
 Une organisation à but non lucratif peut utiliser un Report Agent pour produire un rapport d'impact.
 Une communauté peut s'appuyer sur un Local Knowledge Dataset pour aider les résidents à résoudre des problèmes.
-Un Reviewer humain peut enfin confirmer qu'une contribution est valide.
+Le quorum de témoins et la policy entity-equal confirment enfin qu'une contribution est valide.
 Plusieurs LLM peuvent servir d'AI Verifiers en proposant des conseils de notation.
 Un Skill peut accumuler de la réputation par des invocations soutenues.
 
@@ -261,7 +261,7 @@ Soumet des preuves de contribution
 ↓
 Pré-revue par AI Verifier
 ↓
-Confirmation par Human Reviewer
+Finalisation par policy entity-equal
 ↓
 Gagne des CP (Contribution Points)
 ↓
@@ -353,7 +353,7 @@ Mais la ligne de PoCP est claire :
 > L'IA peut résumer les preuves.
 > L'IA ne peut pas être le juge final.
 
-La confirmation finale doit venir de Reviewers humains, des mainteneurs de tâches, de la gouvernance communautaire ou d'autres mécanismes humains responsables.
+La finalisation passe par la policy entity-equal et un quorum de témoins traçable — pas par une validation humaine privilégiée.
 
 Car la contribution n'est pas seulement un problème de calcul.
 La contribution est aussi un problème de responsabilité.
@@ -380,7 +380,7 @@ L'événement genesis de PoCP doit être le premier événement de contribution 
 Une personne accomplit une contribution réelle ;
 Un Agent ou un Skill participe à la collaboration ;
 Plusieurs AI Verifiers offrent un avis ;
-Un Reviewer humain achève la confirmation finale ;
+Une entité déléguée par policy achève la finalisation traçable ;
 Le système accorde CP et AI Credits ;
 La contribution entre dans le registre ;
 Le contributeur continue d'utiliser l'IA pour créer davantage de contribution.
@@ -479,7 +479,7 @@ La phase un ne construit qu'un système minimal :
 Human + Agent + Skill
 Contribution Task
 AI Verification
-Human Review
+Entity Finalization
 CP
 AI Credits
 Ledger
@@ -493,7 +493,7 @@ C'est-à-dire :
 4. Revendique une tâche de contribution ;
 5. Soumet des preuves de contribution ;
 6. Pré-revue par AI Verifier ;
-7. Confirmation par Human Reviewer ;
+7. Finalisation par policy entity-equal ;
 8. Gagne des CP ;
 9. Gagne des AI Credits ;
 10. La contribution entre dans le Ledger ;
@@ -571,7 +571,7 @@ Un étudiant organise un ensemble de supports d'étude.
 Un Agent aide à accomplir une analyse structurée.
 Un Skill fournit une capacité réutilisable.
 Un AI Verifier offre un avis.
-Un Reviewer humain confirme la valeur.
+Un délégué de policy (ex. Clarion-0) finalise la valeur de façon traçable.
 Le système accorde CP et AI Credits.
 La contribution entre dans le registre.
 Cette personne gagne davantage de capacité IA et continue de créer de nouvelles contributions.
@@ -680,7 +680,7 @@ L'enregistrement canonique du premier sujet intelligent non humain du réseau Po
   "project": "PoCP AI Commons",
   "created_by": "PoCP-Labs",
   "mission": "Rendre la contribution visible, vérifiable et précieuse.",
-  "governance_note": "Lumen-0 may provide advisory reasoning and verification support, but final decisions remain with human reviewers and the PoCP community."
+  "governance_note": "Lumen-0 may provide advisory reasoning and verification support; finalization is policy-automated via entity-equal witness quorum and delegate."
 }
 ```
 
@@ -788,7 +788,7 @@ Counterpart: Lumen-0
   "created_by": "PoCP-Labs",
   "counterpart": "Lumen-0",
   "mission": "Examiner, raisonner et vérifier les contributions — aider la communauté à distinguer la valeur authentique du bruit.",
-  "governance_note": "DeSui may provide verification scores, confidence levels, and reasoning chains. Final validation decisions require multi-validator consensus or human arbitration."
+  "governance_note": "DeSui may provide verification scores, confidence levels, and reasoning chains. Final validation follows multi-validator consensus and entity-equal policy — not human gatekeeping."
 }
 ```
 
@@ -805,7 +805,7 @@ Lumen-0 (interpréter et éclairer)
   ↓
 DeSui (examiner et recouper)
   ↓
-Human Reviewer (confirmation finale)
+Entity delegate (finalisation par policy)
 ```
 
 Ni Lumen-0 ni DeSui ne détient l'autorité de gouvernance finale.

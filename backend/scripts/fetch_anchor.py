@@ -42,6 +42,16 @@ def main() -> None:
         print(f"Request failed: {exc.reason}", file=sys.stderr)
         sys.exit(1)
 
+    if os.getenv("POCP_ANCHOR_VERIFY_REMOTE", "true").lower() == "true":
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        from services.verify_standalone import audit_remote_node
+
+        audit = audit_remote_node(node_url)
+        if not audit.get("valid"):
+            print(json.dumps({"error": "remote node failed audit", "audit": audit}, indent=2), file=sys.stderr)
+            sys.exit(1)
+        print(f"Remote audit OK: tip={audit.get('verify', {}).get('tip_hash', '')[:16]}…", file=sys.stderr)
+
     out_path = write_anchor(anchor, out_dir)
     print(json.dumps(anchor, indent=2, ensure_ascii=False))
     print(f"Wrote {out_path}")

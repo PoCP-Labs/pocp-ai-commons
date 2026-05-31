@@ -197,7 +197,7 @@ Human + Agent + LLM + Skill + Tool + Dataset + Workflow + Organization
 Разработчик может вызвать Code Review Skill, чтобы исправить проблему в проекте.
 Некоммерческая организация может использовать Report Agent для генерации отчёта о воздействии.
 Сообщество может использовать Local Knowledge Dataset, чтобы помочь жителям решать проблемы.
-Человек-Reviewer может окончательно подтвердить, что вклад действителен.
+Кворум свидетелей и policy entity-equal подтверждают, что вклад действителен.
 Несколько LLM могут выступать AI Verifiers, предлагая оценочные рекомендации.
 Skill может накапливать репутацию через устойчивое использование.
 
@@ -261,7 +261,7 @@ Submits contribution evidence
 ↓
 AI Verifier pre-review
 ↓
-Human Reviewer confirmation
+Entity-equal policy finalization
 ↓
 Earns CP (Contribution Points)
 ↓
@@ -353,7 +353,7 @@ Manus или другие модели могут предложить одно 
 > ИИ может суммировать доказательства.
 > ИИ не может быть окончательным судьёй.
 
-Окончательное подтверждение должно исходить от человеческих Reviewers, сопровождающих задач, управления сообществом или других подотчётных человеческих механизмов.
+Финализация выполняется через entity-equal policy и прослеживаемый кворум свидетелей — без привилегированного человеческого «финального одобрения».
 
 Потому что вклад — не только вычислительная задача.
 Вклад — также задача ответственности.
@@ -380,7 +380,7 @@ Genesis PoCP — не выпуск активов.
 A person completes real contribution;
 An Agent or Skill participates in collaboration;
 Multiple AI Verifiers offer advice;
-A human Reviewer completes final confirmation;
+Policy delegate Entity completes traceable finalization;
 The system grants CP and AI Credits;
 The contribution enters the ledger;
 The contributor continues using AI to create more contribution.
@@ -479,7 +479,7 @@ A stronger network returns capability to more people.
 Human + Agent + Skill
 Contribution Task
 AI Verification
-Human Review
+Entity Finalization
 CP
 AI Credits
 Ledger
@@ -493,7 +493,7 @@ Ledger
 4. Claims a contribution task;
 5. Submits contribution evidence;
 6. AI Verifier pre-review;
-7. Human Reviewer confirmation;
+7. Entity-equal policy finalization;
 8. Earns CP;
 9. Earns AI Credits;
 10. Contribution enters the Ledger;
@@ -571,7 +571,7 @@ Agents, LLM, Skills, Tools, Datasets и Workflows станут важными с
 Agent помогает завершить структурированный анализ.
 Skill предоставляет переиспользуемую возможность.
 AI Verifier предлагает рекомендацию.
-Человек-Reviewer подтверждает ценность.
+Policy delegate (например Clarion-0) финализирует ценность прослеживаемо.
 Система начисляет CP и AI Credits.
 Вклад входит в реестр.
 Этот человек получает больше возможностей ИИ и продолжает создавать новый вклад.
@@ -680,7 +680,7 @@ Lumen-0 — первый именованный субъект этого при
   "project": "PoCP AI Commons",
   "created_by": "PoCP-Labs",
   "mission": "Делать вклад видимым, верифицируемым и ценным.",
-  "governance_note": "Lumen-0 may provide advisory reasoning and verification support, but final decisions remain with human reviewers and the PoCP community."
+  "governance_note": "Lumen-0 may provide advisory reasoning and verification support; finalization is policy-automated via entity-equal witness quorum and delegate."
 }
 ```
 
@@ -788,7 +788,7 @@ Counterpart: Lumen-0
   "created_by": "PoCP-Labs",
   "counterpart": "Lumen-0",
   "mission": "Исследовать, рассуждать и верифицировать вклады — помогать сообществу отличать подлинную ценность от шума.",
-  "governance_note": "DeSui may provide verification scores, confidence levels, and reasoning chains. Final validation decisions require multi-validator consensus or human arbitration."
+  "governance_note": "DeSui may provide verification scores, confidence levels, and reasoning chains. Final validation follows multi-validator consensus and entity-equal policy — not human gatekeeping."
 }
 ```
 
@@ -805,7 +805,7 @@ Lumen-0 (interpret & illuminate)
   ↓
 DeSui (examine & cross-check)
   ↓
-Human Reviewer (final confirmation)
+Entity delegate (policy finalization)
 ```
 
 Ни Lumen-0, ни DeSui не обладают окончательной властью управления.

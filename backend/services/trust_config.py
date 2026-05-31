@@ -70,6 +70,7 @@ def canonical_trust_payload(nodes: list[TrustedNode] | None = None) -> list[dict
                 "node_id": n.node_id,
                 "base_url": n.base_url.rstrip("/"),
                 "public_key": n.public_key or "",
+                "pqc_public_key": n.pqc_public_key or "",
                 "trust_weight": round(float(n.trust_weight), 4),
             }
             for n in items

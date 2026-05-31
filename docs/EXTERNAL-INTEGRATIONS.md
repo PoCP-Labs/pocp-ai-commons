@@ -119,7 +119,7 @@ Proof layer: `expert_cards`
 
 **Inspired by:** [hydai/meritocrab](https://github.com/hydai/meritocrab)
 
-AI consensus `suggested_cp` / `suggested_credits` surfaced for human reviewers (advisory only). Explicit human reject endpoint with ledger record.
+AI consensus `suggested_cp` / `suggested_credits` surfaced for finalizers (advisory). Explicit reject endpoint with ledger record.
 
 | Method | Path |
 |--------|------|
@@ -229,9 +229,9 @@ Provenance envelopes now accept `verification_claims` (e.g. `self_reviewed`, `ci
 
 ---
 
-## 18. Meritocrab — Human Review Queue
+## 18. Meritocrab — Finalization Queue
 
-Contributions in `ai_verified` status appear in a review queue for human final approval.
+Contributions in `ai_verified` status may appear in a finalization queue (optional manual step when auto-finalize is off).
 
 | Method | Path |
 |--------|------|
@@ -247,6 +247,179 @@ Contributions in `ai_verified` status appear in a review queue for human final a
 
 ---
 
+## 20. External Inspiration Entity Registry
+
+Borrowed OSS projects are recorded as **community entities** with documented contribution rows — not just documentation.
+
+**PoCP module:** `backend/services/external_inspiration.py`, `backend/config/external_inspirations.yaml`
+
+| Method | Path |
+|--------|------|
+| GET | `/api/v1/external-inspirations/report` |
+| GET | `/api/v1/external-inspirations/inspirations/{slug}` |
+| POST | `/api/v1/external-inspirations/sync` |
+
+Proof layer: `external_inspirations_context`
+
+See [EXTERNAL-INSPIRATION-REGISTRY.md](./EXTERNAL-INSPIRATION-REGISTRY.md).
+
+**Round 5 additions:** CHAOSS transparency reports, All Contributors registries, Open Source Guides governance docs, ForgeFed-style federation — all as `community` entities with graph edges `learned_from` / `uses_pattern_from`.
+
+| Method | Path |
+|--------|------|
+| GET | `/api/v1/external-inspirations/entities/{entity_id}` |
+| GET | `/api/v1/contributions/{id}/external-inspirations` |
+
+**Federation peer community entities:** `GET /api/v1/federation/peers/entities` — trusted nodes as `community` entities with graph edges `trusts_peer` / `federated_with` / `hosts`.
+
+---
+
+## 21. Ollama — Local LLM Witness & Embeddings (NN-2)
+
+**Inspired by:** [ollama/ollama](https://github.com/ollama/ollama)
+
+**PoCP modules:** `backend/services/verifiers/ollama_verifier.py`, `backend/services/ollama_client.py`, `backend/services/embedding_match.py`, `backend/services/ai_chat.py`
+
+Local inference for advisory verification and AI chat — no cloud API key. Federation nodes can run their own witness stack.
+
+| Capability | Env | Notes |
+|------------|-----|-------|
+| MultiVerifier witness | `ENABLE_OLLAMA_VERIFIER=true` | Joins consensus when mock mode is off or alongside mock in dev |
+| AI chat provider | `provider=ollama` on chat endpoint | Uses `OLLAMA_MODEL` |
+| Skill/agent match boost | `ENABLE_OLLAMA_EMBEDDINGS=true` | Blends keyword fit with `OLLAMA_EMBED_MODEL` (default `nomic-embed-text`) |
+
+```bash
+ollama pull llama3.2
+ollama pull nomic-embed-text
+ENABLE_OLLAMA_VERIFIER=true
+ENABLE_OLLAMA_EMBEDDINGS=true
+```
+
+Registry: `GET /api/v1/intelligence/neural-sources` · config: `backend/config/neural_network_sources.yaml`
+
+---
+
+## 22. LangGraph — StudyAgent Runtime (NN-3)
+
+**Inspired by:** [langchain-ai/langgraph](https://github.com/langchain-ai/langgraph)
+
+**PoCP modules:** `backend/services/agent_runtimes/study_agent_runtime.py`, `backend/services/study_agent.py`
+
+Multi-step StudyAgent flow with full **Human → Agent → Skill → LLM** `InvocationTrace`:
+
+```http
+POST /api/v1/intelligence/agents/study/run
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{"topic": "R matrix operations", "task_id": "<optional>", "llm_provider": "mock"}
+```
+
+| Mode | When |
+|------|------|
+| `state_machine_v1` | Default — no extra deps |
+| `langgraph` | `pip install langgraph` + `ENABLE_LANGGRAPH_STUDY_AGENT=true` |
+
+Output includes `draft` (advisory), `graph_steps`, and `invocation_chain` for contribution evidence.
+
+### Submit contribution (NN-3 closed loop)
+
+```http
+POST /api/v1/intelligence/agents/study/run
+{"topic": "R matrix ops", "task_id": "<task-uuid>", "submit_contribution": true}
+```
+
+Creates a **submitted** Contribution Event with `evidence.study_agent.trace_id` linked to the InvocationTrace. Then:
+
+```http
+POST /api/v1/contributions/{id}/auto-verify
+```
+
+Automated test: `python backend/scripts/study_agent_loop_test.py`
+
+---
+
+## 23. SourceCred — Contribution Graph Weights (evaluating)
+
+**Inspired by:** [sourcecred/sourcecred](https://github.com/sourcecred/sourcecred)
+
+**Mapping:** [inspiration-mappings/sourcecred.md](./inspiration-mappings/sourcecred.md)
+
+**Borrow:** plugin-style graph ingestion, CredRank-style **advisory** propagation, instance-configurable edge weights.
+
+**Reject:** Grain token, Cred-as-payout without Human finalizer.
+
+**Target modules:** `graph.py`, `graph_analytics.py`, `graph_gnn_advisory.py`
+
+Response includes `sourcecred_advisory` block (PageRank hints, advisory only).
+
+---
+
+## 24. Proof-of-Contribution Protocol Core — pow.yaml Interop (evaluating)
+
+**Inspired by:** [Gitdigital-products/Proof-of-Contribution-Protocol-Core](https://github.com/Gitdigital-products/Proof-of-Contribution-Protocol-Core)
+
+**Mapping:** [inspiration-mappings/poc-protocol-core.md](./inspiration-mappings/poc-protocol-core.md)
+
+**Borrow:** JSON Schema for contribution metadata, CI validation patterns, DAO-composable proof records.
+
+**Reject:** pow.yaml as sole canonical format (PoCP proof packet is strict superset).
+
+**Target modules:** `evidence.py`, `proof.py`, `pow_export.py`
+
+| Method | Path | Status |
+|--------|------|--------|
+| GET | `/api/v1/contributions/{id}/proof` | active |
+| GET | `/api/v1/contributions/{id}/pow` | active — pow interop export |
+
+---
+
+## 25. Model Context Protocol (MCP) — Tool Entity (evaluating)
+
+**Inspired by:** [modelcontextprotocol/spec](https://github.com/modelcontextprotocol/spec)
+
+**Mapping:** [inspiration-mappings/mcp.md](./inspiration-mappings/mcp.md)
+
+**Borrow:** server/tool manifests, invoke semantics, transport patterns → Tool Entity + Capability Receipt.
+
+**Reject:** MCP as replacement for Skill Entity or auto-approve on tool success.
+
+**Target modules:** `mcp_import.py`, `mcp_invoke.py`, `capability_receipt.py`, `remote_mcp_invoke.py`
+
+| Method | Path | Status |
+|--------|------|--------|
+| POST | `/api/v1/capabilities/import/mcp` | active |
+| POST | `/api/v1/capabilities/mcp/invoke` | active — returns `capability_receipts` + step `metadata` |
+| POST | `/api/v1/intelligence/peer/mcp/invoke` | prototype |
+
+---
+
 ## Router
 
 All integration endpoints live under `backend/routers/integrations.py` with tag `integrations`.
+
+---
+
+## 26. Bitcoin — Verify-Don't-Trust Memory Layer
+
+**Inspired by:** [bitcoin/bitcoin](https://github.com/bitcoin/bitcoin)
+
+**Mapping:** [inspiration-mappings/bitcoin.md](./inspiration-mappings/bitcoin.md)
+
+**Borrow:** append-only hash chain, Merkle commitments, SPV-style proof inclusion, independent audit nodes, issuance discipline via ledger-only mint.
+
+**Reject:** currency, mining, PoW consensus as protocol requirement, chain-as-product narrative.
+
+**PoCP modules:** `ledger_chain.py`, `ledger_merkle.py`, `ledger_anchor.py`, `graph_merkle.py`, `verify_standalone.py`, `wallet_audit.py`, `anchor_cosign.py`, `scripts/audit_node.py`
+
+| Method | Path | Role |
+|--------|------|------|
+| GET | `/api/v1/ledger/verify` | Replay hash chain |
+| GET | `/api/v1/ledger/anchor` | Merkle + graph root + cosign |
+| GET | `/api/v1/graph/merkle-root` | Collaboration graph commitment |
+| GET | `/api/v1/graph/merkle-proof/contribution/{id}` | Graph SPV |
+| POST | `/api/v1/proof/verify` | Offline packet verify |
+| GET | `/api/v1/wallets/audit` | Replay balances from transactions |
+| GET | `/api/v1/crypto/readiness` | Hybrid suite / PQC readiness |
+
+See [PORTABLE-PROOF-FEDERATION.md](./PORTABLE-PROOF-FEDERATION.md) · [QUANTUM-READINESS.md](./QUANTUM-READINESS.md).

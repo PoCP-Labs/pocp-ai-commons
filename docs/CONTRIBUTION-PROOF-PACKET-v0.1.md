@@ -37,7 +37,7 @@ Every proof packet declares the protocol layers it covers:
 | `contribution_event` | The task, contributor, contribution type, description, status, and creation time |
 | `entity_identity` | Primary entity plus participant identity snapshots, roles, weights, and participant evidence |
 | `evidence` | Raw evidence, normalized evidence items, content hash, and evidence spec version |
-| `verification` | AI advisory verification, human review, and the rule: AI advises; humans approve; ledger remembers |
+| `verification` | AI advisory verification, entity finalizations, and the rule: witnesses advise; policy finalizes traceably; ledger remembers |
 | `contribution_graph` | Contribution-scoped graph nodes, edges, and invocation traces |
 | `rights_and_reputation` | CP / BC transactions and reputation state associated with the contribution |
 | `ledger_audit` | Ledger records and record hashes linked to the contribution |

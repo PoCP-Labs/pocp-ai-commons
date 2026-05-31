@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session, joinedload
 
 from intelligence import engines
 from intelligence.protocol import (
+    ACCOUNTABILITY_PRINCIPLE,
+    ACCOUNTABILITY_PRINCIPLE_ZH,
     CAPABILITY_LAYER_VERSION,
     UNIFIED_PRINCIPLE,
     UNIFIED_PRINCIPLE_ZH,
@@ -22,6 +24,8 @@ class CapabilityLayer:
     version = CAPABILITY_LAYER_VERSION
     principle = UNIFIED_PRINCIPLE
     principle_zh = UNIFIED_PRINCIPLE_ZH
+    accountability_principle = ACCOUNTABILITY_PRINCIPLE
+    accountability_principle_zh = ACCOUNTABILITY_PRINCIPLE_ZH
 
     def protocol(self) -> dict[str, Any]:
         header = contribution_packet_header()
@@ -41,6 +45,8 @@ class CapabilityLayer:
             "capability_layer_version": self.version,
             "principle": self.principle,
             "principle_zh": self.principle_zh,
+            "accountability_principle": self.accountability_principle,
+            "accountability_principle_zh": self.accountability_principle_zh,
             "modules_total": len(modules),
             "modules_active": active,
             "modules": modules,

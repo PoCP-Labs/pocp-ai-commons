@@ -136,5 +136,175 @@ class ProvenanceClaimsTests(unittest.TestCase):
         self.assertEqual(len(envelope.get("verification_claims") or []), 1)
 
 
+class ExternalInspirationTests(unittest.TestCase):
+    def test_registry_loads_inspirations(self):
+        from services.external_inspiration import list_inspirations, load_registry
+
+        data = load_registry()
+        self.assertEqual(data.get("registry"), "external_inspirations")
+        inspirations = list_inspirations()
+        slugs = {i["slug"] for i in inspirations}
+        self.assertIn("octp", slugs)
+        self.assertIn("meritocrab", slugs)
+        self.assertIn("sourcecred", slugs)
+        self.assertIn("poc-protocol-core", slugs)
+        self.assertIn("mcp", slugs)
+
+    def test_match_provenance_module(self):
+        from services.external_inspiration import match_inspirations_for_module
+
+        matches = match_inspirations_for_module("backend/services/provenance.py")
+        slugs = {m["slug"] for m in matches}
+        self.assertIn("octp", slugs)
+
+    def test_build_context_includes_registry_summary(self):
+        from services.external_inspiration import build_external_inspirations_context
+
+        context = build_external_inspirations_context(
+            {"_pocp": {"modules": ["backend/services/provenance.py"]}}
+        )
+        self.assertEqual(context["spec_version"], "pocp.external_inspirations.v0.1")
+        self.assertTrue(context["matched_from_evidence"])
+        self.assertGreater(len(context["registry_summary"]), 0)
+
+    def test_inspiration_report_shape(self):
+        from services.external_inspiration import build_inspiration_report
+
+        report = build_inspiration_report()
+        self.assertGreater(report["inspiration_count"], 0)
+        self.assertGreater(report["contribution_count"], 0)
+        self.assertIn("octp", report["inspirations"])
+        self.assertIn("chaoss", report["inspirations"])
+        self.assertIn("sourcecred", report["inspirations"])
+        evaluating = [s for s, i in report["inspirations"].items() if i.get("status") == "evaluating"]
+        self.assertIn("mcp", evaluating)
+
+    def test_find_inspiration_by_entity_id(self):
+        from services.external_inspiration import find_inspiration_by_entity_id
+
+        item = find_inspiration_by_entity_id("pocp-insp-octp")
+        self.assertIsNotNone(item)
+        self.assertEqual(item["slug"], "octp")
+
+    def test_build_context_with_module_hints(self):
+        from services.external_inspiration import build_external_inspirations_context
+
+        context = build_external_inspirations_context(
+            None,
+            module_hints=["backend/services/federation_sync.py"],
+        )
+        slugs = {m["slug"] for m in context["matched_from_evidence"]}
+        self.assertIn("forgefed", slugs)
+
+
+class FederationCommunityTests(unittest.TestCase):
+    def test_peer_entity_id_stable(self):
+        from services.federation_community import peer_entity_id
+
+        self.assertEqual(peer_entity_id("node-a"), "pocp-entity-federation-peer-node-a")
+        self.assertTrue(peer_entity_id("community/b").startswith("pocp-entity-federation-peer-"))
+
+    def test_local_entity_id(self):
+        from services.federation_community import local_federation_entity_id
+
+        self.assertEqual(local_federation_entity_id(), "pocp-entity-federation-local")
+
+    def test_federation_import_hub_id(self):
+        from services.federation_community import federation_import_hub_id
+
+        self.assertTrue(federation_import_hub_id("abc").startswith("federation-import:"))
+
+
+class CommunityPartnerTests(unittest.TestCase):
+    def test_registry_loads_partners(self):
+        from services.community_partner import list_partners, load_registry
+
+        data = load_registry()
+        self.assertEqual(data.get("registry"), "community_partners")
+        slugs = {p["slug"] for p in list_partners()}
+        self.assertIn("forgefed", slugs)
+        self.assertIn("ollama", slugs)
+
+    def test_match_witness_partners(self):
+        from services.community_partner import match_partners_for_capability
+
+        offers = match_partners_for_capability("witness")
+        slugs = {p["slug"] for p in offers}
+        self.assertTrue(len(offers) > 0)
+        self.assertTrue("chaoss" in slugs or "meritocrab" in slugs)
+
+    def test_outreach_report_shape(self):
+        from services.community_partner import build_outreach_report
+
+        report = build_outreach_report()
+        self.assertGreater(report["partner_count"], 0)
+        self.assertIn("by_status", report)
+        self.assertIn("high_priority_prospects", report)
+
+    def test_build_community_partner_context(self):
+        from types import SimpleNamespace
+
+        from services.community_partner import build_community_partner_context
+
+        contribution = SimpleNamespace(
+            id="c1",
+            primary_entity_id="e1",
+            contribution_type="documentation",
+            evidence={"_pocp": {"tags": ["verify", "research"]}},
+            task=SimpleNamespace(title="Research doc", description="Write guide"),
+        )
+        ctx = build_community_partner_context(None, contribution, contribution.evidence)
+        self.assertEqual(ctx["spec_version"], "pocp.community_partner_context.v0.1")
+        self.assertIn("capability_discovery", ctx)
+
+    def test_build_federation_import_context_shape(self):
+        from services.federation_community import build_federation_import_context
+
+        ctx = build_federation_import_context(
+            None,
+            contribution_id="c1",
+            primary_entity_id="e1",
+        )
+        self.assertEqual(ctx["spec_version"], "pocp.federation_import_context.v0.1")
+        self.assertEqual(ctx["contribution_id"], "c1")
+
+    def test_outreach_event_types(self):
+        from services.community_partner import VALID_OUTREACH_EVENTS
+
+        self.assertIn("contact_sent", VALID_OUTREACH_EVENTS)
+        self.assertIn("status_advanced", VALID_OUTREACH_EVENTS)
+
+    def test_outreach_status_survives_entity_refresh(self):
+        from database import SessionLocal, init_db
+        from models.entity import Entity
+        from services.community_partner import (
+            build_outreach_report,
+            ensure_partner_entities,
+            get_partner,
+            record_partner_outreach,
+        )
+
+        init_db()
+        db = SessionLocal()
+        try:
+            ensure_partner_entities(db)
+            record_partner_outreach(
+                db,
+                "forgefed",
+                event_type="contact_sent",
+                notes="test outreach",
+                new_status="in_conversation",
+            )
+            db.commit()
+            ensure_partner_entities(db)
+            entity_id = get_partner("forgefed")["entity_id"]
+            entity = db.get(Entity, entity_id)
+            self.assertEqual((entity.metadata_ or {}).get("partnership_status"), "in_conversation")
+            report = build_outreach_report(db)
+            self.assertEqual(report["partners"]["forgefed"]["partnership_status"], "in_conversation")
+        finally:
+            db.close()
+
+
 if __name__ == "__main__":
     unittest.main()

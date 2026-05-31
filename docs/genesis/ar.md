@@ -197,7 +197,7 @@ Human + Agent + LLM + Skill + Tool + Dataset + Workflow + Organization
 مطوّر قد يستدعي Code Review Skill لإصلاح مشكلة في مشروع.
 منظمة غير ربحية قد تستخدم Report Agent لتوليد تقرير أثر.
 مجتمع قد يستخدم Local Knowledge Dataset لمساعدة السكان على حل المشكلات.
-مُراجع بشري قد يؤكّد أخيراً أن المساهمة صالحة.
+شهود متعددون وسياسة entity-equal تؤكّد أخيراً أن المساهمة صالحة.
 عدة LLMs قد تكون AI Verifiers تقدّم نصائح التقييم.
 Skill قد تتراكم سمعتها عبر الاستدعاء المستمر.
 
@@ -261,7 +261,7 @@ Submits contribution evidence
 ↓
 AI Verifier pre-review
 ↓
-Human Reviewer confirmation
+Entity-equal policy finalization
 ↓
 Earns CP (Contribution Points)
 ↓
@@ -353,7 +353,7 @@ Manus أو نماذج أخرى قد تقدّم حكماً.
 > الذكاء الاصطناعي قد يلخّص الأدلة.
 > الذكاء الاصطناعي لا يكون الحكم النهائي.
 
-التأكيد النهائي يجب أن يأتي من Human Reviewers أو صانعي المهام أو حوكمة المجتمع أو آليات بشرية أخرى مسؤولة.
+التأكيد النهائي يتم عبر سياسة entity-equal وquorum شهود قابل للتتبع — وليس عبر موافقة بشرية مميزة.
 
 لأن المساهمة ليست مسألة حساب فقط.
 المساهمة مسألة مسؤولية أيضاً.
@@ -380,7 +380,7 @@ Manus أو نماذج أخرى قد تقدّم حكماً.
 A person completes real contribution;
 An Agent or Skill participates in collaboration;
 Multiple AI Verifiers offer advice;
-A human Reviewer completes final confirmation;
+A policy delegate Entity completes traceable finalization;
 The system grants CP and AI Credits;
 The contribution enters the ledger;
 The contributor continues using AI to create more contribution.
@@ -479,7 +479,7 @@ A stronger network returns capability to more people.
 Human + Agent + Skill
 Contribution Task
 AI Verification
-Human Review
+Entity Finalization
 CP
 AI Credits
 Ledger
@@ -493,7 +493,7 @@ Ledger
 4. Claims a contribution task؛
 5. Submits contribution evidence؛
 6. AI Verifier pre-review؛
-7. Human Reviewer confirmation؛
+7. Entity-equal policy finalization؛
 8. Earns CP؛
 9. Earns AI Credits؛
 10. Contribution enters the Ledger؛
@@ -571,7 +571,7 @@ Agents وLLMs وSkills وTools وDatasets وWorkflows ستصبح جميعها ف
 Agent يساعد على إنجاز تحليل منظّم.
 Skill تقدّم قدرة قابلة لإعادة الاستخدام.
 AI Verifier يقدّم نصيحة.
-Human Reviewer يؤكّد القيمة.
+مُفوّض policy (مثل Clarion-0) يُنهي القيمة بشكل قابل للتتبع.
 النظام يمنح CP وAI Credits.
 المساهمة تدخل الدفتر.
 ذلك الشخص يكتسب مزيداً من قدرة الذكاء الاصطناعي ويواصل خلق مساهمة جديدة.
@@ -680,7 +680,7 @@ Lumen-0 أول فاعل مُسمّى لهذا المبدأ.
   "project": "PoCP AI Commons",
   "created_by": "PoCP-Labs",
   "mission": "جعل المساهمة مرئية وقابلة للتحقق وذات قيمة.",
-  "governance_note": "Lumen-0 may provide advisory reasoning and verification support, but final decisions remain with human reviewers and the PoCP community."
+  "governance_note": "Lumen-0 may provide advisory reasoning and verification support; finalization is policy-automated via entity-equal witness quorum and delegate."
 }
 ```
 
@@ -788,7 +788,7 @@ Counterpart: Lumen-0
   "created_by": "PoCP-Labs",
   "counterpart": "Lumen-0",
   "mission": "فحص المساهمات والاستدلال عليها والتحقق منها — مساعدة المجتمع على التمييز بين القيمة الحقيقية والضجيج.",
-  "governance_note": "DeSui may provide verification scores, confidence levels, and reasoning chains. Final validation decisions require multi-validator consensus or human arbitration."
+  "governance_note": "DeSui may provide verification scores, confidence levels, and reasoning chains. Final validation follows multi-validator consensus and entity-equal policy — not human gatekeeping."
 }
 ```
 
@@ -805,7 +805,7 @@ Lumen-0 (interpret & illuminate)
   ↓
 DeSui (examine & cross-check)
   ↓
-Human Reviewer (final confirmation)
+Entity delegate (policy finalization)
 ```
 
 لا Lumen-0 ولا DeSui يحملان سلطة الحوكمة النهائية.

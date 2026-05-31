@@ -1,0 +1,538 @@
+# External inspiration registry — OSS projects whose patterns PoCP borrowed.
+# Each inspiration gets a community Entity and documented contribution records.
+# See docs/EXTERNAL-INSPIRATION-REGISTRY.md and docs/EXTERNAL-INTEGRATIONS.md
+
+spec_version: "0.1"
+registry: external_inspirations
+relationship_default: pattern_borrowed
+
+attribution_policy:
+  note: >
+    PoCP records external inspirations as community entities for transparency.
+    No code was forked; patterns were adapted under NO-TOKEN-FIRST constraints.
+
+inspirations:
+  octp:
+    display_name: Open Contribution Trust Protocol (OCTP)
+    entity_id: pocp-insp-octp
+    entity_type: community
+    portable_id: github:openoctp/spec
+    github_url: https://github.com/openoctp/spec
+    homepage_url: https://github.com/openoctp/spec
+    status: pattern_borrowed
+    integration_round: 1
+    summary: >
+      Provenance envelope for how work was created (human/AI/mixed),
+      cited experts and tools, optional verification claims.
+    contributions:
+      - id: octp-provenance-envelope
+        title: Provenance envelope on contribution submit
+        integration_section: 1
+        pocp_modules:
+          - backend/services/provenance.py
+        api_paths:
+          - POST /api/v1/contributions
+        proof_layers:
+          - provenance_envelope
+      - id: octp-signed-provenance
+        title: Signed provenance integrity + URL evidence checks
+        integration_section: 8
+        pocp_modules:
+          - backend/services/provenance.py
+          - backend/services/evidence_validate.py
+        api_paths:
+          - GET /api/v1/contributions/{id}/evidence-check
+      - id: octp-verification-claims
+        title: Verification claims in provenance (self_reviewed, ci_passed, etc.)
+        integration_section: 17
+        pocp_modules:
+          - backend/services/provenance.py
+        proof_layers:
+          - provenance_envelope
+
+  garl:
+    display_name: GARL Protocol
+    entity_id: pocp-insp-garl
+    entity_type: community
+    portable_id: github:Garl-Protocol/garl
+    github_url: https://github.com/Garl-Protocol/garl
+    status: pattern_borrowed
+    integration_round: 1
+    summary: Agent action receipts with SHA-256 hash and optional node signatures.
+    contributions:
+      - id: garl-agent-receipt
+        title: Invocation trace action receipts
+        integration_section: 2
+        pocp_modules:
+          - backend/services/agent_receipt.py
+        api_paths:
+          - GET /api/v1/invocations/{trace_id}/receipt
+          - POST /api/v1/invocations/{trace_id}/receipt/verify
+
+  receipt:
+    display_name: RECEIPT (MorkeethHQ)
+    entity_id: pocp-insp-receipt
+    entity_type: community
+    portable_id: github:MorkeethHQ/receipt
+    github_url: https://github.com/MorkeethHQ/receipt
+    status: pattern_borrowed
+    integration_round: 1
+    summary: Receipt-style hashing for agent invocation traces.
+    contributions:
+      - id: receipt-hash-pattern
+        title: Receipt hash canonicalization for invocations
+        integration_section: 2
+        pocp_modules:
+          - backend/services/agent_receipt.py
+        api_paths:
+          - GET /api/v1/invocations/{trace_id}/receipt
+
+  erc-8004:
+    display_name: ERC-8004 Agent Trust
+    entity_id: pocp-insp-erc-8004
+    entity_type: community
+    portable_id: github:erc-8004/erc-8004-contracts
+    github_url: https://github.com/erc-8004/erc-8004-contracts
+    status: pattern_borrowed
+    integration_round: 1
+    summary: Off-chain agent reputation registry without wallet requirement.
+    contributions:
+      - id: erc8004-agent-feedback
+        title: Off-chain agent feedback and reputation summary
+        integration_section: 3
+        pocp_modules:
+          - backend/services/agent_reputation.py
+          - backend/models/agent_feedback.py
+        api_paths:
+          - POST /api/v1/agents/{agent_id}/feedback
+          - GET /api/v1/agents/{agent_id}/reputation/summary
+          - GET /api/v1/agents/{agent_id}/reputation/clients
+      - id: erc8004-agent-registration
+        title: Off-chain agent identity registration
+        integration_section: 9
+        pocp_modules:
+          - backend/routers/integrations.py
+        api_paths:
+          - POST /api/v1/agents
+
+  meritocrab:
+    display_name: Meritocrab
+    entity_id: pocp-insp-meritocrab
+    entity_type: community
+    portable_id: github:hydai/meritocrab
+    github_url: https://github.com/hydai/meritocrab
+    status: pattern_borrowed
+    integration_round: 1
+    summary: >
+      Advisory AI verification, external HTTP verifiers, reward advisory,
+      human reject, reputation audit, review queue, request-changes webhooks.
+    contributions:
+      - id: meritocrab-http-verifiers
+        title: External HTTP verifier plugin registry
+        integration_section: 4
+        pocp_modules:
+          - backend/services/verifiers/http_verifier.py
+          - backend/config/verifiers.yaml
+          - backend/services/verifier_registry.py
+      - id: meritocrab-reward-advisory
+        title: Reward advisory and human reject endpoint
+        integration_section: 7
+        pocp_modules:
+          - backend/services/reward_advisory.py
+        api_paths:
+          - GET /api/v1/contributions/{id}/reward-advisory
+          - POST /api/v1/contributions/{id}/reject
+      - id: meritocrab-reputation-audit
+        title: Reputation change audit trail
+        integration_section: 11
+        pocp_modules:
+          - backend/services/reputation_audit.py
+          - backend/models/reputation_audit.py
+        api_paths:
+          - GET /api/v1/entities/{id}/reputation/audit
+      - id: meritocrab-request-changes
+        title: Request changes workflow and webhooks
+        integration_section: 14
+        pocp_modules:
+          - backend/services/contribution.py
+          - backend/config/webhooks.yaml
+          - backend/services/webhook_dispatcher.py
+        api_paths:
+          - POST /api/v1/contributions/{id}/request-changes
+      - id: meritocrab-review-queue
+        title: Human review queue for ai_verified contributions
+        integration_section: 18
+        pocp_modules:
+          - backend/services/review_queue.py
+        api_paths:
+          - GET /api/v1/reviews/queue
+
+  contributor-attribution:
+    display_name: contributor-attribution
+    entity_id: pocp-insp-contributor-attribution
+    entity_type: community
+    portable_id: github:drdeeks/contributor-attribution
+    github_url: https://github.com/drdeeks/contributor-attribution
+    status: pattern_borrowed
+    integration_round: 2
+    summary: Code path impact context and Merkle attribution proofs.
+    contributions:
+      - id: contrib-attribution-context
+        title: Code attribution context in proof packets
+        integration_section: 5
+        pocp_modules:
+          - backend/services/code_attribution_bridge.py
+          - backend/config/code_attribution.yaml
+        api_paths:
+          - GET /api/v1/contributions/{id}/code-attribution-context
+        proof_layers:
+          - code_attribution_context
+      - id: contrib-attribution-merkle
+        title: Merkle tree attribution proof
+        integration_section: 16
+        pocp_modules:
+          - backend/services/attribution_merkle.py
+        api_paths:
+          - GET /api/v1/contributions/{id}/attribution-proof
+          - POST /api/v1/contributions/{id}/attribution-proof/verify
+        proof_layers:
+          - attribution_merkle_proof
+
+  proof-of-contribution:
+    display_name: proof-of-contribution
+    entity_id: pocp-insp-proof-of-contribution
+    entity_type: community
+    portable_id: github:dannwaneri/proof-of-contribution
+    github_url: https://github.com/dannwaneri/proof-of-contribution
+    status: pattern_borrowed
+    integration_round: 2
+    summary: Expert cards resolving cited human experts into entity reputation cards.
+    contributions:
+      - id: poc-expert-cards
+        title: Expert cards from human_experts_cited
+        integration_section: 6
+        pocp_modules:
+          - backend/services/expert_cards.py
+        api_paths:
+          - GET /api/v1/contributions/{id}/experts
+        proof_layers:
+          - expert_cards
+
+  trustmygit:
+    display_name: TrustMyGit
+    entity_id: pocp-insp-trustmygit
+    entity_type: community
+    portable_id: github:TrustMyGit/TrustMyGit
+    github_url: https://github.com/TrustMyGit/TrustMyGit
+    status: pattern_adapted_no_token
+    integration_round: 3
+    summary: >
+      Git commit evidence validation and portable reputation export —
+      adapted off-chain without token-first economics.
+    contributions:
+      - id: trustmygit-git-evidence
+        title: Git commit SHA evidence validation
+        integration_section: 12
+        pocp_modules:
+          - backend/services/evidence_git.py
+        api_paths:
+          - GET /api/v1/contributions/{id}/evidence-check
+      - id: trustmygit-portable-reputation
+        title: Portable off-chain reputation bundles
+        integration_section: 12
+        pocp_modules:
+          - backend/services/portable_reputation.py
+        api_paths:
+          - GET /api/v1/entities/{id}/reputation/portable
+          - GET /api/v1/federation/reputation/{portable_id}/portable
+
+  clarion-unified:
+    display_name: Clarion Review Pattern (PoCP-native + Meritocrab)
+    entity_id: pocp-insp-clarion-unified
+    entity_type: community
+    portable_id: pocp:clarion-unified-review
+    status: pattern_borrowed
+    integration_round: 3
+    summary: Unified Clarion review packet merging heuristic rubric with AI consensus.
+    contributions:
+      - id: clarion-unified-packet
+        title: Unified Clarion-0 review packet
+        integration_section: 13
+        pocp_modules:
+          - backend/services/clarion.py
+          - backend/services/verifiers/clarion_verifier.py
+        api_paths:
+          - GET /api/v1/contributions/{id}/clarion-review
+
+  chaoss:
+    display_name: CHAOSS Community Health
+    entity_id: pocp-insp-chaoss
+    entity_type: community
+    portable_id: github:chaoss/community
+    github_url: https://github.com/chaoss/community
+    homepage_url: https://chaoss.community/
+    status: pattern_borrowed
+    integration_round: 5
+    summary: >
+      Transparent metrics and registry reports for open-source community health —
+      adapted as inspiration registry audit surfaces, not proprietary scores.
+    contributions:
+      - id: chaoss-transparency-report
+        title: Inspiration registry transparency report
+        integration_section: 20
+        pocp_modules:
+          - backend/services/external_inspiration.py
+          - backend/routers/external_inspiration.py
+        api_paths:
+          - GET /api/v1/external-inspirations/report
+        proof_layers:
+          - external_inspirations_context
+
+  all-contributors:
+    display_name: All Contributors
+    entity_id: pocp-insp-all-contributors
+    entity_type: community
+    portable_id: github:all-contributors/all-contributors
+    github_url: https://github.com/all-contributors/all-contributors
+    status: pattern_borrowed
+    integration_round: 5
+    summary: Recognize every contributor type in structured registries and entity records.
+    contributions:
+      - id: all-contributors-genesis-registry
+        title: Genesis Code Contributors human-readable registry
+        integration_section: 20
+        pocp_modules:
+          - GENESIS-CODE-CONTRIBUTORS.md
+          - backend/config/code_attribution.yaml
+          - backend/services/code_attribution.py
+        api_paths:
+          - GET /api/v1/code-attribution/builders
+      - id: all-contributors-inspiration-entities
+        title: External inspiration community entities
+        integration_section: 20
+        pocp_modules:
+          - backend/config/external_inspirations.yaml
+          - backend/services/external_inspiration.py
+        api_paths:
+          - GET /api/v1/external-inspirations/inspirations
+
+  opensource-guides:
+    display_name: GitHub Open Source Guides
+    entity_id: pocp-insp-opensource-guides
+    entity_type: community
+    portable_id: github:github/opensource.guide
+    github_url: https://github.com/github/opensource.guide
+    homepage_url: https://opensource.guide/
+    status: pattern_borrowed
+    integration_round: 5
+    summary: Community governance and openness documentation patterns for PoCP commons.
+    contributions:
+      - id: oss-guides-governance-docs
+        title: Governance, openness, and anti-monopoly documentation
+        integration_section: 20
+        pocp_modules:
+          - docs/OPENNESS-AND-ANTI-MONOPOLY.md
+          - GOVERNANCE.md
+          - NO-TOKEN-FIRST.md
+        api_paths: []
+
+  forgefed:
+    display_name: ForgeFed / ActivityPub Federation
+    entity_id: pocp-insp-forgefed
+    entity_type: community
+    portable_id: github:ForgeFed/ForgeFed
+    github_url: https://github.com/ForgeFed/ForgeFed
+    status: pattern_borrowed
+    integration_round: 5
+    summary: Federated peer nodes as community-operated instances — adapted for PoCP portable proof federation.
+    contributions:
+      - id: forgefed-portable-federation
+        title: Multi-node portable proof federation
+        integration_section: 20
+        pocp_modules:
+          - backend/services/federation_sync.py
+          - backend/services/federation_import.py
+          - backend/services/portable_reputation.py
+          - backend/services/federation_community.py
+          - docs/FEDERATION-v0.1.md
+        api_paths:
+          - GET /api/v1/federation/reputation/{portable_id}/portable
+          - GET /api/v1/federation/peers/entities
+          - POST /api/v1/federation/import
+
+  sourcecred:
+    display_name: SourceCred
+    entity_id: pocp-insp-sourcecred
+    entity_type: community
+    portable_id: github:sourcecred/sourcecred
+    github_url: https://github.com/sourcecred/sourcecred
+    homepage_url: https://sourcecred.io/
+    status: evaluating
+    integration_round: 6
+    summary: >
+      Contribution graph plugins, CredRank-style weight propagation, and instance-level
+      heuristics — adapted for PoCP graph analytics and rights advisory without Grain/token.
+    mapping_doc: docs/inspiration-mappings/sourcecred.md
+    contributions:
+      - id: sourcecred-graph-plugins
+        title: "[evaluating] Plugin-style contribution graph ingestion"
+        integration_section: 21
+        pocp_modules:
+          - backend/services/graph.py
+          - backend/intelligence/graph_analytics.py
+        api_paths:
+          - GET /api/v1/graph
+          - GET /api/v1/intelligence/graph/analytics
+      - id: sourcecred-credrank-advisory
+        title: PageRank-style reputation propagation (advisory only)
+        integration_section: 21
+        pocp_modules:
+          - backend/services/graph_analytics.py
+          - backend/services/graph_gnn_advisory.py
+        api_paths:
+          - GET /api/v1/intelligence/graph/analytics
+      - id: sourcecred-instance-weights
+        title: "[evaluating] Instance-configurable edge weights in pocp_rewards.yaml"
+        integration_section: 21
+        pocp_modules:
+          - backend/config/pocp_rewards.yaml
+          - backend/services/rights_conversion.py
+
+  poc-protocol-core:
+    display_name: Proof-of-Contribution Protocol Core
+    entity_id: pocp-insp-poc-protocol-core
+    entity_type: community
+    portable_id: github:Gitdigital-products/Proof-of-Contribution-Protocol-Core
+    github_url: https://github.com/Gitdigital-products/Proof-of-Contribution-Protocol-Core
+    status: evaluating
+    integration_round: 6
+    summary: >
+      pow.yaml JSON Schema for machine-verifiable contribution metadata — evaluate
+      interop mapping to PoCP Contribution Event + Proof Packet.
+    mapping_doc: docs/inspiration-mappings/poc-protocol-core.md
+    contributions:
+      - id: poc-core-pow-schema-mapping
+        title: pow.yaml ↔ PoCP proof interop export
+        integration_section: 22
+        pocp_modules:
+          - backend/services/pow_export.py
+          - PROTOCOL-SPEC-v0.1.md
+        api_paths:
+          - GET /api/v1/contributions/{id}/proof
+          - GET /api/v1/contributions/{id}/pow
+      - id: poc-core-ci-validation
+        title: "[evaluating] CI validation of contribution proofs against schema"
+        integration_section: 22
+        pocp_modules:
+          - backend/scripts/smoke_test.py
+        api_paths: []
+
+  mcp:
+    display_name: Model Context Protocol (MCP)
+    entity_id: pocp-insp-mcp
+    entity_type: community
+    portable_id: github:modelcontextprotocol/spec
+    github_url: https://github.com/modelcontextprotocol/spec
+    homepage_url: https://modelcontextprotocol.io/
+    status: evaluating
+    integration_round: 6
+    summary: >
+      Tool/server capability descriptors and invoke semantics — Tool Entity registration,
+      MCP import, and Capability Receipt on invocation steps.
+    mapping_doc: docs/inspiration-mappings/mcp.md
+    contributions:
+      - id: mcp-tool-entity-registration
+        title: "[evaluating] MCP server → Tool Entity + child tool entities"
+        integration_section: 23
+        pocp_modules:
+          - backend/services/mcp_import.py
+          - backend/routers/capabilities.py
+        api_paths:
+          - POST /api/v1/capabilities/import/mcp
+          - POST /api/v1/entities/tool
+      - id: mcp-invoke-receipt
+        title: MCP invoke → InvocationTrace + capability receipt
+        integration_section: 23
+        pocp_modules:
+          - backend/services/mcp_invoke.py
+          - backend/services/capability_receipt.py
+        api_paths:
+          - POST /api/v1/capabilities/mcp/invoke
+          - GET /api/v1/invocations/{trace_id}/receipt
+      - id: mcp-peer-federation
+        title: "[evaluating] Peer MCP witness routing (NN-5)"
+        integration_section: 23
+        pocp_modules:
+          - backend/services/remote_mcp_invoke.py
+          - backend/services/peer_mcp.py
+        api_paths:
+          - POST /api/v1/intelligence/peer/mcp/invoke
+
+  bitcoin:
+    display_name: Bitcoin
+    entity_id: pocp-insp-bitcoin
+    entity_type: community
+    portable_id: github:bitcoin/bitcoin
+    github_url: https://github.com/bitcoin/bitcoin
+    homepage_url: https://bitcoin.org/
+    status: pattern_borrowed
+    integration_round: 7
+    summary: >
+      Append-only hash chain, Merkle anchors, independent full-node-style audit,
+      and verify-don't-trust — applied to contribution ledger and portable proofs.
+    mapping_doc: docs/inspiration-mappings/bitcoin.md
+    contributions:
+      - id: bitcoin-hash-chain-ledger
+        title: Hash-chained append-only contribution ledger
+        integration_section: 22
+        pocp_modules:
+          - backend/services/ledger_chain.py
+          - backend/services/ledger_anchor.py
+        api_paths:
+          - GET /api/v1/ledger/verify
+          - GET /api/v1/ledger/anchor
+      - id: bitcoin-audit-node
+        title: Standalone audit node CLI and proof verification
+        integration_section: 22
+        pocp_modules:
+          - backend/services/verify_standalone.py
+          - backend/scripts/audit_node.py
+        api_paths:
+          - POST /api/v1/proof/verify
+          - GET /api/v1/audit/node
+      - id: bitcoin-spv-merkle
+        title: SPV Merkle inclusion proofs for ledger records
+        integration_section: 22
+        pocp_modules:
+          - backend/services/ledger_merkle.py
+          - backend/services/proof.py
+        api_paths:
+          - GET /api/v1/ledger/merkle-proof/{record_hash}
+      - id: bitcoin-wallet-replay
+        title: Wallet balance audit via transaction replay
+        integration_section: 22
+        pocp_modules:
+          - backend/services/wallet_audit.py
+        api_paths:
+          - GET /api/v1/wallets/audit
+          - GET /api/v1/wallets/export
+          - POST /api/v1/wallets/export/verify
+
+# Projects evaluated but not imported — recorded for transparency
+declined_inspirations:
+  agent-commons:
+    display_name: Agent Commons
+    entity_id: pocp-insp-agent-commons
+    entity_type: community
+    portable_id: github:agentcommons/agent-commons
+    status: not_imported
+    reason: Token-first economics conflict with NO-TOKEN-FIRST.md
+  lineage:
+    display_name: Lineage (on-chain iNFT)
+    entity_id: pocp-insp-lineage
+    entity_type: community
+    status: not_imported
+    reason: Chain-required royalty settlement not needed for Sprint Alpha
+
+ledger_policy:
+  ledger_event_type: external_inspiration_sync

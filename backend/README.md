@@ -39,6 +39,21 @@ python scripts/reset_db.py
 # then restart uvicorn or docker compose
 ```
 
+Upgrade an **existing** database to the extended Entity ontology (Tool, Dataset, witness role on demo contribution) without wiping data:
+
+```bash
+python scripts/upgrade_demo_topology.py
+# or restart the API — seed_demo runs the same upgrade on startup
+```
+
+Distributed compute Phase α (Entity `compute_profile`, scheduler, receipts):
+
+```bash
+python scripts/distributed_compute_demo_test.py http://127.0.0.1:8000
+```
+
+See [docs/DISTRIBUTED-COMPUTE-RESEARCH.md](../docs/DISTRIBUTED-COMPUTE-RESEARCH.md).
+
 ## Migrations
 
 ```bash
@@ -51,6 +66,28 @@ alembic upgrade head
 - Health: `GET /health` (includes `database.dialect` and status)
 - Spec: [PROTOCOL-SPEC-v0.1.md](../PROTOCOL-SPEC-v0.1.md)
 - Schema: [docs/SCHEMA.md](../docs/SCHEMA.md)
+- Capability integration: [docs/CAPABILITY-INTEGRATION.md](../docs/CAPABILITY-INTEGRATION.md)
+
+### Capability import (required platform layer)
+
+```text
+GET  /api/v1/capabilities/sources
+GET  /api/v1/capabilities/catalog
+POST /api/v1/capabilities/import/agentskills
+POST /api/v1/capabilities/import/agent
+POST /api/v1/capabilities/skills/{skill_entity_id}/execute
+POST /api/v1/capabilities/agents/{agent_entity_id}/execute
+POST /api/v1/capabilities/{entity_id}/runtime
+POST /api/v1/capabilities/{entity_id}/activate
+```
+
+Bundled OpenClaw-compatible example skills sync on startup (`config/capabilities/bundled/`).
+
+Smoke test (server running):
+
+```bash
+python scripts/capability_execute_test.py http://127.0.0.1:8000
+```
 
 ## Smoke test
 
@@ -59,6 +96,27 @@ With the server running:
 ```bash
 python scripts/smoke_test.py http://127.0.0.1:8000
 ```
+
+## Pilot metrics & tasks
+
+Entity Network Pilot dashboard (protocol · intelligence · compute layers):
+
+```bash
+python scripts/pilot_metrics.py http://127.0.0.1:8000
+python scripts/pilot_metrics.py --json
+python scripts/run_entity_pilot_demo.py --single http://127.0.0.1:8000
+```
+
+Seed 10 Epic B task templates:
+
+```bash
+python scripts/seed_pilot_tasks.py --api http://127.0.0.1:8000
+python scripts/run_entity_pilot_demo.py --single http://127.0.0.1:8000 --seed-tasks
+```
+
+Epic D two-node federation: `docker compose -f docker-compose.federation.yml up -d` then `python scripts/run_entity_pilot_demo.py`.
+
+See [docs/PILOT-LAUNCH-CHECKLIST.md](../docs/PILOT-LAUNCH-CHECKLIST.md) · [docs/FEDERATION-DEMO.md](../docs/FEDERATION-DEMO.md).
 
 ## Core loop
 

@@ -125,9 +125,9 @@ AI Advisory Review (structured JSON)
   - suggested_credits
   - rationale (text)
         ↓
-Human Reviewer
-  - approve / reject / request_changes
-  - override suggested rewards
+Policy Finalizer (auto or delegate)
+  - approve / reject / request_changes (traceable)
+  - override suggested rewards when policy allows
         ↓
 Ledger writes:
   - contribution_event (final)

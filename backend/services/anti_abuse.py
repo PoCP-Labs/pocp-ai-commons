@@ -10,6 +10,37 @@ from models.contribution import ContributionEvent
 
 DAILY_CONTRIBUTION_LIMIT = int(os.getenv("DAILY_CONTRIBUTION_LIMIT", "10"))
 DAILY_AI_CREDITS_BURN_LIMIT = float(os.getenv("DAILY_AI_CREDITS_BURN_LIMIT", "200"))
+DAILY_COMPUTE_JOB_LIMIT = int(os.getenv("DAILY_COMPUTE_JOB_LIMIT", "50"))
+HOURLY_COMPUTE_JOB_LIMIT = int(os.getenv("HOURLY_COMPUTE_JOB_LIMIT", "20"))
+
+
+def require_contribution_bound_compute(
+    *,
+    contribution_id: str | None,
+    task_id: str | None,
+) -> None:
+    if not contribution_id and not task_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Compute jobs must bind contribution_id or task_id (mesh anti-abuse)",
+        )
+
+
+def check_compute_job_limits(db: Session, entity_id: str) -> None:
+    from services.compute_jobs import count_jobs_for_initiator
+
+    daily = count_jobs_for_initiator(db, entity_id, since_hours=24)
+    if daily >= DAILY_COMPUTE_JOB_LIMIT:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Daily compute job limit reached: {DAILY_COMPUTE_JOB_LIMIT}",
+        )
+    hourly = count_jobs_for_initiator(db, entity_id, since_hours=1)
+    if hourly >= HOURLY_COMPUTE_JOB_LIMIT:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Hourly compute job limit reached: {HOURLY_COMPUTE_JOB_LIMIT}",
+        )
 
 
 def _day_start() -> datetime:

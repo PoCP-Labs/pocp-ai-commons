@@ -4,6 +4,8 @@ How to run **PoCP AI Commons** on the public internet (full stack: API + Postgre
 
 For local development only, see [LOCAL-SETUP.md](./LOCAL-SETUP.md).
 
+**Language:** Production UI and API defaults are [English-first](./LANGUAGE-POLICY.md).
+
 For a **static manifesto site** without the live app, see [GITHUB-PAGES.md](./GITHUB-PAGES.md) and [DEPLOY-CHECKLIST.md](./DEPLOY-CHECKLIST.md).
 
 ---
@@ -256,5 +258,6 @@ This does **not** include login, AI Chat, or the contribution loop.
 ## Related
 
 - [DATABASE.md](./DATABASE.md) — PostgreSQL and migrations
+- [PILOT-LAUNCH-CHECKLIST.md](./PILOT-LAUNCH-CHECKLIST.md) — 30–100 user pilot after staging
 - [PUBLIC-DEMO.md](./PUBLIC-DEMO.md) — demo script for visitors
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — system overview

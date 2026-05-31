@@ -4,11 +4,12 @@ import json
 import os
 import urllib.error
 
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from schemas.federation import TrustedNode
 from services.federation_import import import_from_proof_packet
-from services.federation_peers import fetch_proof, probe_peer
+from services.federation_peers import fetch_federation_intelligence, fetch_proof, probe_peer
 from services.trust_config import load_trusted_nodes
 
 
@@ -44,7 +45,15 @@ def sync_peer_into_db(db: Session, peer: TrustedNode) -> list[dict]:
     for contribution_id in _export_approved_contribution_ids(peer.base_url):
         try:
             proof = fetch_proof(peer.base_url, contribution_id)
-            record = import_from_proof_packet(db, peer.node_id, proof)
+            intelligence_bundle = None
+            if os.getenv("POCP_SYNC_INTELLIGENCE_BUNDLE", "true").lower() in ("true", "1", "yes", "on"):
+                intelligence_bundle = fetch_federation_intelligence(peer.base_url, contribution_id)
+            record = import_from_proof_packet(
+                db,
+                peer.node_id,
+                proof,
+                intelligence_bundle=intelligence_bundle,
+            )
             db.commit()
             db.refresh(record)
             results.append(
@@ -53,6 +62,9 @@ def sync_peer_into_db(db: Session, peer: TrustedNode) -> list[dict]:
                     "contribution_id": contribution_id,
                     "status": "imported",
                     "reputation_applied": record.reputation_applied,
+                    "has_intelligence_bundle": bool(
+                        (record.payload or {}).get("protocol_excerpt", {}).get("intelligence_export_type")
+                    ),
                 }
             )
         except urllib.error.HTTPError as exc:
@@ -74,6 +86,27 @@ def sync_peer_into_db(db: Session, peer: TrustedNode) -> list[dict]:
                         "status": "error",
                         "code": exc.code,
                         "body": exc.read().decode(),
+                    }
+                )
+                db.rollback()
+        except HTTPException as exc:
+            if exc.status_code == 409:
+                results.append(
+                    {
+                        "source_node_id": peer.node_id,
+                        "contribution_id": contribution_id,
+                        "status": "skipped",
+                        "reason": "duplicate",
+                    }
+                )
+                db.rollback()
+            else:
+                results.append(
+                    {
+                        "source_node_id": peer.node_id,
+                        "contribution_id": contribution_id,
+                        "status": "error",
+                        "error": f"{exc.status_code}: {exc.detail}",
                     }
                 )
                 db.rollback()

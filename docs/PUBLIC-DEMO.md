@@ -39,7 +39,7 @@ Open http://localhost:3000
 
 1. **Not a token project** — AI Credits are usage rights from verified contribution
 2. **Entity-centric** — Humans, Agents, Skills participate together
-3. **AI witness, human final** — Verifiers advise; humans approve
+3. **AI witness, policy final** — Verifiers advise; witness quorum + entity delegate finalize traceably
 4. **Contribution OS** — Ledger, proof packets, graph as protocol primitives
 
 ## One-line pitch

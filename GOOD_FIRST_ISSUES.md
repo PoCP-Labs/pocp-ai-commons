@@ -164,7 +164,7 @@ Suggested node types:
 - Skill
 - Contribution
 - AI Verifier
-- Human Reviewer
+- Policy finalizer (Entity-equal)
 - Ledger
 
 Labels:

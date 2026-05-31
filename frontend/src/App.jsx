@@ -1,12 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import ContributionGraphView from "./ContributionGraph";
-import ContributionInsights from "./ContributionInsights";
 import EntityDetail from "./EntityDetail";
-import ExternalInspirationsPanel from "./ExternalInspirationsPanel";
-import CommunityPartnersPanel from "./CommunityPartnersPanel";
-import CapabilityCatalog from "./CapabilityCatalog";
-import IntelligencePanel from "./IntelligencePanel";
-import StudyAgentPanel from "./StudyAgentPanel";
+import CryptoReadinessPanel from "./CryptoReadinessPanel";
 import ProofVerifyPanel, { CryptoReadinessBadge, LedgerVerifyBadge } from "./ProofVerifyPanel";
 import SubmitFlow from "./SubmitFlow";
 
@@ -183,8 +178,8 @@ function LedgerBlockPanel({ record, height }) {
 function AdvisoryBanner() {
   return (
     <div className="alert alert--info" style={{ marginBottom: "1rem" }}>
-      <strong>Entity-equal network.</strong> All Entity types participate equally; finalization is policy-automated
-      after witness quorum — traceable in ledger, not controlled by humans.
+      <strong>AI is advisory; humans decide.</strong> AI verifiers suggest scores and credits. Final approval stays with
+      human reviewers — every step is recorded in the ledger.
     </div>
   );
 }
@@ -199,8 +194,8 @@ export default function App() {
   const [ledger, setLedger] = useState([]);
   const [ledgerVerify, setLedgerVerify] = useState(null);
   const [ledgerAnchor, setLedgerAnchor] = useState(null);
-  const [cryptoReadiness, setCryptoReadiness] = useState(null);
   const [walletAudit, setWalletAudit] = useState(null);
+  const [cryptoReadiness, setCryptoReadiness] = useState(null);
   const [issuanceBudget, setIssuanceBudget] = useState(null);
   const [graph, setGraph] = useState({ nodes: [], edges: [] });
   const [profile, setProfile] = useState(null);
@@ -212,11 +207,12 @@ export default function App() {
   const [error, setError] = useState(null);
   const [tab, setTab] = useState("dashboard");
   const [apiVersion, setApiVersion] = useState("—");
-  const [capabilityLayer, setCapabilityLayer] = useState("—");
   const [aiUsage, setAiUsage] = useState([]);
   const [selectedEntityId, setSelectedEntityId] = useState(null);
+  const [entityTypeFilter, setEntityTypeFilter] = useState("");
+  const [entityStatusFilter, setEntityStatusFilter] = useState("");
   const [reviewQueue, setReviewQueue] = useState([]);
-  const [federationImports, setFederationImports] = useState(null);
+  const [pendingEntityReviews, setPendingEntityReviews] = useState([]);
 
   const loadProfile = useCallback(async () => {
     if (!getToken()) {
@@ -226,17 +222,46 @@ export default function App() {
     try {
       const me = await fetchJson("/api/v1/me");
       setProfile(me);
+      try {
+        const pending = await fetchJson("/api/v1/entity-reviews/pending");
+        setPendingEntityReviews(pending);
+      } catch {
+        setPendingEntityReviews([]);
+      }
     } catch {
       setToken(null);
       setProfile(null);
+      setPendingEntityReviews([]);
     }
   }, []);
+
+  const reviewPendingEntity = async (entityId, action) => {
+    setError(null);
+    try {
+      await fetchJson(`/api/v1/entities/${entityId}/review`, {
+        method: "POST",
+        body: JSON.stringify({ action, feedback: `${action} via dashboard` }),
+      });
+      await loadProfile();
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const entitiesQuery = useCallback(() => {
+    const params = new URLSearchParams();
+    if (entityTypeFilter) params.set("entity_type", entityTypeFilter);
+    if (entityStatusFilter) params.set("status", entityStatusFilter);
+    const qs = params.toString();
+    return `/api/v1/entities${qs ? `?${qs}` : ""}`;
+  }, [entityTypeFilter, entityStatusFilter]);
 
   const load = useCallback(async () => {
     setError(null);
     try {
       const [e, t, c, inv, w, r, l, g] = await Promise.all([
-        fetchJson("/api/v1/entities"),
+        fetchJson(entitiesQuery()),
         fetchJson("/api/v1/tasks"),
         fetchJson("/api/v1/contributions"),
         fetchJson("/api/v1/invocations"),
@@ -281,12 +306,6 @@ export default function App() {
       } catch {
         setReviewQueue([]);
       }
-      try {
-        const fed = await fetchJson("/api/v1/federation/imports/graph-summary");
-        setFederationImports(fed);
-      } catch {
-        setFederationImports(null);
-      }
     } catch (err) {
       const msg = err?.message || String(err);
       setError(msg);
@@ -294,7 +313,7 @@ export default function App() {
         setApiVersion("offline");
       }
     }
-  }, []);
+  }, [entitiesQuery]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -309,10 +328,7 @@ export default function App() {
     loadProfile();
     fetch(`${API}/health`)
       .then((r) => r.json())
-      .then((h) => {
-        setApiVersion(h.version || "—");
-        setCapabilityLayer(h.capability_layer || "—");
-      })
+      .then((h) => setApiVersion(h.version || "—"))
       .catch(() => setApiVersion("offline"));
   }, [load, loadProfile]);
 
@@ -397,21 +413,15 @@ export default function App() {
   }, {});
   const selectedEntity = selectedEntityId ? entityMap[selectedEntityId] : null;
   const contribution = contributions[0];
-  const defaultReviewer = entities.find(
-    (e) => e.entity_type === "human" && e.id !== contribution?.primary_entity_id
-  );
   const latestLedger = ledger[0];
 
   const tabs = [
     { id: "dashboard", label: "Network" },
-    { id: "entities", label: "Entities" },
-    { id: "intelligence", label: "Capability" },
-    { id: "inspirations", label: "Inspirations" },
-    { id: "partners", label: "Partners" },
+    { id: "workflow", label: "Contribute" },
     { id: "account", label: "Wallet" },
     { id: "chat", label: "AI Node" },
-    { id: "workflow", label: "Contribute" },
     { id: "graph", label: "Graph" },
+    { id: "entities", label: "Entities" },
   ];
 
   return (
@@ -427,7 +437,6 @@ export default function App() {
           Blocks: <span className="network-bar__value">{ledger.length}</span>
         </div>
         <LedgerVerifyBadge verify={ledgerVerify} anchor={ledgerAnchor} />
-        <CryptoReadinessBadge readiness={cryptoReadiness} anchor={ledgerAnchor} />
         {walletAudit && (
           <div className="network-bar__item network-bar__item--audit" title="Balances recomputed from transactions">
             Wallets:{" "}
@@ -451,13 +460,7 @@ export default function App() {
           Contributions: <span className="network-bar__value">{contributions.length}</span>
         </div>
         <div className="network-bar__item">
-          Capability: <span className="network-bar__ai">v{capabilityLayer}</span>
-        </div>
-        <div className="network-bar__item">
           Protocol: <span className="network-bar__ai">v{apiVersion}</span>
-        </div>
-        <div className="network-bar__item">
-          AI Witness: <span className="network-bar__ai">Entity-Equal Auto</span>
         </div>
       </div>
 
@@ -469,7 +472,7 @@ export default function App() {
               PoCP <span>AI Commons</span>
             </h1>
             <p className="brand__tagline">
-              Contribution OS · Entity-centric Proof of Contribution · Sprint Alpha
+              Earn AI access through verified contribution · Genesis MVP
             </p>
           </div>
         </div>
@@ -581,6 +584,34 @@ export default function App() {
               </div>
             </div>
           )}
+          {profile && pendingEntityReviews.length > 0 && (
+            <div className="panel" style={{ marginTop: "1.5rem" }}>
+              <h3 className="panel__title" style={{ fontSize: "1rem" }}>
+                Entity Review Queue
+              </h3>
+              <p className="panel__subtitle">
+                Pending registrations you may approve as owner or organization governance proxy
+              </p>
+              {pendingEntityReviews.map((e) => (
+                <div key={e.id} className="mini-card" style={{ marginBottom: 8 }}>
+                  <EntityBadge type={e.entity_type} />
+                  <strong style={{ marginLeft: 8 }}>{e.name}</strong>
+                  <span style={{ marginLeft: 8, color: "var(--text-dim)", fontSize: "0.8rem" }}>pending</span>
+                  {e.description && (
+                    <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: 4 }}>{e.description}</div>
+                  )}
+                  <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+                    <button type="button" className="btn btn--primary" onClick={() => reviewPendingEntity(e.id, "approve")}>
+                      Approve
+                    </button>
+                    <button type="button" className="btn btn--secondary" onClick={() => reviewPendingEntity(e.id, "reject")}>
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
@@ -651,7 +682,7 @@ export default function App() {
           <AdvisoryBanner />
           <h2 className="panel__title">Contribution Pipeline</h2>
           <p className="panel__subtitle">
-            Invoke → Submit → AI Witness Review → Traceable Finalization → Credits + Reputation
+            Submit → AI advisory review → Human approval → CP + AI Credits → Ledger
           </p>
           <SubmitFlow
             api={API}
@@ -674,6 +705,7 @@ export default function App() {
               entityMap={entityMap}
               onBack={() => setSelectedEntityId(null)}
               fetchJson={fetchJson}
+              authenticated={!!profile}
             />
           ) : (
             <section className="panel">
@@ -709,69 +741,10 @@ export default function App() {
         </>
       )}
 
-      {tab === "intelligence" && (
-        <>
-          <CapabilityCatalog
-            fetchJson={fetchJson}
-            profile={profile}
-            entities={entities}
-            onRefresh={load}
-          />
-          <StudyAgentPanel
-            fetchJson={fetchJson}
-            tasks={tasks}
-            profile={profile}
-            onRefresh={load}
-          />
-          <IntelligencePanel
-            api={API}
-            fetchJson={fetchJson}
-            tasks={tasks}
-            profile={profile}
-            onSelectEntity={(id) => {
-              setSelectedEntityId(id);
-              setTab("entities");
-            }}
-          />
-        </>
-      )}
-
       {tab === "graph" && (
         <section className="panel">
           <h2 className="panel__title section-heading--ai">Contribution Graph</h2>
           <ContributionGraphView graph={graph} entities={entities} />
-        </section>
-      )}
-
-      {tab === "inspirations" && (
-        <section className="panel">
-          <h2 className="panel__title">External Inspirations</h2>
-          <p className="panel__subtitle">
-            Community entities — OSS projects whose patterns PoCP borrowed (no-token-first)
-          </p>
-          <ExternalInspirationsPanel
-            fetchJson={fetchJson}
-            onSelectEntity={(id) => {
-              setSelectedEntityId(id);
-              setTab("entities");
-            }}
-          />
-        </section>
-      )}
-
-      {tab === "partners" && (
-        <section className="panel">
-          <h2 className="panel__title">Community Partners</h2>
-          <p className="panel__subtitle">
-            Active outreach to open-source & distributed communities — capabilities, Entities, next actions
-          </p>
-          <CommunityPartnersPanel
-            fetchJson={fetchJson}
-            onSelectEntity={(id) => {
-              setSelectedEntityId(id);
-              setTab("entities");
-            }}
-          />
         </section>
       )}
 
@@ -798,9 +771,52 @@ export default function App() {
             </div>
           </div>
 
+          <CryptoReadinessPanel
+            readiness={cryptoReadiness}
+            anchor={ledgerAnchor}
+            ledgerVerify={ledgerVerify}
+            walletAudit={walletAudit}
+          />
+
           <section className="panel">
             <h2 className="panel__title">Registered Entities</h2>
             <p className="panel__subtitle">Humans · Agents · Skills · LLMs · Organizations</p>
+            <div className="entity-filters" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+              <select
+                value={entityTypeFilter}
+                onChange={(ev) => setEntityTypeFilter(ev.target.value)}
+                aria-label="Filter by entity type"
+                style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border, #e2e8f0)" }}
+              >
+                <option value="">All types</option>
+                {["human", "agent", "skill", "llm", "tool", "dataset", "workflow", "organization", "community"].map(
+                  (t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  )
+                )}
+              </select>
+              <select
+                value={entityStatusFilter}
+                onChange={(ev) => setEntityStatusFilter(ev.target.value)}
+                aria-label="Filter by status"
+                style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border, #e2e8f0)" }}
+              >
+                <option value="">All statuses</option>
+                <option value="active">active</option>
+                <option value="pending">pending</option>
+                <option value="inactive">inactive</option>
+              </select>
+              <button
+                type="button"
+                className="btn btn--secondary"
+                onClick={() => load()}
+                style={{ padding: "6px 12px" }}
+              >
+                Apply filters
+              </button>
+            </div>
             {entities.map((e) => (
               <div
                 key={e.id}
@@ -849,28 +865,10 @@ export default function App() {
             </section>
           )}
 
-          {federationImports?.import_count > 0 && (
-            <section className="panel">
-              <h2 className="panel__title">Federated Imports</h2>
-              <p className="panel__subtitle">
-                Cross-node contributions mirrored as community graph hubs ({federationImports.import_count} total)
-              </p>
-              {(federationImports.recent || []).map((item) => (
-                <div key={item.id} className="mini-card">
-                  <strong>{item.task_title}</strong>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: 4 }}>
-                    {item.peer_entity_name || item.source_node_id} →{" "}
-                    {item.primary_entity_name || item.primary_portable_id} · rep +{item.reputation_applied}
-                  </div>
-                </div>
-              ))}
-            </section>
-          )}
-
           {reviewQueue.length > 0 && (
             <section className="panel">
               <h2 className="panel__title">Finalization Queue</h2>
-              <p className="panel__subtitle">Contributions awaiting final approval (Meritocrab-style queue)</p>
+              <p className="panel__subtitle">Contributions awaiting policy finalization (optional manual queue)</p>
               {reviewQueue.map((item) => (
                 <div key={item.contribution_id} className="mini-card">
                   <strong>{item.task_title || "Contribution"}</strong> — {item.description?.slice(0, 60)}
@@ -928,15 +926,6 @@ export default function App() {
                   })}
                 </tbody>
               </table>
-              {contribution.status === "ai_verified" && (
-                <ContributionInsights
-                  contributionId={contribution.id}
-                  fetchJson={fetchJson}
-                  currentEntityId={profile?.entity?.id || null}
-                  reviewerId={defaultReviewer?.id || null}
-                  onAction={load}
-                />
-              )}
             </section>
           )}
 

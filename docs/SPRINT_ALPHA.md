@@ -5,7 +5,7 @@
 Turn the Genesis demo into a real usable MVP:
 
 ```text
-Login → Human Entity → Wallet → AI Chat burns Credits → Contribution → AI Verify → Human Review → CP/Credits → Ledger
+Login → Human Entity → Wallet → AI Chat burns Credits → Contribution → AI Verify → Policy Auto-Finalize → CP/Credits → Ledger
 ```
 
 ## What this patch adds

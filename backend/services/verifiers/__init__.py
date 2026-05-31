@@ -2,6 +2,7 @@ from services.verifiers.base import BaseVerifier, VerifierResult
 from services.verifiers.mock_verifier import MockVerifier
 from services.verifiers.openai_verifier import OpenAIVerifier
 from services.verifiers.deepseek_verifier import DeepSeekVerifier
+from services.verifiers.ollama_verifier import OllamaVerifier
 
 
 def __getattr__(name: str):
@@ -17,5 +18,6 @@ __all__ = [
     "MockVerifier",
     "OpenAIVerifier",
     "DeepSeekVerifier",
+    "OllamaVerifier",
     "MultiVerifierService",
 ]

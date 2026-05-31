@@ -31,7 +31,7 @@ You can contribute as a:
 | AI Verifier Builder | Build OpenAI, DeepSeek, Claude, Gemini, local LLM verifiers |
 | Skill Builder | Create reusable Skills such as Study Helper, Code Review, Resume Helper |
 | Task Designer | Design contribution tasks for learning, open-source, public-good, and community work |
-| Human Reviewer | Review contributions and improve verification rubrics |
+| Finalizer Entity | Optional manual finalization; improve verification rubrics |
 | Researcher | Improve CP/Credits rules, reputation, governance, anti-abuse, human-agent collaboration |
 | Community Builder | Translate docs, welcome new contributors, organize discussions and build sessions |
 
@@ -39,14 +39,13 @@ You can contribute as a:
 
 Code contribution is not limited to writing code. Requirements, issues, prompts, tests, reviews, documentation, skills, agents, and human judgment are all part of the code contribution chain.
 
-See the [Code Contribution Commons](./CODE-CONTRIBUTION-COMMONS.md) package:
+See also:
 
 - [GENESIS-CODE-CONTRIBUTORS.md](./GENESIS-CODE-CONTRIBUTORS.md)
-- [DEV-TASKS.md](./DEV-TASKS.md)
 - [ISSUE-WRITING-GUIDE.md](./ISSUE-WRITING-GUIDE.md)
 - [AI-ASSISTED-CODING-GUIDE.md](./AI-ASSISTED-CODING-GUIDE.md)
 - [REVIEW-GUIDE.md](./REVIEW-GUIDE.md)
-- [docs/CODE-COMMONS-LAUNCH.md](./docs/CODE-COMMONS-LAUNCH.md)
+- [docs/README.md](./docs/README.md)
 
 Pick a GitHub issue template (`code_contribution_task`, `issue_spec_task`, `test_task`, `skill_task`, `review_task`) that matches your role. AI may advise; humans remain responsible for final review and merge.
 

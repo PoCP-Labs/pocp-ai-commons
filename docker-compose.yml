@@ -27,6 +27,8 @@ services:
       DATABASE_URL: postgresql+psycopg://pocp:pocp@postgres:5432/pocp
       POCP_WAIT_FOR_DB: "true"
       POCP_WAIT_FOR_DB_SECONDS: "60"
+      ENABLE_DEV_LOGIN: "true"
+      ENABLE_MOCK_VERIFIER: "true"
     volumes:
       - ./backend:/app
     depends_on:

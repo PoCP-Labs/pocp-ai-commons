@@ -123,6 +123,7 @@ class LedgerOut(BaseModel):
     payload: dict[str, Any] = Field(default_factory=dict)
     prev_hash: str | None = None
     record_hash: str | None = None
+    hash_algorithm: str = "sha256"
     created_at: datetime
 
 
@@ -135,6 +136,18 @@ class EntityCreate(BaseModel):
     description: str | None = None
     owner_id: str | None = None
     creator_id: str | None = None
+
+
+class EntityPatch(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    status: str | None = None
+    metadata: dict[str, Any] | None = None
+
+
+class EntityReviewIn(BaseModel):
+    action: str = Field(description="approve | reject")
+    feedback: str | None = None
 
 
 class TaskCreate(BaseModel):
@@ -221,6 +234,8 @@ class ContributionGraph(BaseModel):
     edges: list[GraphEdge]
     entity_count: int = 0
     contribution_node_count: int = 0
+    federation_import_node_count: int = 0
+    ledger_node_count: int = 0
 
 
 class OrganizationOut(BaseModel):
@@ -249,6 +264,38 @@ class SkillCreate(BaseModel):
     version: str = "1.0.0"
 
 
+class ToolCreate(BaseModel):
+    name: str
+    description: str | None = None
+    maintainer_id: str
+    tool_kind: str = "mcp"
+    service_endpoints: dict[str, str] = Field(default_factory=dict)
+    capabilities: list[str] = Field(default_factory=list)
+    mcp_server: str | None = None
+    activate: bool = True
+
+
+class DatasetCreate(BaseModel):
+    name: str
+    description: str | None = None
+    maintainer_id: str
+    source_uri: str | None = None
+    license: str | None = None
+    content_hash: str | None = None
+    data_format: str | None = None
+    activate: bool = True
+
+
+class WorkflowCreate(BaseModel):
+    name: str
+    description: str | None = None
+    maintainer_id: str
+    steps: list[dict[str, Any]] = Field(default_factory=list)
+    version: str = "1.0.0"
+    entrypoint: str | None = None
+    activate: bool = True
+
+
 class InvocationStepOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -257,6 +304,7 @@ class InvocationStepOut(BaseModel):
     source_entity_id: str
     target_entity_id: str
     action: str
+    metadata: dict | None = Field(default=None, validation_alias="metadata_")
 
 
 class InvocationOut(BaseModel):
@@ -313,3 +361,16 @@ class AgentReputationSummary(BaseModel):
     unique_reviewers: int
     recent_feedback: list[dict[str, Any]] = Field(default_factory=list)
     registry_compat: str
+
+
+class ComputeRegisterIn(BaseModel):
+    offers: list[dict[str, Any]]
+    endpoints: dict[str, Any] = Field(default_factory=dict)
+    capacity: dict[str, Any] = Field(default_factory=dict)
+    policy: dict[str, Any] = Field(default_factory=dict)
+    accountability: dict[str, Any] = Field(default_factory=dict)
+    status: str = "active"
+
+
+class ComputeHeartbeatIn(BaseModel):
+    status: str = "active"

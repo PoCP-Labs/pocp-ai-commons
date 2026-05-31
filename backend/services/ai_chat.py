@@ -8,12 +8,24 @@ from models.ai_usage import AIUsageLog
 from models.wallet import CreditTransaction, CreditType, Wallet
 from services.anti_abuse import check_daily_ai_burn_limit
 from services.ledger_chain import append_ledger_record
+from services.llama_cpp_client import llama_cpp_base_url, llama_cpp_chat_enabled, llama_cpp_chat_model
+from services.ollama_client import ollama_base_url, ollama_chat_model
+from services.vllm_client import vllm_base_url, vllm_chat_enabled, vllm_chat_model
 
 AI_CHAT_COST_PER_MESSAGE = float(os.getenv("AI_CHAT_COST_PER_MESSAGE", "5"))
 
 
-async def generate_ai_reply(message: str, provider: str = "mock", model: str | None = None) -> tuple[str, str, str]:
+async def generate_ai_reply(
+    message: str,
+    provider: str = "mock",
+    model: str | None = None,
+    *,
+    system_content: str | None = None,
+) -> tuple[str, str, str]:
     provider = (provider or "mock").lower()
+    system = system_content or (
+        "You are PoCP AI Commons assistant. Be helpful, concise, and educational."
+    )
     if provider == "openai" and os.getenv("OPENAI_API_KEY"):
         model = model or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
         base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
@@ -27,7 +39,7 @@ async def generate_ai_reply(message: str, provider: str = "mock", model: str | N
                 json={
                     "model": model,
                     "messages": [
-                        {"role": "system", "content": "You are PoCP AI Commons assistant. Be helpful, concise, and educational."},
+                        {"role": "system", "content": system},
                         {"role": "user", "content": message},
                     ],
                     "temperature": 0.3,
@@ -36,6 +48,74 @@ async def generate_ai_reply(message: str, provider: str = "mock", model: str | N
             resp.raise_for_status()
             data = resp.json()
             return data["choices"][0]["message"]["content"], "openai", model
+
+    if provider == "ollama":
+        model = model or ollama_chat_model()
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(
+                f"{ollama_base_url()}/api/chat",
+                json={
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": message},
+                    ],
+                    "stream": False,
+                },
+            )
+            resp.raise_for_status()
+            content = (resp.json().get("message") or {}).get("content") or ""
+            return content, "ollama", model
+
+    if provider == "llama_cpp" and llama_cpp_chat_enabled():
+        model = model or llama_cpp_chat_model()
+        base_url = llama_cpp_base_url()
+        timeout = float(os.getenv("LLAMA_CPP_TIMEOUT_SECONDS", "120"))
+        headers = {"Content-Type": "application/json"}
+        api_key = os.getenv("LLAMA_CPP_API_KEY")
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.post(
+                f"{base_url}/v1/chat/completions",
+                headers=headers,
+                json={
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": message},
+                    ],
+                    "temperature": 0.3,
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return data["choices"][0]["message"]["content"], "llama_cpp", model
+
+    if provider == "vllm" and vllm_chat_enabled():
+        model = model or vllm_chat_model()
+        base_url = vllm_base_url()
+        timeout = float(os.getenv("VLLM_TIMEOUT_SECONDS", "120"))
+        headers = {"Content-Type": "application/json"}
+        api_key = os.getenv("VLLM_API_KEY")
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.post(
+                f"{base_url}/v1/chat/completions",
+                headers=headers,
+                json={
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": message},
+                    ],
+                    "temperature": 0.3,
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return data["choices"][0]["message"]["content"], "vllm", model
 
     # mock fallback keeps MVP usable without paid API keys
     return (

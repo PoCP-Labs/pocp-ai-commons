@@ -13,6 +13,7 @@ from schemas.federation import ImportEventPayload, TrustedNode
 from services.entity_portable import resolve_or_create_portable_entity
 from services.evidence import POCP_META_KEY, hash_evidence
 from services.federation_crypto import import_payload_message, verify_message
+from services.crypto_suite import verify_federation_signatures
 from services.ledger_chain import append_ledger_record
 from services.proof import compute_contribution_proof_hash
 from services.protocol_config import get_rewards_config
@@ -88,7 +89,9 @@ def _verify_import_signature(payload: ImportEventPayload, evidence_hash: str, tr
 
 def _verify_proof_signature(source_node_id: str, proof: dict, trusted: dict[str, TrustedNode]) -> None:
     federation = proof.get("federation") or {}
-    signature = federation.get("signature")
+    signatures = federation.get("signatures") or {}
+    classic = signatures.get("classic") or {}
+    signature = federation.get("signature") or classic.get("signature")
     proof_hash = (proof.get("integrity") or {}).get("proof_hash")
     if not proof_hash:
         raise HTTPException(status_code=400, detail="Proof missing integrity.proof_hash")
@@ -111,14 +114,23 @@ def _verify_proof_signature(source_node_id: str, proof: dict, trusted: dict[str,
     node = trusted.get(source_node_id)
     if node and node.public_key:
         public_key = node.public_key
-    if not public_key:
-        raise HTTPException(status_code=400, detail="No public_key available to verify proof signature")
+    trusted_pqc = getattr(node, "pqc_public_key", None) if node else None
 
-    if not verify_message(proof_hash, signature, public_key):
-        raise HTTPException(status_code=400, detail="Invalid proof federation signature")
+    verify_federation_signatures(
+        federation,
+        proof_hash,
+        trusted_public_key=public_key,
+        trusted_pqc_public_key=trusted_pqc,
+    )
 
 
-def import_federated_event(db: Session, payload: ImportEventPayload) -> FederatedImport:
+def import_federated_event(
+    db: Session,
+    payload: ImportEventPayload,
+    *,
+    proof_signature_verified: bool = False,
+    protocol_excerpt: dict | None = None,
+) -> FederatedImport:
     allow_untrusted = os.getenv("POCP_ALLOW_UNTRUSTED_IMPORT", "false").lower() == "true"
     trusted = _trusted_nodes_map()
     if payload.source_node_id not in trusted and not allow_untrusted:
@@ -148,7 +160,8 @@ def import_federated_event(db: Session, payload: ImportEventPayload) -> Federate
     if content_hash != computed:
         raise HTTPException(status_code=400, detail="Evidence content_hash mismatch")
 
-    _verify_import_signature(payload, content_hash, trusted)
+    if not proof_signature_verified:
+        _verify_import_signature(payload, content_hash, trusted)
 
     primary = resolve_or_create_portable_entity(db, payload.primary_entity_portable_id)
     trust_weight = _trust_weight(payload.source_node_id)
@@ -180,6 +193,10 @@ def import_federated_event(db: Session, payload: ImportEventPayload) -> Federate
         _add_reputation(db, primary.id, amount, "human", reference_id=payload.contribution_id)
         reputation_applied += amount
 
+    stored_payload = payload.model_dump()
+    if protocol_excerpt:
+        stored_payload["protocol_excerpt"] = protocol_excerpt
+
     record = FederatedImport(
         source_node_id=payload.source_node_id,
         source_contribution_id=payload.contribution_id,
@@ -191,7 +208,7 @@ def import_federated_event(db: Session, payload: ImportEventPayload) -> Federate
         ledger_record_hash=payload.ledger_record_hash,
         trust_weight=trust_weight,
         reputation_applied=reputation_applied,
-        payload=payload.model_dump(),
+        payload=stored_payload,
     )
     db.add(record)
     db.flush()
@@ -215,7 +232,13 @@ def import_federated_event(db: Session, payload: ImportEventPayload) -> Federate
     return record
 
 
-def import_from_proof_packet(db: Session, source_node_id: str, proof: dict) -> FederatedImport:
+def import_from_proof_packet(
+    db: Session,
+    source_node_id: str,
+    proof: dict,
+    *,
+    intelligence_bundle: dict | None = None,
+) -> FederatedImport:
     if proof.get("proof_type") != "pocp_contribution_proof":
         raise HTTPException(status_code=400, detail="Invalid proof_type")
 
@@ -233,11 +256,16 @@ def import_from_proof_packet(db: Session, source_node_id: str, proof: dict) -> F
     if os.getenv("POCP_VERIFY_REMOTE_LEDGER", "true").lower() == "true":
         peer = trusted.get(source_node_id)
         if peer:
-            from services.federation_peers import verify_remote_ledger
+            from services.federation_peers import verify_remote_ledger_record
 
-            tip = (proof.get("integrity") or {}).get("ledger_tip_hash")
+            ledger_hashes = (proof.get("ledger_audit") or {}).get("record_hashes") or []
+            approval_hash = (
+                ledger_hashes[-1]
+                if ledger_hashes
+                else (proof.get("integrity") or {}).get("ledger_tip_hash")
+            )
             try:
-                verify_remote_ledger(peer.base_url, expected_tip_hash=tip)
+                verify_remote_ledger_record(peer.base_url, approval_hash)
             except ValueError as exc:
                 raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -274,4 +302,7 @@ def import_from_proof_packet(db: Session, source_node_id: str, proof: dict) -> F
         ledger_record_hash=ledger_hashes[-1] if ledger_hashes else proof.get("integrity", {}).get("ledger_tip_hash") or "",
         signature=None,
     )
-    return import_federated_event(db, payload)
+    from intelligence.federation_intel import protocol_excerpt_from_bundle
+
+    excerpt = protocol_excerpt_from_bundle(proof, intelligence_bundle)
+    return import_federated_event(db, payload, proof_signature_verified=True, protocol_excerpt=excerpt)

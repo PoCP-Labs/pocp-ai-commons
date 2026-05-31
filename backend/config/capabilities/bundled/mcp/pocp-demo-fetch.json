@@ -1,0 +1,20 @@
+{
+  "external_id": "pocp-demo-fetch",
+  "name": "MCP Fetch (demo)",
+  "description": "HTTP fetch tool server — common MCP community pattern for web evidence gathering.",
+  "command": "npx",
+  "args": ["-y", "@modelcontextprotocol/server-fetch"],
+  "tools": [
+    {
+      "name": "fetch",
+      "description": "Fetch a URL and return contents for human/agent review.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string", "format": "uri" }
+        },
+        "required": ["url"]
+      }
+    }
+  ]
+}

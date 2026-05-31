@@ -33,6 +33,8 @@ from schemas import (
     DatasetCreate,
     EntityCreate,
     EntityOut,
+    EntityPatch,
+    EntityReviewIn,
     InvocationCreate,
     InvocationOut,
     LedgerOut,
@@ -49,6 +51,13 @@ from schemas import (
 )
 from intelligence import capability_layer
 from intelligence.entity_ontology import enrich_entity_record, ontology_document
+from services.entity_management import (
+    apply_entity_patch,
+    assert_entity_governable_by_actor,
+    list_pending_for_actor,
+    query_entities,
+    review_entity,
+)
 from services.entity_register import (
     register_dataset,
     register_entity as register_typed_entity,
@@ -91,8 +100,86 @@ def _assert_task_sponsor_allowed(db: Session, sponsor_id: str | None, current_us
 
 
 @router.get("/entities", response_model=list[EntityOut])
-def list_entities(db: Session = Depends(get_db)):
-    return db.query(Entity).order_by(Entity.created_at).all()
+def list_entities(
+    db: Session = Depends(get_db),
+    entity_type: str | None = Query(default=None, description="Filter by entity_type"),
+    status: str | None = Query(default=None, description="active | inactive | pending"),
+    owner_id: str | None = Query(default=None, description="Filter by owner entity id"),
+    q: str | None = Query(default=None, description="Search name or description"),
+    genesis_only: bool = Query(default=False, description="Only protocol genesis entities"),
+):
+    try:
+        return query_entities(
+            db,
+            entity_type=entity_type,
+            status=status,
+            owner_id=owner_id,
+            q=q,
+            genesis_only=genesis_only,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/entity-reviews/pending", response_model=list[EntityOut])
+def list_pending_entity_reviews(
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    return list_pending_for_actor(db, current_user.entity_id)
+
+
+@router.post("/entities/{entity_id}/review", response_model=EntityOut)
+def review_entity_endpoint(
+    entity_id: str,
+    body: EntityReviewIn,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    entity = db.query(Entity).filter(Entity.id == entity_id).first()
+    if not entity:
+        raise HTTPException(status_code=404, detail="Entity not found")
+    try:
+        review_entity(
+            db,
+            entity,
+            actor_entity_id=current_user.entity_id,
+            action=body.action,
+            feedback=body.feedback,
+        )
+        db.commit()
+        db.refresh(entity)
+    except ValueError as exc:
+        msg = str(exc)
+        code = 403 if "authorized" in msg or "Genesis" in msg else 400
+        raise HTTPException(status_code=code, detail=msg) from exc
+    return entity
+
+
+@router.patch("/entities/{entity_id}", response_model=EntityOut)
+def patch_entity(
+    entity_id: str,
+    body: EntityPatch,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    entity = db.query(Entity).filter(Entity.id == entity_id).first()
+    if not entity:
+        raise HTTPException(status_code=404, detail="Entity not found")
+    try:
+        assert_entity_governable_by_actor(db, entity, current_user.entity_id)
+        apply_entity_patch(
+            entity,
+            name=body.name,
+            description=body.description,
+            status=body.status,
+            metadata=body.metadata,
+        )
+        db.commit()
+        db.refresh(entity)
+    except ValueError as exc:
+        raise HTTPException(status_code=403 if "Genesis" in str(exc) else 400, detail=str(exc)) from exc
+    return entity
 
 
 @router.get("/entities/ontology")

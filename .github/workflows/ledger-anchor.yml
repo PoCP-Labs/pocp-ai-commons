@@ -33,6 +33,7 @@ jobs:
             exit 0
           fi
           cd backend
+          pip install -q -r requirements.txt
           python scripts/fetch_anchor.py "$POCP_ANCHOR_NODE_URL" ../anchors
 
       - name: Commit anchor file

@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from models.contribution import ContributionEvent, ContributionParticipant, ParticipantRole
 from models.entity import Entity, EntityType
 from models.wallet import CreditTransaction, CreditType, Wallet
+from services.issuance_budget import assert_issuance_allowed
 from services.ledger_chain import append_ledger_record
 from services.protocol_config import get_rewards_config
 
@@ -96,6 +97,11 @@ def issue_right(
     if amount < 0:
         raise ValueError("Rights issuance amount cannot be negative")
 
+    if kind == "cp":
+        assert_issuance_allowed(db, cp_amount=amount)
+    elif kind == "bc":
+        assert_issuance_allowed(db, bc_amount=amount)
+
     policy = rights_policy()[kind]
     wallet = get_or_create_wallet(db, entity_id)
     current_balance = float(getattr(wallet, policy.wallet_field))
@@ -162,6 +168,56 @@ def contribution_rights_amounts(participant: ContributionParticipant) -> dict[st
         "cp": round(cp_base * weight / 0.4, 2),
         "bc": round(bc_base * weight / 0.4, 2),
     }
+
+
+def entity_equal_enabled() -> bool:
+    return bool(get_rewards_config().get("entity_equal", {}).get("enabled", False))
+
+
+def entity_bc_amount(entity_type: EntityType, participant: ContributionParticipant) -> float | None:
+    if not entity_equal_enabled():
+        return None
+    defaults = get_rewards_config()["contribution_defaults"]
+    if entity_type == EntityType.agent and participant.role in (
+        ParticipantRole.executor,
+        ParticipantRole.creator,
+    ):
+        base = float(defaults.get("agent", {}).get("ai_credits_base", 0))
+        weight = participant.weight or 0.25
+        return round(base * weight / 0.25, 2) if base > 0 else None
+    if entity_type == EntityType.skill and participant.role == ParticipantRole.skill_provider:
+        base = float(defaults.get("skill", {}).get("ai_credits_base", 0))
+        weight = participant.weight or 0.15
+        return round(base * weight / 0.15, 2) if base > 0 else None
+    if entity_type == EntityType.llm and participant.role in (
+        ParticipantRole.model_provider,
+        ParticipantRole.verifier,
+        ParticipantRole.skill_provider,
+    ):
+        base = float(defaults.get("llm", {}).get("ai_credits_base", 0))
+        weight = participant.weight or 0.1
+        return round(base * weight / 0.1, 2) if base > 0 else None
+    return None
+
+
+def issue_entity_bc_grant(
+    db: Session,
+    *,
+    contribution: ContributionEvent,
+    participant: ContributionParticipant,
+    entity: Entity,
+) -> RightsGrant | None:
+    amount = entity_bc_amount(entity.entity_type, participant)
+    if amount is None or amount <= 0:
+        return None
+    return issue_right(
+        db,
+        entity_id=entity.id,
+        contribution_id=contribution.id,
+        kind="bc",
+        amount=amount,
+        reason=f"Entity-equal AI Credits ({entity.entity_type.value}/{participant.role.value})",
+    )
 
 
 def issue_contribution_rights(

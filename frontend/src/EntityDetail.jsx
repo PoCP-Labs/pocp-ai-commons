@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import LogOutreachForm from "./LogOutreachForm";
 
 export default function EntityDetail({
   entity,
@@ -8,10 +9,52 @@ export default function EntityDetail({
   entityMap,
   onBack,
   fetchJson,
+  authenticated = false,
 }) {
   const [audit, setAudit] = useState([]);
   const [portable, setPortable] = useState(null);
+  const [ontologySlice, setOntologySlice] = useState(null);
   const [agentRep, setAgentRep] = useState(null);
+  const [inspirationDetail, setInspirationDetail] = useState(null);
+  const [federationImports, setFederationImports] = useState(null);
+  const [partnerDetail, setPartnerDetail] = useState(null);
+  const [partnerOutreachLog, setPartnerOutreachLog] = useState([]);
+
+  const isPartnerEntity =
+    entity?.metadata?.roles?.includes("community_partner") ||
+    entity?.metadata?.partner_slug;
+
+  const loadPartnerData = useCallback(() => {
+    if (!fetchJson || !entity?.id || !isPartnerEntity) return Promise.resolve();
+    const slug = entity.metadata?.partner_slug;
+    const profilePromise = fetchJson(`/api/v1/community-partners/entities/${entity.id}`)
+      .then((data) => {
+        setPartnerDetail(data);
+      })
+      .catch(() => {
+        setPartnerDetail(null);
+      });
+    const logPromise = slug
+      ? fetchJson(`/api/v1/community-partners/partners/${slug}/outreach-log`)
+          .then((data) => {
+            setPartnerOutreachLog(data.entries || []);
+          })
+          .catch(() => {
+            setPartnerOutreachLog([]);
+          })
+      : Promise.resolve();
+    return Promise.all([profilePromise, logPromise]);
+  }, [entity?.id, entity?.metadata?.partner_slug, fetchJson, isPartnerEntity]);
+
+  const isInspirationEntity =
+    entity?.entity_type === "community" &&
+    (entity?.metadata?.roles?.includes("external_inspiration") ||
+      entity?.id?.startsWith("pocp-insp-") || entity?.id?.startsWith("pocp-entity-inspiration-"));
+  const isFederationPeer =
+    entity?.entity_type === "community" &&
+    (entity?.metadata?.roles?.includes("federation_peer") ||
+      entity?.metadata?.roles?.includes("federation_node") ||
+      entity?.id?.startsWith("pocp-entity-federation-"));
 
   useEffect(() => {
     if (!fetchJson || !entity?.id) return;
@@ -33,6 +76,14 @@ export default function EntityDetail({
         if (!cancelled) setPortable(null);
       });
 
+    fetchJson(`/api/v1/entities/${entity.id}/ontology`)
+      .then((data) => {
+        if (!cancelled) setOntologySlice(data);
+      })
+      .catch(() => {
+        if (!cancelled) setOntologySlice(null);
+      });
+
     if (entity.entity_type === "agent") {
       fetchJson(`/api/v1/agents/${entity.id}/reputation/summary`)
         .then((data) => {
@@ -43,10 +94,37 @@ export default function EntityDetail({
         });
     }
 
+    if (isInspirationEntity) {
+      fetchJson(`/api/v1/external-inspirations/entities/${entity.id}`)
+        .then((data) => {
+          if (!cancelled) setInspirationDetail(data);
+        })
+        .catch(() => {
+          if (!cancelled) setInspirationDetail(null);
+        });
+    } else {
+      setInspirationDetail(null);
+    }
+
+    fetchJson(`/api/v1/federation/entities/${entity.id}/imports?limit=8`)
+      .then((data) => {
+        if (!cancelled) setFederationImports(data);
+      })
+      .catch(() => {
+        if (!cancelled) setFederationImports(null);
+      });
+
+    if (isPartnerEntity) {
+      loadPartnerData();
+    } else {
+      setPartnerDetail(null);
+      setPartnerOutreachLog([]);
+    }
+
     return () => {
       cancelled = true;
     };
-  }, [entity?.id, entity?.entity_type, fetchJson]);
+  }, [entity?.id, entity?.entity_type, entity?.metadata?.roles, fetchJson, isInspirationEntity, isPartnerEntity, loadPartnerData]);
 
   const relatedContributions = contributions.filter(
     (c) =>
@@ -78,9 +156,30 @@ export default function EntityDetail({
           {entity.metadata?.portable_id && (
             <div className="entity-row__mission">Portable: {entity.metadata.portable_id}</div>
           )}
-          {entity.metadata?.roles?.length > 0 && (
+          {entity.metadata?.github_url && (
             <div className="entity-row__mission" style={{ marginTop: 8 }}>
-              Roles: {entity.metadata.roles.join(", ")}
+              <a href={entity.metadata.github_url} target="_blank" rel="noreferrer">
+                {entity.metadata.github_url}
+              </a>
+            </div>
+          )}
+          {entity.metadata?.inspiration_status && (
+            <div className="entity-row__mission" style={{ marginTop: 8 }}>
+              Relationship: {entity.metadata.inspiration_status.replace(/_/g, " ")}
+            </div>
+          )}
+          {isFederationPeer && entity.metadata?.node_id && (
+            <div className="entity-row__mission" style={{ marginTop: 8 }}>
+              Node ID: {entity.metadata.node_id}
+              {entity.metadata.trust_weight != null ? ` · trust ${entity.metadata.trust_weight}` : ""}
+            </div>
+          )}
+          {isFederationPeer && entity.metadata?.base_url && (
+            <div className="entity-row__mission">{entity.metadata.base_url}</div>
+          )}
+          {entity.metadata?.decline_reason && (
+            <div className="entity-row__mission" style={{ marginTop: 8, color: "var(--text-dim)" }}>
+              {entity.metadata.decline_reason}
             </div>
           )}
         </div>
@@ -99,6 +198,147 @@ export default function EntityDetail({
           </div>
         )}
       </div>
+
+      {entity.metadata?.roles?.length > 0 && (
+        <div className="entity-row__mission" style={{ marginBottom: 12 }}>
+          Roles: {entity.metadata.roles.join(", ")}
+        </div>
+      )}
+
+      {ontologySlice?.ontology && (
+        <div className="mini-card" style={{ marginBottom: 12 }}>
+          <strong>Entity ontology</strong>
+          <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: 6 }}>
+            {ontologySlice.ontology.type_spec?.description ||
+              ontologySlice.ontology.type_spec?.description_zh}
+          </div>
+          {(ontologySlice.ontology.typical_roles || []).length > 0 && (
+            <div style={{ fontSize: "0.75rem", marginTop: 6 }}>
+              Typical roles: {ontologySlice.ontology.typical_roles.join(", ")}
+            </div>
+          )}
+          {ontologySlice.ontology.accountable_principal && (
+            <div style={{ fontSize: "0.75rem", marginTop: 4, color: "var(--btc)" }}>
+              Accountability anchor
+            </div>
+          )}
+        </div>
+      )}
+
+      {inspirationDetail && (
+        <>
+          <h3 style={{ fontSize: "0.9rem", marginBottom: 8 }}>Borrowed Contributions to PoCP</h3>
+          {(inspirationDetail.recorded_contributions || inspirationDetail.contributions || []).map((c) => (
+            <div key={c.contribution_id || c.id} className="mini-card">
+              <strong>{c.title}</strong>
+              {(c.pocp_modules || []).length > 0 && (
+                <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: 4 }}>
+                  Modules: {(c.pocp_modules || []).slice(0, 3).join(", ")}
+                  {(c.pocp_modules || []).length > 3 ? "…" : ""}
+                </div>
+              )}
+              {(c.api_paths || []).length > 0 && (
+                <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: 4 }}>
+                  APIs: {(c.api_paths || []).slice(0, 2).join(" · ")}
+                </div>
+              )}
+            </div>
+          ))}
+        </>
+      )}
+
+      {partnerDetail && (
+        <>
+          <h3 style={{ fontSize: "0.9rem", marginBottom: 8 }}>Community Partnership</h3>
+          <div className="mini-card">
+            Status: <strong>{partnerDetail.partnership_status?.replace(/_/g, " ") || "—"}</strong>
+            {partnerDetail.community_kind && (
+              <span> · {partnerDetail.community_kind.replace(/_/g, " ")}</span>
+            )}
+            {(partnerDetail.alignment || []).length > 0 && (
+              <div style={{ fontSize: "0.75rem", marginTop: 6 }}>
+                Alignment: {partnerDetail.alignment.join(", ")}
+              </div>
+            )}
+            {(partnerDetail.capabilities_offered || []).length > 0 && (
+              <div style={{ fontSize: "0.75rem", marginTop: 6 }}>
+                Offers:{" "}
+                {(partnerDetail.capabilities_offered || [])
+                  .map((c) => `${c.capability}${c.label ? ` (${c.label})` : ""}`)
+                  .join(" · ")}
+              </div>
+            )}
+            {(partnerDetail.capabilities_sought || []).length > 0 && (
+              <div style={{ fontSize: "0.75rem", marginTop: 4, color: "var(--text-dim)" }}>
+                Seeks:{" "}
+                {(partnerDetail.capabilities_sought || [])
+                  .map((c) => `${c.capability}${c.label ? ` (${c.label})` : ""}`)
+                  .join(" · ")}
+              </div>
+            )}
+            {partnerDetail.outreach?.next_action && (
+              <div style={{ fontSize: "0.75rem", marginTop: 6, color: "var(--ai)" }}>
+                Next outreach: {partnerDetail.outreach.next_action}
+              </div>
+            )}
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <LogOutreachForm
+              slug={partnerDetail.slug || entity.metadata?.partner_slug}
+              currentStatus={partnerDetail.partnership_status}
+              fetchJson={fetchJson}
+              authenticated={authenticated}
+              onSuccess={loadPartnerData}
+            />
+          </div>
+          {partnerOutreachLog.length > 0 && (
+            <>
+              <h4 style={{ fontSize: "0.82rem", margin: "12px 0 6px" }}>Outreach Log</h4>
+              {partnerOutreachLog.slice(0, 5).map((entry, idx) => (
+                <div key={`${entry.at}-${idx}`} className="mini-card">
+                  <strong>{entry.event_type?.replace(/_/g, " ")}</strong>
+                  {entry.notes && (
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: 4 }}>{entry.notes}</div>
+                  )}
+                  <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: 4 }}>{entry.at}</div>
+                </div>
+              ))}
+            </>
+          )}
+        </>
+      )}
+
+      {federationImports &&
+        (federationImports.received_count > 0 || federationImports.exported_count > 0) && (
+          <>
+            {federationImports.received_count > 0 && (
+              <>
+                <h3 style={{ fontSize: "0.9rem", margin: "16px 0 8px" }}>Federated Imports Received</h3>
+                {federationImports.received_imports.map((item) => (
+                  <div key={item.id} className="mini-card">
+                    <strong>{item.task_title}</strong>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: 4 }}>
+                      From {item.peer_entity_name || item.source_node_id} · rep +{item.reputation_applied}
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+            {federationImports.exported_count > 0 && (
+              <>
+                <h3 style={{ fontSize: "0.9rem", margin: "16px 0 8px" }}>Contributions Exported via Federation</h3>
+                {federationImports.exported_imports.map((item) => (
+                  <div key={item.id} className="mini-card">
+                    <strong>{item.task_title}</strong>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: 4 }}>
+                      Imported locally for {item.primary_entity_name || item.primary_portable_id}
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+          </>
+        )}
 
       {portable?.federation?.total_score > 0 && (
         <div className="mini-card mini-card--rep" style={{ marginBottom: 12 }}>

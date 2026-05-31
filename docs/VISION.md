@@ -10,7 +10,7 @@ The PC Internet connected information. The Mobile Internet connected people and 
 
 When AI drives the marginal cost of knowledge, code, and content toward zero, what becomes scarce is not capability alone, but **trusted contribution, responsibility, judgment, collaboration, and reputation**. PoCP builds a verifiable ledger and allocation mechanism for these.
 
-See also: [CONTRIBUTION-INTERNET.md](./CONTRIBUTION-INTERNET.md) · [PROTOCOL.md](./PROTOCOL.md) · [SCHEMA.md](./SCHEMA.md)
+See also: [CONTRIBUTION-INTERNET.md](./CONTRIBUTION-INTERNET.md) · [INTELLECTUAL-EQUALITY.md](./INTELLECTUAL-EQUALITY.md) · [PROTOCOL.md](./PROTOCOL.md) · [SCHEMA.md](./SCHEMA.md)
 
 ---
 
@@ -105,6 +105,28 @@ What impact resulted
 
 This graph powers recommendation, allocation, governance, and trust across the AI collaboration economy.
 
+### 11. Distributed Entity market (economic thesis)
+
+PoCP is **not** a centralized compute center that sells tokens. It enables a **contribution-attributed bilateral market**:
+
+```text
+Entity providers sell compute + intelligence → earn settlement Token (AI Credits in Pilot)
+Consumers spend Token on the network → debited from Wallet
+Every trade → ComputeReceipt / IntelReceipt → Proof → Ledger
+```
+
+This closes the economic loop beyond “platform grants credits for contribution”:
+
+```text
+Contribute → verify → earn → consume peer Entity services → providers earn → reinvest
+```
+
+Metering uses LLM Token usage (and intel equivalents); settlement uses **AI Credits** until governance may introduce an optional protocol token ([NO-TOKEN-FIRST.md](../NO-TOKEN-FIRST.md)).
+
+See: [ENTITY-MARKET-SPEC.md](./ENTITY-MARKET-SPEC.md) · [COMPUTE-METERING-SPEC.md](./COMPUTE-METERING-SPEC.md)
+
+> Sell compute and intelligence as an Entity; buy with Token; prove with Receipt.
+
 ---
 
 ## Evolution Phases
@@ -115,7 +137,8 @@ This graph powers recommendation, allocation, governance, and trust across the A
 | **2** | Contribution → reputation and opportunity |
 | **3** | Humans, Agents, Skills form a Contribution Graph |
 | **4** | Graph supports governance, resource allocation, task collaboration |
-| **5** | PoCP becomes a public value protocol for the AI era |
+| **5** | **Entity bilateral market** — Token-metered compute/intelligence trade between providers and consumers |
+| **6** | PoCP becomes a public value protocol for the AI era |
 
 ---
 
@@ -144,7 +167,7 @@ This graph powers recommendation, allocation, governance, and trust across the A
 
 | Risk | Guardrail |
 |------|-----------|
-| Points farming | Quality verification + human review |
+| Points farming | Quality verification + policy finalization |
 | Platform extraction | Value flows back via ledger |
 | Social credit abuse | Voluntary participation, transparent purpose |
 | AI review bias | AI suggests only; humans confirm |

@@ -15,9 +15,12 @@ from services.rights_conversion import rights_rules_manifest
 from services.compute_registry import compute_status_manifest
 from services.oss_entity_registry import ensure_all_oss_entities, list_oss_entity_specs
 from services.peer_compute import list_peer_compute_status, validate_peer_witness_request
+from services.peer_trust import issue_peer_challenge, peer_trust_manifest
 from services.peer_mcp import peer_mcp_enabled
 from services.remote_mcp_invoke import run_remote_mcp_invoke
 from services.remote_witness import run_witness
+from services.a2a_agent_card import build_entity_agent_card, build_node_agent_card
+from services.a2a_task_bridge import handle_jsonrpc_call
 from models.user_account import UserAccount
 from routers.auth import require_current_user
 
@@ -183,6 +186,18 @@ def compute_peers():
     return list_peer_compute_status()
 
 
+@router.get("/compute/peer/trust")
+def compute_peer_trust():
+    """Peer handshake manifest — algorithms, headers, challenge endpoint (BI-2)."""
+    return peer_trust_manifest()
+
+
+@router.get("/compute/peer/challenge")
+def compute_peer_challenge(node_id: str | None = Query(default=None)):
+    """Issue one-time handshake nonce for challenge-response peer auth."""
+    return issue_peer_challenge(node_id=node_id)
+
+
 @router.post("/compute/witness")
 async def compute_witness(body: WitnessRequest, request: Request):
     """Run one witness provider — callable by trusted peer nodes for federated verify."""
@@ -190,7 +205,10 @@ async def compute_witness(body: WitnessRequest, request: Request):
     if not validate_peer_witness_request(headers):
         raise HTTPException(
             status_code=403,
-            detail="Peer witness denied. Set POCP_ALLOW_PEER_WITNESS=true or X-POCP-Peer-Secret.",
+            detail=(
+                "Peer witness denied. Configure POCP_PEER_COMPUTE_SECRET handshake, "
+                "Ed25519 trusted node key, POCP_ALLOW_PEER_WITNESS dev bypass, or legacy X-POCP-Peer-Secret."
+            ),
         )
     result = await run_witness(body.context, provider=body.provider)
     return {
@@ -210,7 +228,10 @@ async def compute_inference(body: ComputeInferenceRequest, request: Request):
     if not validate_peer_witness_request(headers):
         raise HTTPException(
             status_code=403,
-            detail="Peer inference denied. Set POCP_ALLOW_PEER_WITNESS=true or X-POCP-Peer-Secret.",
+            detail=(
+                "Peer inference denied. Configure POCP_PEER_COMPUTE_SECRET handshake, "
+                "Ed25519 trusted node key, or dev bypass POCP_ALLOW_PEER_WITNESS."
+            ),
         )
     output, provider, model = await generate_ai_reply(
         body.prompt,
@@ -239,7 +260,10 @@ async def compute_mcp_invoke(
     if not validate_peer_witness_request(headers):
         raise HTTPException(
             status_code=403,
-            detail="Peer MCP denied. Set POCP_ALLOW_PEER_WITNESS=true or X-POCP-Peer-Secret.",
+            detail=(
+                "Peer MCP denied. Configure POCP_PEER_COMPUTE_SECRET handshake, "
+                "Ed25519 trusted node key, or dev bypass POCP_ALLOW_PEER_WITNESS."
+            ),
         )
     result = await run_remote_mcp_invoke(
         db,
@@ -278,6 +302,96 @@ def semantic_dedup_check(
         evidence=body.evidence,
         exclude_contribution_id=body.exclude_contribution_id,
     )
+
+
+@router.get("/agent-card")
+def node_agent_card(db: Session = Depends(get_db)):
+    """A2A Agent Card for this PoCP node — mirrors /.well-known/agent.json."""
+    return build_node_agent_card(db)
+
+
+@router.get("/entities/{entity_id}/agent-card")
+def entity_agent_card(entity_id: str, db: Session = Depends(get_db)):
+    """A2A Agent Card for a PoCP Entity (ComputeProfile + declared capabilities)."""
+    card = build_entity_agent_card(db, entity_id)
+    if card is None:
+        raise HTTPException(status_code=404, detail="Entity not found")
+    return card
+
+
+@router.get("/entities/{entity_id}/a2a")
+def entity_a2a_surface(entity_id: str, db: Session = Depends(get_db)):
+    """A2A service descriptor — Agent Card + JSON-RPC task bridge."""
+    card = build_entity_agent_card(db, entity_id)
+    if card is None:
+        raise HTTPException(status_code=404, detail="Entity not found")
+    return {
+        "protocol": "a2a",
+        "protocol_version": card["pocp"]["a2a_protocol_version"],
+        "agent_card": card,
+        "jsonrpc_endpoint": f"/api/v1/intelligence/entities/{entity_id}/a2a",
+        "methods": ["SendMessage", "GetTask", "ListTasks", "GetAgentCard"],
+        "task_bridge": {
+            "contribution_bound": True,
+            "auto_finalization_enabled": True,
+            "send_message_maps_to": "ContributionEvent",
+            "auto_verify": f"/api/v1/contributions/{{contribution_id}}/auto-verify",
+        },
+    }
+
+
+@router.post("/entities/{entity_id}/a2a")
+async def entity_a2a_jsonrpc(
+    entity_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    """A2A JSON-RPC 2.0 — SendMessage creates Contribution bound to target Entity."""
+    card = build_entity_agent_card(db, entity_id)
+    if card is None:
+        raise HTTPException(status_code=404, detail="Entity not found")
+    payload = await request.json()
+    if isinstance(payload, list):
+        raise HTTPException(status_code=400, detail="JSON-RPC batch not supported in v0.1")
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="JSON-RPC body must be an object")
+    return handle_jsonrpc_call(db, user=current_user, payload=payload, target_entity_id=entity_id)
+
+
+@router.get("/a2a")
+def node_a2a_surface(db: Session = Depends(get_db)):
+    """Node-level A2A service descriptor."""
+    card = build_node_agent_card(db)
+    return {
+        "protocol": "a2a",
+        "protocol_version": card["pocp"]["a2a_protocol_version"],
+        "agent_card": card,
+        "jsonrpc_endpoint": "/api/v1/intelligence/a2a",
+        "methods": ["SendMessage", "GetTask", "ListTasks", "GetAgentCard"],
+        "entity_cards": "/api/v1/intelligence/entities/{entity_id}/agent-card",
+        "well_known": "/.well-known/agent.json",
+        "task_bridge": {
+            "contribution_bound": True,
+            "auto_finalization_enabled": True,
+            "send_message_maps_to": "ContributionEvent",
+        },
+    }
+
+
+@router.post("/a2a")
+async def node_a2a_jsonrpc(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    """Node-level A2A JSON-RPC 2.0 — SendMessage → Contribution (optional targetEntityId in metadata)."""
+    payload = await request.json()
+    if isinstance(payload, list):
+        raise HTTPException(status_code=400, detail="JSON-RPC batch not supported in v0.1")
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="JSON-RPC body must be an object")
+    return handle_jsonrpc_call(db, user=current_user, payload=payload, target_entity_id=None)
 
 
 @router.get("/entities/{entity_id}/profile")
