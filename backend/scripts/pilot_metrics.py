@@ -119,6 +119,8 @@ def _collect_from_api(base: str, *, days: int) -> dict[str, Any]:
     intelligence_status = _http_get_optional(base, "/api/v1/intelligence/status")
     ledger_verify = _http_get_optional(base, "/api/v1/ledger/verify")
     federation_imports = _http_get_optional(base, "/api/v1/federation/imports")
+    trust_policy_bundle = _http_get_optional(base, "/api/v1/federation/trust-policy-bundle")
+    graph_meta = _http_get_optional(base, "/api/v1/graph")
 
     return _build_metrics(
         source=f"api:{base}",
@@ -132,6 +134,8 @@ def _collect_from_api(base: str, *, days: int) -> dict[str, Any]:
         intelligence_status=intelligence_status,
         ledger_verify=ledger_verify,
         federation_imports=federation_imports,
+        trust_policy_bundle=trust_policy_bundle,
+        graph_meta=graph_meta,
     )
 
 
@@ -265,6 +269,8 @@ def _build_metrics(
     intelligence_status: dict | None,
     ledger_verify: dict | None,
     federation_imports: list | dict | None,
+    trust_policy_bundle: dict | None = None,
+    graph_meta: dict | None = None,
 ) -> dict[str, Any]:
     now = datetime.now(timezone.utc)
     window_start = now - timedelta(days=days)
@@ -378,6 +384,9 @@ def _build_metrics(
         "federation_imports": import_count,
         "ledger_valid": (ledger_verify or {}).get("valid"),
         "ledger_record_count": (ledger_verify or {}).get("count"),
+        "trust_policy_fingerprint": (trust_policy_bundle or {}).get("bundle_fingerprint"),
+        "trust_policy_strict": (trust_policy_bundle or {}).get("strict_mode_active"),
+        "graph_edge_layers": (graph_meta or {}).get("edge_layer_counts"),
     }
 
     intelligence_layer = {
@@ -461,6 +470,11 @@ def _print_human(report: dict) -> None:
             print("    hint: federation imports accrue on mirror/importing nodes (Epic D Node B)")
     if p.get("ledger_valid") is not None:
         print(f"  ledger valid:        {p['ledger_valid']}  records={p.get('ledger_record_count')}")
+    if p.get("trust_policy_fingerprint"):
+        strict = "strict" if p.get("trust_policy_strict") else "advisory"
+        print(f"  trust policy:        {p['trust_policy_fingerprint']} ({strict})")
+    if p.get("graph_edge_layers"):
+        print(f"  graph edge layers:   {p['graph_edge_layers']}")
     print()
 
     i = report["distributed_intelligence_layer"]

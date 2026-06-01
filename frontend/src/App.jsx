@@ -6,6 +6,7 @@ import CapabilityDirectory from "./CapabilityDirectory";
 import ComputePoolPanel from "./ComputePoolPanel";
 import ProviderPanel from "./ProviderPanel";
 import EntityDetail from "./EntityDetail";
+import SubmitFlow from "./SubmitFlow";
 import CryptoReadinessPanel from "./CryptoReadinessPanel";
 import ProofVerifyPanel, { CryptoReadinessBadge, LedgerVerifyBadge } from "./ProofVerifyPanel";
 import WalletPanel from "./WalletPanel";

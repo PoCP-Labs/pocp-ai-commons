@@ -4,7 +4,7 @@
 Runs (when nodes are up):
   1. Health check Node A (+ optional Node B)
   2. smoke_test on Node A (optional --skip-smoke)
-  3. federation_demo_test (if Node B reachable)
+  3. federation preflight + demo + strict-mode (if Node B reachable)
   4. pilot_metrics on each node
 
 Start federation stack first:
@@ -126,8 +126,20 @@ def main() -> int:
     if node_b and _health_ok(node_b):
         print(f"OK Node B health: {node_b}")
         code = _run(
+            [sys.executable, "scripts/federation_pilot_preflight.py", node_a, node_b],
+            label="Federation preflight (trust bundle + validate-proof)",
+        )
+        if code != 0:
+            return code
+        code = _run(
             [sys.executable, "scripts/federation_demo_test.py", node_a, node_b],
             label="Epic D federation demo",
+        )
+        if code != 0:
+            return code
+        code = _run(
+            [sys.executable, "scripts/federation_strict_mode_test.py", node_a, node_b],
+            label="Federation strict-mode pilot",
         )
         if code != 0:
             return code

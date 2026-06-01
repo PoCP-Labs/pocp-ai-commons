@@ -1,0 +1,17 @@
+# Trust Policy Bundle — instance rules for federation import validation
+# See docs/protocol/TRUST-POLICY-BUNDLE.md
+
+spec_version: "0.1"
+bundle_id: pocp_trust_policy_v1
+
+import_rules:
+  proof_type: pocp_contribution_proof
+  allowed_contribution_statuses:
+    - approved
+  require_integrity_proof_hash: true
+  require_evidence_content_hash: true
+  validate_participant_roles: true
+  validate_invocation_edges: true
+  enforce_invocation_matrix_strict: false
+  require_capability_receipt_on_steps: false
+  min_witness_count: 0

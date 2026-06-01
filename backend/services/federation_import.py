@@ -18,6 +18,7 @@ from services.ledger_chain import append_ledger_record
 from services.proof import compute_contribution_proof_hash
 from services.protocol_config import get_rewards_config
 from services.trust_config import trusted_nodes_map as _trusted_nodes_map
+from services.trust_policy_bundle import validate_proof_against_trust_policy
 
 
 def _trust_weight(source_node_id: str) -> float:
@@ -253,6 +254,8 @@ def import_from_proof_packet(
 
     _verify_proof_signature(source_node_id, proof, trusted)
 
+    trust_validation = validate_proof_against_trust_policy(proof, source_node_id=source_node_id)
+
     if os.getenv("POCP_VERIFY_REMOTE_LEDGER", "true").lower() == "true":
         peer = trusted.get(source_node_id)
         if peer:
@@ -305,4 +308,5 @@ def import_from_proof_packet(
     from intelligence.federation_intel import protocol_excerpt_from_bundle
 
     excerpt = protocol_excerpt_from_bundle(proof, intelligence_bundle)
+    excerpt["trust_policy_validation"] = trust_validation
     return import_federated_event(db, payload, proof_signature_verified=True, protocol_excerpt=excerpt)

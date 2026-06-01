@@ -153,6 +153,8 @@ class EntityOntologyTests(unittest.TestCase):
         self.assertEqual(enriched["entity_type"], "human")
         self.assertTrue(enriched["ontology"]["accountable_principal"])
         self.assertIn("creator", enriched["ontology"]["typical_roles"])
+        self.assertIn("connections", enriched)
+        self.assertIn("agent", enriched["connections"]["can_own_types"])
 
 
 if __name__ == "__main__":

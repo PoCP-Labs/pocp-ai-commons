@@ -112,6 +112,22 @@ def main() -> None:
     assert fed.get("signature"), "proof missing federation Ed25519 signature"
     print(f"OK signed proof from Node A ({approved[0][:8]}…)")
 
+    bundle_b = req(NODE_B, "GET", "/api/v1/federation/trust-policy-bundle")
+    assert bundle_b.get("schema") == "pocp.trust_policy_bundle.v0.1", bundle_b
+    print(f"OK trust policy bundle on Node B fingerprint={bundle_b.get('bundle_fingerprint')}")
+
+    validation = req(
+        NODE_B,
+        "POST",
+        "/api/v1/federation/validate-proof",
+        {"source_node_id": "node-a", "proof": proof},
+    )
+    assert validation.get("blocking_valid") is True, validation
+    print(
+        f"OK validate-proof preflight checks={validation.get('check_count')} "
+        f"failed={validation.get('failed_count', 0)}"
+    )
+
     imports_before = req(NODE_B, "GET", "/api/v1/federation/imports")
     sync = req(NODE_B, "POST", "/api/v1/federation/sync")
     assert sync["errors"] == 0, sync

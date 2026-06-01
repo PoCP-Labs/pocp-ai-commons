@@ -31,6 +31,27 @@ _HUB_INBOUND_ROLES = {
     ParticipantRole.tool_provider: "provides_tool",
     ParticipantRole.data_provider: "provides_data",
 }
+
+# Entity connection layers — see docs/protocol/ENTITY-CONNECTION.md
+_STRUCTURAL_RELATIONS = frozenset({"owns", "created", "founded"})
+_OPERATIONAL_RELATIONS = frozenset(
+    {"uses", "calls", "invokes_llm", "invokes_mcp", "hosts_inference", "hosts"}
+)
+
+
+def infer_connection_layer(edge: dict) -> str:
+    """Map graph edge relation to structural / protocol / operational layer."""
+    explicit = edge.get("connection_layer")
+    if explicit in ("structural", "protocol", "operational"):
+        return explicit
+    relation = edge.get("relation") or ""
+    if relation in _STRUCTURAL_RELATIONS:
+        return "structural"
+    if relation in _OPERATIONAL_RELATIONS:
+        return "operational"
+    return "protocol"
+
+
 def _contribution_hub_id(contribution_id: str) -> str:
     return f"{CONTRIBUTION_HUB_PREFIX}{contribution_id}"
 
@@ -73,7 +94,9 @@ def _append_edge(edges: list[dict], edge: dict) -> None:
         for e in edges
     ):
         return
-    edges.append(edge)
+    tagged = dict(edge)
+    tagged.setdefault("connection_layer", infer_connection_layer(tagged))
+    edges.append(tagged)
 
 
 def build_contribution_graph(db: Session) -> dict:
@@ -146,6 +169,7 @@ def build_contribution_graph(db: Session) -> dict:
                     "source": RAIN_ID,
                     "target": e.id,
                     "relation": "sponsors",
+                    "connection_layer": "structural",
                     "contribution_id": None,
                     "weight": 1.0,
                 },
@@ -410,6 +434,11 @@ def build_contribution_graph(db: Session) -> dict:
     exchange_nodes = sum(1 for n in nodes if n["entity_type"] == "exchange")
     federation_import_nodes = sum(1 for n in nodes if n["entity_type"] == "federation_import")
     ledger_nodes = sum(1 for n in nodes if n["entity_type"] == "ledger")
+    layer_counts = {"structural": 0, "protocol": 0, "operational": 0}
+    for edge in edges:
+        layer = edge.get("connection_layer") or infer_connection_layer(edge)
+        if layer in layer_counts:
+            layer_counts[layer] += 1
     return {
         "nodes": nodes,
         "edges": edges,
@@ -418,4 +447,10 @@ def build_contribution_graph(db: Session) -> dict:
         "exchange_node_count": exchange_nodes,
         "federation_import_node_count": federation_import_nodes,
         "ledger_node_count": ledger_nodes,
+        "connection_layers": {
+            "structural": "ownership & accountability (owns, created, founded)",
+            "protocol": "contribution participants & verification (submits, witnesses, …)",
+            "operational": "invocation trace (uses, calls, invokes_llm, …)",
+        },
+        "edge_layer_counts": layer_counts,
     }

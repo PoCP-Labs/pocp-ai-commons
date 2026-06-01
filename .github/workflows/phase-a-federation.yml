@@ -1,23 +1,26 @@
 name: Phase A Federation Acceptance
 
-  on:
+on:
   push:
     branches: [main, master, graph-network-animation]
     paths:
       - "backend/**"
       - "docker-compose.federation.yml"
+      - "docker-compose.federation.strict.yml"
       - ".github/workflows/phase-a-federation.yml"
       - "scripts/run-phase-a.sh"
+      - "scripts/run-phase-a.ps1"
   pull_request:
     paths:
       - "backend/**"
       - "docker-compose.federation.yml"
+      - "docker-compose.federation.strict.yml"
   workflow_dispatch:
 
 jobs:
   federation-acceptance:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v4
@@ -48,12 +51,28 @@ jobs:
             sleep 3
           done
 
+      - name: Enable strict trust policy on Node B
+        run: |
+          docker compose -f docker-compose.federation.yml -f docker-compose.federation.strict.yml up -d backend-b
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:8101/health >/dev/null; then
+              echo "Node B strict mode ready"
+              break
+            fi
+            sleep 2
+          done
+          curl -sf http://127.0.0.1:8101/api/v1/federation/trust-policy-bundle | python -c \
+            "import json,sys; b=json.load(sys.stdin); assert b.get('strict_mode_active') is True, b"
+
       - name: Run Phase A federation acceptance
         run: |
           python backend/scripts/run_phase_a_acceptance.py \
             http://127.0.0.1:8100 \
             --federation http://127.0.0.1:8101 \
             --skip-optional
+
+      - name: Entity Network Pilot demo
+        run: python backend/scripts/run_entity_pilot_demo.py --skip-smoke
 
       - name: Federation logs on failure
         if: failure()

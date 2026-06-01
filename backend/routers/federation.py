@@ -31,6 +31,10 @@ from services.federation_community import (
 )
 from services.node_mode import node_mode
 from services.trust_config import load_trusted_nodes, trust_list_hash, trusted_nodes_source
+from services.trust_policy_bundle import (
+    trust_policy_bundle_manifest,
+    validate_proof_against_trust_policy,
+)
 
 router = APIRouter(prefix="/api/v1/federation", tags=["federation"])
 
@@ -92,6 +96,8 @@ def get_node_info():
             f"{backend_url}/api/v1/federation/reputation?portable_id={{portable_id}}",
             f"{backend_url}/api/v1/federation/peers/health",
             f"{backend_url}/api/v1/federation/sync",
+            f"{backend_url}/api/v1/federation/trust-policy-bundle",
+            f"{backend_url}/api/v1/federation/validate-proof",
             f"{backend_url}/api/v1/federation/settlement/intent",
             f"{backend_url}/api/v1/federation/settlements",
             f"{backend_url}/api/v1/intelligence/federation/export/{{contribution_id}}",
@@ -169,6 +175,27 @@ def get_trust_list():
         trusted_nodes=nodes,
         source=trusted_nodes_source(),
         trust_list_hash=trust_list_hash(nodes) if nodes else None,
+    )
+
+
+@router.get("/trust-policy-bundle")
+def get_trust_policy_bundle():
+    """Active trust + finalization + entity-connection + import rules for this node."""
+    return trust_policy_bundle_manifest()
+
+
+class ValidateProofIn(BaseModel):
+    source_node_id: str | None = None
+    proof: dict
+
+
+@router.post("/validate-proof")
+def validate_proof_endpoint(body: ValidateProofIn):
+    """Dry-run trust policy validation without importing."""
+    return validate_proof_against_trust_policy(
+        body.proof,
+        source_node_id=body.source_node_id,
+        raise_on_block=False,
     )
 
 

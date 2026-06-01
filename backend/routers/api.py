@@ -51,6 +51,7 @@ from schemas import (
 )
 from intelligence import capability_layer
 from intelligence.entity_ontology import enrich_entity_record, ontology_document
+from services.entity_connections import build_entity_connections, entity_connection_matrix
 from services.entity_management import (
     apply_entity_patch,
     assert_entity_governable_by_actor,
@@ -188,12 +189,31 @@ def get_entities_ontology():
     return ontology_document()
 
 
+@router.get("/entities/connections/matrix")
+def get_entity_connections_matrix():
+    """Type-level Entity connection rules — structural, protocol, operational layers."""
+    return entity_connection_matrix()
+
+
 @router.get("/entities/{entity_id}/ontology")
 def get_entity_ontology_slice(entity_id: str, db: Session = Depends(get_db)):
     entity = db.query(Entity).filter(Entity.id == entity_id).first()
     if not entity:
         raise HTTPException(status_code=404, detail="Entity not found")
     return enrich_entity_record(entity)
+
+
+@router.get("/entities/{entity_id}/connections")
+def get_entity_connections(
+    entity_id: str,
+    db: Session = Depends(get_db),
+    limit: int = Query(default=50, ge=1, le=200),
+):
+    """Three-layer connection view for one Entity instance."""
+    payload = build_entity_connections(db, entity_id, limit=limit)
+    if payload is None:
+        raise HTTPException(status_code=404, detail="Entity not found")
+    return payload
 
 
 @router.post("/entities/{entity_id}/compute/register")

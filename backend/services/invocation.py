@@ -2,8 +2,22 @@
 
 from sqlalchemy.orm import Session
 
+from intelligence.entity_ontology import validate_invocation_edge
 from models.entity import Entity, EntityType
 from models.invocation import InvocationStatus, InvocationStep, InvocationTrace
+
+
+def _assert_step_edge(db: Session, source_id: str, target_id: str, action: str) -> None:
+    source = db.query(Entity).filter(Entity.id == source_id).first()
+    target = db.query(Entity).filter(Entity.id == target_id).first()
+    if not source or not target:
+        return
+    validate_invocation_edge(
+        source.entity_type.value,
+        target.entity_type.value,
+        action,
+        strict=True,
+    )
 
 
 def record_invocation(
@@ -76,6 +90,7 @@ def record_invocation(
         order += 1
 
     for s in steps:
+        _assert_step_edge(db, s.source_entity_id, s.target_entity_id, s.action)
         db.add(s)
 
     db.flush()

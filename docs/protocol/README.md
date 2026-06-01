@@ -9,6 +9,9 @@ Entities publish supply; consumers invoke by the unit; the exchange chain + ledg
 | [CHAIN-AND-NODE-PLAN-v0.1.md](./CHAIN-AND-NODE-PLAN-v0.1.md) | **Start here (engineering)** — chains + nodes |
 | [EXCHANGE-SPINE-v0.1.md](./EXCHANGE-SPINE-v0.1.md) | Exchange events (`exchange_settled`) |
 | [CAPABILITY-SCHEMA-v0.3.md](./CAPABILITY-SCHEMA-v0.3.md) | Capability types & units |
+| [ENTITY-CONNECTION.md](./ENTITY-CONNECTION.md) | **Entity linking** — structural / protocol / operational |
+| [TRUST-POLICY-BUNDLE.md](./TRUST-POLICY-BUNDLE.md) | **Federation import** — trust + finalization + validation |
+| [INVOCATION-SCHEMA-v0.3.md](./INVOCATION-SCHEMA-v0.3.md) | InvocationTrace + step matrix |
 | [CONSTITUTION-v0.1.md](./CONSTITUTION-v0.1.md) | Invariants |
 | [ENTITY-NODE-MANIFEST-v0.1.md](./ENTITY-NODE-MANIFEST-v0.1.md) | Node manifest (→ v0.2 facets) |
 | [THREAT-MODEL-v0.1.md](./THREAT-MODEL-v0.1.md) | Security |

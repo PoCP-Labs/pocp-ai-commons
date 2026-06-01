@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 const ENTITY_COLORS = {
   human: "#60a5fa",
@@ -9,46 +9,41 @@ const ENTITY_COLORS = {
   workflow: "#fb923c",
   contribution: "#fbbf24",
   ledger: "#94a3b8",
+  exchange: "#64748b",
   organization: "#f7931a",
   llm: "#22d3ee",
   community: "#fb7185",
   federation_import: "#c084fc",
 };
 
-const RELATION_COLORS = {
-  uses: "#60a5fa",
-  calls: "#a78bfa",
-  invokes_llm: "#22d3ee",
-  submits: "#fbbf24",
-  verifies: "#22d3ee",
-  reviews: "#fbbf24",
-  sponsors: "#f7931a",
-  creator: "#f7931a",
-  executor: "#a78bfa",
-  skill_provider: "#34d399",
-  reviewer: "#fbbf24",
-  verifier: "#22d3ee",
-  witness: "#22d3ee",
-  sponsor: "#f7931a",
-  founded: "#f7931a",
-  learned_from: "#fb7185",
-  uses_pattern_from: "#fb7185",
-  trusts_peer: "#fb7185",
-  federated_with: "#fb7185",
-  hosts: "#f7931a",
-  seeks_partnership: "#34d399",
-  partners_with: "#34d399",
-  offers_capability: "#34d399",
-  integrates: "#a78bfa",
-  exported_contribution: "#c084fc",
-  imported_to: "#c084fc",
-  received_import: "#c084fc",
-  final_review: "#fbbf24",
-  witnesses: "#22d3ee",
-  recorded_in: "#94a3b8",
-  provides_tool: "#64748b",
-  provides_data: "#64748b",
-};
+/** Protocol connection layers — aligned with docs/protocol/ENTITY-CONNECTION.md */
+export const CONNECTION_LAYERS = [
+  { id: "structural", label: "Structural", labelZh: "结构层", color: "#f7931a" },
+  { id: "protocol", label: "Protocol", labelZh: "贡献协议", color: "#fbbf24" },
+  { id: "operational", label: "Operational", labelZh: "运行迹", color: "#22d3ee" },
+];
+
+const LAYER_BY_ID = Object.fromEntries(CONNECTION_LAYERS.map((l) => [l.id, l]));
+
+const STRUCTURAL_RELATIONS = new Set(["owns", "created", "founded"]);
+const OPERATIONAL_RELATIONS = new Set([
+  "uses",
+  "calls",
+  "invokes_llm",
+  "invokes_mcp",
+  "hosts_inference",
+  "hosts",
+]);
+
+export function resolveConnectionLayer(edge) {
+  if (edge?.connection_layer && LAYER_BY_ID[edge.connection_layer]) {
+    return edge.connection_layer;
+  }
+  const rel = edge?.relation || "";
+  if (STRUCTURAL_RELATIONS.has(rel)) return "structural";
+  if (OPERATIONAL_RELATIONS.has(rel)) return "operational";
+  return "protocol";
+}
 
 const LAYOUT_COLUMNS = [
   "human",
@@ -58,6 +53,7 @@ const LAYOUT_COLUMNS = [
   "dataset",
   "workflow",
   "contribution",
+  "exchange",
   "ledger",
   "federation_import",
   "llm",
@@ -83,6 +79,17 @@ function pulseDotCount(x1, y1, x2, y2) {
   if (dist < 120) return 2;
   if (dist < 220) return 3;
   return 4;
+}
+
+function layerStrokeStyle(layerId) {
+  switch (layerId) {
+    case "structural":
+      return { strokeWidth: 1, strokeOpacity: 0.42, strokeDasharray: undefined };
+    case "operational":
+      return { strokeWidth: 1.35, strokeOpacity: 0.55, strokeDasharray: undefined };
+    default:
+      return { strokeWidth: 0.85, strokeOpacity: 0.32, strokeDasharray: "4 5" };
+  }
 }
 
 function layoutNodes(nodes) {
@@ -115,9 +122,6 @@ function layoutNodes(nodes) {
   return positions;
 }
 
-/**
- * Merge entity registry with graph metrics so every registered entity appears on the canvas.
- */
 function buildEntityNodes(entities, graph) {
   const graphById = Object.fromEntries(
     (graph?.nodes || [])
@@ -138,38 +142,66 @@ function buildEntityNodes(entities, graph) {
 }
 
 export default function ContributionGraphView({ graph, entities = [] }) {
-  const { entityNodes, hubNodes, visibleEdges, positions, width, height, connectedIds } = useMemo(() => {
-    const entityNodes = buildEntityNodes(entities, graph);
-    const hubNodes = (graph?.nodes || []).filter(
-      (n) =>
-        n.entity_type === "contribution" ||
-        n.entity_type === "federation_import" ||
-        n.entity_type === "ledger"
-    );
-    const visibleEdges = (graph?.edges || []).filter((e) => !["owns", "created"].includes(e.relation));
+  const [activeLayers, setActiveLayers] = useState(() =>
+    Object.fromEntries(CONNECTION_LAYERS.map((l) => [l.id, true]))
+  );
 
-    const connectedIds = new Set();
-    visibleEdges.forEach((e) => {
-      connectedIds.add(e.source);
-      connectedIds.add(e.target);
+  const toggleLayer = (layerId) => {
+    setActiveLayers((prev) => {
+      const next = { ...prev, [layerId]: !prev[layerId] };
+      if (!CONNECTION_LAYERS.some((l) => next[l.id])) {
+        return prev;
+      }
+      return next;
     });
+  };
 
-    const allLayoutNodes = [...entityNodes, ...hubNodes];
-    const pos = layoutNodes(allLayoutNodes);
+  const { entityNodes, hubNodes, visibleEdges, positions, width, height, connectedIds, layerCounts } =
+    useMemo(() => {
+      const entityNodes = buildEntityNodes(entities, graph);
+      const hubNodes = (graph?.nodes || []).filter(
+        (n) =>
+          n.entity_type === "contribution" ||
+          n.entity_type === "federation_import" ||
+          n.entity_type === "ledger" ||
+          n.entity_type === "exchange"
+      );
 
-    const maxX = Math.max(...Object.values(pos).map((p) => p.x), 0) + 140;
-    const maxY = Math.max(...Object.values(pos).map((p) => p.y), 0) + 88;
+      const allEdges = (graph?.edges || []).map((e) => ({
+        ...e,
+        connection_layer: resolveConnectionLayer(e),
+      }));
 
-    return {
-      entityNodes,
-      hubNodes,
-      visibleEdges,
-      positions: pos,
-      width: maxX,
-      height: maxY,
-      connectedIds,
-    };
-  }, [graph, entities]);
+      const counts = { structural: 0, protocol: 0, operational: 0 };
+      allEdges.forEach((e) => {
+        counts[e.connection_layer] = (counts[e.connection_layer] || 0) + 1;
+      });
+
+      const visibleEdges = allEdges.filter((e) => activeLayers[e.connection_layer]);
+
+      const connectedIds = new Set();
+      visibleEdges.forEach((e) => {
+        connectedIds.add(e.source);
+        connectedIds.add(e.target);
+      });
+
+      const allLayoutNodes = [...entityNodes, ...hubNodes];
+      const pos = layoutNodes(allLayoutNodes);
+
+      const maxX = Math.max(...Object.values(pos).map((p) => p.x), 0) + 140;
+      const maxY = Math.max(...Object.values(pos).map((p) => p.y), 0) + 88;
+
+      return {
+        entityNodes,
+        hubNodes,
+        visibleEdges,
+        positions: pos,
+        width: maxX,
+        height: maxY,
+        connectedIds,
+        layerCounts: graph?.edge_layer_counts || counts,
+      };
+    }, [graph, entities, activeLayers]);
 
   const entityCount = entities.length;
   const hubCount = hubNodes.length;
@@ -185,8 +217,31 @@ export default function ContributionGraphView({ graph, entities = [] }) {
         {graph?.ledger_node_count != null && graph.ledger_node_count > 0
           ? ` · ${graph.ledger_node_count} ledger`
           : ""}{" "}
-        · {visibleEdges.length} relation{visibleEdges.length === 1 ? "" : "s"}
+        · {visibleEdges.length} edge{visibleEdges.length === 1 ? "" : "s"} shown
       </p>
+
+      <div className="graph-layer-controls">
+        <span className="graph-layer-controls__title">Connection layers</span>
+        {CONNECTION_LAYERS.map((layer) => {
+          const on = activeLayers[layer.id];
+          const count = layerCounts[layer.id] ?? 0;
+          return (
+            <button
+              key={layer.id}
+              type="button"
+              className={`graph-layer-toggle${on ? " graph-layer-toggle--active" : ""}`}
+              onClick={() => toggleLayer(layer.id)}
+              title={graph?.connection_layers?.[layer.id] || layer.label}
+            >
+              <span className="graph-layer-toggle__swatch" style={{ background: layer.color }} />
+              {layer.label}
+              <span className="graph-layer-toggle__zh">{layer.labelZh}</span>
+              <span className="graph-layer-toggle__count">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
       <div className="graph-legend">
         {Object.entries(ENTITY_COLORS).map(([type, color]) => (
           <span key={type} className="graph-legend__item">
@@ -195,9 +250,10 @@ export default function ContributionGraphView({ graph, entities = [] }) {
           </span>
         ))}
         <span className="graph-legend__item" style={{ opacity: 0.7 }}>
-          dashed = registered, no relation edge yet
+          dashed outline = registered, no visible edge in active layers
         </span>
       </div>
+
       <svg width={width} height={height} style={{ display: "block" }}>
         <defs>
           <filter id="graph-pulse-dot" x="-200%" y="-200%" width="500%" height="500%">
@@ -228,7 +284,9 @@ export default function ContributionGraphView({ graph, entities = [] }) {
           const y1 = from.y + 26;
           const x2 = to.x;
           const y2 = to.y + 26;
-          const color = RELATION_COLORS[edge.relation] || "#5c6573";
+          const layer = LAYER_BY_ID[edge.connection_layer] || LAYER_BY_ID.protocol;
+          const color = layer.color;
+          const stroke = layerStrokeStyle(edge.connection_layer);
           const pathD = edgePath(x1, y1, x2, y2);
           const reversePathD = reverseEdgePath(x1, y1, x2, y2);
           const travelSec = edgeTravelSeconds(x1, y1, x2, y2);
@@ -241,15 +299,15 @@ export default function ContributionGraphView({ graph, entities = [] }) {
           const edgeKey = `${edge.source}-${edge.target}-${edge.relation}-${i}`;
 
           return (
-            <g key={edgeKey} className="graph-edge">
+            <g key={edgeKey} className={`graph-edge graph-edge--${edge.connection_layer}`}>
               <path
                 className="graph-edge__track"
                 d={pathD}
                 fill="none"
                 stroke={color}
-                strokeWidth={0.75}
-                strokeOpacity={0.28}
-                strokeDasharray="3 5"
+                strokeWidth={stroke.strokeWidth}
+                strokeOpacity={stroke.strokeOpacity}
+                strokeDasharray={stroke.strokeDasharray}
                 strokeLinecap="round"
                 style={{ animationDelay: `${marchDelay}s` }}
               />
@@ -258,7 +316,7 @@ export default function ContributionGraphView({ graph, entities = [] }) {
                 return (
                   <circle
                     key={`${edgeKey}-dot-${di}`}
-                    r={2}
+                    r={edge.connection_layer === "operational" ? 2.4 : 2}
                     fill={color}
                     opacity={0.92}
                     filter="url(#graph-pulse-dot)"
@@ -272,13 +330,7 @@ export default function ContributionGraphView({ graph, entities = [] }) {
                   </circle>
                 );
               })}
-              <circle
-                key={`${edgeKey}-dot-reverse`}
-                r={1.4}
-                fill={color}
-                opacity={0.45}
-                filter="url(#graph-pulse-dot)"
-              >
+              <circle r={1.4} fill={color} opacity={0.45} filter="url(#graph-pulse-dot)">
                 <animateMotion
                   dur={`${reverseTravelSec}s`}
                   begin={`${travelSec * 0.45}s`}
@@ -286,7 +338,15 @@ export default function ContributionGraphView({ graph, entities = [] }) {
                   path={reversePathD}
                 />
               </circle>
-              <text x={midX} y={midY} textAnchor="middle" fontSize={8} fill="#6b7585" fontFamily="JetBrains Mono, monospace">
+              <text
+                x={midX}
+                y={midY}
+                textAnchor="middle"
+                fontSize={8}
+                fill={color}
+                fillOpacity={0.85}
+                fontFamily="JetBrains Mono, monospace"
+              >
                 {label}
               </text>
             </g>
@@ -341,14 +401,26 @@ export default function ContributionGraphView({ graph, entities = [] }) {
         {hubNodes.map((node) => {
           const pos = positions[node.id];
           if (!pos) return null;
+          const glowType =
+            node.entity_type === "federation_import"
+              ? "federation_import"
+              : node.entity_type === "ledger"
+                ? "ledger"
+                : node.entity_type === "exchange"
+                  ? "exchange"
+                  : "contribution";
           const color = ENTITY_COLORS[node.entity_type] || ENTITY_COLORS.contribution;
+          const hubLabel =
+            node.entity_type === "federation_import"
+              ? "FED IMPORT"
+              : node.entity_type === "ledger"
+                ? "LEDGER"
+                : node.entity_type === "exchange"
+                  ? "EXCHANGE"
+                  : "CONTRIBUTION";
 
           return (
-            <g
-              key={node.id}
-              transform={`translate(${pos.x}, ${pos.y})`}
-              filter={`url(#glow-${node.entity_type === "federation_import" ? "federation_import" : node.entity_type === "ledger" ? "ledger" : "contribution"})`}
-            >
+            <g key={node.id} transform={`translate(${pos.x}, ${pos.y})`} filter={`url(#glow-${glowType})`}>
               <rect width={108} height={52} rx={8} fill="#111820" stroke={color} strokeWidth={1.5} />
               <rect width={108} height={3} rx={8} fill={color} opacity={0.9} />
               <text
@@ -371,11 +443,7 @@ export default function ContributionGraphView({ graph, entities = [] }) {
                 fontFamily="JetBrains Mono, monospace"
                 letterSpacing="0.08em"
               >
-                {node.entity_type === "federation_import"
-                  ? "FED IMPORT"
-                  : node.entity_type === "ledger"
-                    ? "LEDGER"
-                    : "CONTRIBUTION"}
+                {hubLabel}
               </text>
             </g>
           );

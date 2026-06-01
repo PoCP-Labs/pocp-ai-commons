@@ -21,6 +21,7 @@ from services.remote_mcp_invoke import run_remote_mcp_invoke
 from services.remote_witness import run_witness
 from services.a2a_agent_card import build_entity_agent_card, build_node_agent_card
 from services.a2a_task_bridge import handle_jsonrpc_call
+from services.entity_connections import entity_connection_matrix
 from models.user_account import UserAccount
 from routers.auth import require_current_user
 
@@ -131,13 +132,34 @@ def protocol_primitives():
     from services.capability_receipt import CAPABILITY_RECEIPT_SCHEMA
     from services.rights_conversion import CONVERSION_SCHEMA, RIGHTS_RULES_SCHEMA
 
+    from intelligence.entity_ontology import ENTITY_CONNECTION_SCHEMA, connection_matrix_document
+    from services.trust_policy_bundle import TRUST_POLICY_BUNDLE_SCHEMA, trust_policy_bundle_manifest
+
     return {
         "rights_rules_schema": RIGHTS_RULES_SCHEMA,
         "contribution_to_rights_conversion_schema": CONVERSION_SCHEMA,
         "capability_receipt_schema": CAPABILITY_RECEIPT_SCHEMA,
+        "entity_connection_schema": ENTITY_CONNECTION_SCHEMA,
+        "trust_policy_bundle_schema": TRUST_POLICY_BUNDLE_SCHEMA,
+        "entity_connections": connection_matrix_document(),
+        "trust_policy_bundle": trust_policy_bundle_manifest(),
         "finalization_policy": finalization_policy_manifest(),
         "rights_rules": rights_rules_manifest(),
     }
+
+
+@router.get("/protocol/entity-connections")
+def protocol_entity_connections():
+    """Entity type connection matrix — how each entity type links in the protocol."""
+    return entity_connection_matrix()
+
+
+@router.get("/protocol/trust-policy-bundle")
+def protocol_trust_policy_bundle():
+    """Trust + finalization + import rules bundle for federation peers."""
+    from services.trust_policy_bundle import trust_policy_bundle_manifest
+
+    return trust_policy_bundle_manifest()
 
 
 @router.get("/compute/status")

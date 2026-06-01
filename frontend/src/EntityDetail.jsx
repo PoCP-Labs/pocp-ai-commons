@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import ComputeAttributionPanel from "./ComputeAttributionPanel";
+import EntityConnectionsPanel from "./EntityConnectionsPanel";
 import EntityWalletActivity from "./EntityWalletActivity";
+import FederationTrustPanel from "./FederationTrustPanel";
 import LogOutreachForm from "./LogOutreachForm";
 function ContributionReceiptSummary({ contributionId, entityMap, fetchJson, onSelectEntity }) {
   const [proof, setProof] = useState(null);
@@ -378,6 +380,18 @@ export default function EntityDetail({
           )}
         </div>
       )}
+
+      {fetchJson && (
+        <EntityConnectionsPanel
+          entityId={entity.id}
+          fetchJson={fetchJson}
+          onSelectEntity={onSelectEntity}
+          ontologyConnections={ontologySlice?.connections}
+        />
+      )}
+
+      {(isFederationPeer || federationImports?.received_count > 0 || federationImports?.exported_count > 0) &&
+        fetchJson && <FederationTrustPanel fetchJson={fetchJson} federationImports={federationImports} />}
 
       {inspirationDetail && (
         <>

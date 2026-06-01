@@ -60,6 +60,22 @@ python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8000
 python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8100 --federation http://127.0.0.1:8101
 ```
 
+**Federation preflight only** (trust bundle + `validate-proof`, no import):
+
+```bash
+docker compose -f docker-compose.federation.yml up -d --build
+python backend/scripts/federation_pilot_preflight.py
+python backend/scripts/federation_pilot_preflight.py --sync   # preflight + sync on Node B
+python backend/scripts/run_entity_pilot_demo.py              # full pilot orchestration
+```
+
+**Strict trust policy (production-like import gates on Node B):**
+
+```bash
+docker compose -f docker-compose.federation.yml -f docker-compose.federation.strict.yml up -d backend-b
+python backend/scripts/federation_strict_mode_test.py
+```
+
 See [ROADMAP-THREE-PHASES.md](./ROADMAP-THREE-PHASES.md) for Phase A/B/C exit criteria.
 
 **Proof deep-link (UI):** open `http://localhost:3000/?proof=<contribution_id>` to verify a contribution proof without running the full submit flow.

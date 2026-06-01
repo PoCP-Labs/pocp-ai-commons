@@ -1,0 +1,9 @@
+# Strict federation overlay — enable on Node B (mirror) for production-like import gates.
+# Usage:
+#   docker compose -f docker-compose.federation.yml -f docker-compose.federation.strict.yml up -d --build
+#   python backend/scripts/federation_strict_mode_test.py
+
+services:
+  backend-b:
+    environment:
+      POCP_STRICT_TRUST_POLICY: "true"

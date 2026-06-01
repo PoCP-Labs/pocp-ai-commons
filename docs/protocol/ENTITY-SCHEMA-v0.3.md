@@ -14,3 +14,22 @@
   "metadata": {}
 }
 ```
+
+## Connection profile (protocol layer)
+
+Every entity exposes a **connection slice** via ontology / connections APIs:
+
+```json
+{
+  "connections": {
+    "schema": "pocp.entity_connection.v0.1",
+    "can_own_types": ["agent", "skill"],
+    "typical_invocation_targets": ["agent", "skill"],
+    "suggested_invocation_actions": { "agent": "uses" },
+    "typical_participant_roles": ["creator", "reviewer"],
+    "connect_via": ["registration", "ownership", "contribution_participant", "invocation_trace"]
+  }
+}
+```
+
+See [ENTITY-CONNECTION.md](./ENTITY-CONNECTION.md) for the three-layer model (structural · protocol · operational).

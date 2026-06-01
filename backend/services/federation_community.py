@@ -183,6 +183,12 @@ def _serialize_import(record: FederatedImport, entity_map: dict[str, Entity] | N
         "reputation_applied": record.reputation_applied,
         "imported_at": record.imported_at.isoformat(),
         "graph_hub_id": federation_import_hub_id(record.id),
+        "trust_policy_valid": ((record.payload or {}).get("protocol_excerpt") or {})
+        .get("trust_policy_validation", {})
+        .get("blocking_valid"),
+        "trust_policy_failed_count": ((record.payload or {}).get("protocol_excerpt") or {})
+        .get("trust_policy_validation", {})
+        .get("failed_count"),
     }
 
 

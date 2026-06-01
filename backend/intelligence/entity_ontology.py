@@ -322,7 +322,9 @@ def enrich_entity_record(entity: Any) -> dict[str, Any]:
     """Attach ontology slice to an Entity ORM object or dict."""
     et = entity.entity_type.value if hasattr(entity.entity_type, "value") else entity.get("entity_type")
     type_spec = ENTITY_TYPE_SPECS.get(et, {})
+    conn_spec = connection_spec_for(et)
     meta = entity.metadata_ if hasattr(entity, "metadata_") else entity.get("metadata", {})
+    allowed_targets = conn_spec.get("typical_invocation_targets", [])
     return {
         "entity_id": entity.id if hasattr(entity, "id") else entity.get("id"),
         "entity_type": et,
@@ -334,6 +336,20 @@ def enrich_entity_record(entity: Any) -> dict[str, Any]:
             "accountable_principal": type_spec.get("accountable_principal", False),
             "network_subject": type_spec.get("network_subject", True),
         },
+        "connections": {
+            "schema": ENTITY_CONNECTION_SCHEMA,
+            "can_own_types": conn_spec.get("can_own", []),
+            "typical_invocation_targets": allowed_targets,
+            "suggested_invocation_actions": {
+                target: invocation_action_for(et, target)
+                for target in allowed_targets
+                if invocation_action_for(et, target)
+            },
+            "typical_participant_roles": conn_spec.get("typical_participant_roles", []),
+            "connect_via": conn_spec.get("connect_via", []),
+            "instance_api": f"/api/v1/entities/{entity.id if hasattr(entity, 'id') else entity.get('id')}/connections",
+            "matrix_api": "/api/v1/entities/connections/matrix",
+        },
         "metadata": meta or {},
         "compute_profile": meta.get("compute_profile") if meta else None,
     }
@@ -342,6 +358,266 @@ def enrich_entity_record(entity: Any) -> dict[str, Any]:
 COMPUTE_CAPABILITIES = sorted(
     ["llm_inference", "embeddings", "witness", "mcp_host", "agent_runtime"]
 )
+
+# How entities link — three protocol layers (see docs/protocol/ENTITY-CONNECTION.md)
+CONNECTION_LAYERS: list[dict[str, Any]] = [
+    {
+        "id": "structural",
+        "label": "Structural",
+        "label_zh": "结构层",
+        "relations": ["owns", "created", "founded", "sponsors"],
+        "source": "Entity.owner_id / creator_id",
+        "meaning": "Accountability and registration — who maintains and is responsible for an entity.",
+    },
+    {
+        "id": "protocol",
+        "label": "Contribution protocol",
+        "label_zh": "贡献协议层",
+        "relations": [
+            "submits",
+            "witnesses",
+            "verifies",
+            "reviews",
+            "sponsors",
+            "provides_tool",
+            "provides_data",
+        ],
+        "source": "ContributionParticipant (role + weight)",
+        "meaning": "Verified value events — every entity connects by participating in contribution proofs.",
+    },
+    {
+        "id": "operational",
+        "label": "Operational trace",
+        "label_zh": "运行迹层",
+        "relations": ["uses", "calls", "invokes_llm", "invokes_mcp", "hosts_inference"],
+        "source": "InvocationTrace / InvocationStep (+ capability_receipt in step metadata)",
+        "meaning": "Runtime chains — Human→Agent→Skill→Tool→LLM with portable receipts.",
+    },
+]
+
+# Per-type connection profile: what each entity type may own, invoke, and play in events.
+ENTITY_CONNECTION_SPECS: dict[str, dict[str, Any]] = {
+    "human": {
+        "can_own": [
+            "agent",
+            "skill",
+            "tool",
+            "dataset",
+            "workflow",
+            "compute_node",
+            "verifier_node",
+            "reviewer_node",
+            "organization",
+        ],
+        "typical_invocation_targets": ["agent", "skill", "tool", "workflow"],
+        "typical_invocation_actions": ["uses"],
+        "typical_participant_roles": ["creator", "reviewer", "coordinator"],
+        "connect_via": ["registration", "ownership", "contribution_participant", "invocation_trace"],
+    },
+    "agent": {
+        "can_own": [],
+        "typical_invocation_targets": ["skill", "tool", "llm", "workflow"],
+        "typical_invocation_actions": ["uses", "calls", "invokes_llm"],
+        "typical_participant_roles": ["executor", "coordinator", "reviewer"],
+        "connect_via": ["ownership", "contribution_participant", "invocation_trace", "capability_receipt"],
+    },
+    "skill": {
+        "can_own": [],
+        "typical_invocation_targets": ["llm", "tool"],
+        "typical_invocation_actions": ["invokes_llm", "calls"],
+        "typical_participant_roles": ["skill_provider"],
+        "connect_via": ["ownership", "contribution_participant", "invocation_trace", "capability_receipt"],
+    },
+    "llm": {
+        "can_own": [],
+        "typical_invocation_targets": [],
+        "typical_invocation_actions": [],
+        "typical_participant_roles": ["model_provider", "witness", "verifier", "reviewer"],
+        "connect_via": ["ownership", "contribution_participant", "invocation_trace"],
+    },
+    "tool": {
+        "can_own": [],
+        "typical_invocation_targets": ["tool", "llm"],
+        "typical_invocation_actions": ["invokes_mcp", "invokes_llm", "calls"],
+        "typical_participant_roles": ["tool_provider"],
+        "connect_via": ["ownership", "contribution_participant", "invocation_trace", "capability_receipt"],
+    },
+    "dataset": {
+        "can_own": [],
+        "typical_invocation_targets": [],
+        "typical_invocation_actions": [],
+        "typical_participant_roles": ["data_provider"],
+        "connect_via": ["ownership", "contribution_participant"],
+    },
+    "workflow": {
+        "can_own": [],
+        "typical_invocation_targets": ["agent", "skill", "tool"],
+        "typical_invocation_actions": ["calls", "uses"],
+        "typical_participant_roles": ["coordinator"],
+        "connect_via": ["ownership", "contribution_participant", "invocation_trace"],
+    },
+    "organization": {
+        "can_own": ["agent", "skill", "tool", "dataset", "workflow", "compute_node"],
+        "typical_invocation_targets": ["agent", "workflow"],
+        "typical_invocation_actions": ["uses"],
+        "typical_participant_roles": ["sponsor", "coordinator"],
+        "connect_via": ["registration", "ownership", "contribution_participant"],
+    },
+    "community": {
+        "can_own": [],
+        "typical_invocation_targets": [],
+        "typical_invocation_actions": [],
+        "typical_participant_roles": ["sponsor", "witness"],
+        "connect_via": ["registration", "contribution_participant", "federation"],
+    },
+    "compute_node": {
+        "can_own": [],
+        "typical_invocation_targets": ["llm"],
+        "typical_invocation_actions": ["hosts_inference"],
+        "typical_participant_roles": ["model_provider", "tool_provider"],
+        "connect_via": ["ownership", "contribution_participant", "invocation_trace", "compute_register"],
+    },
+    "verifier_node": {
+        "can_own": [],
+        "typical_invocation_targets": ["llm"],
+        "typical_invocation_actions": ["witnesses"],
+        "typical_participant_roles": ["verifier", "witness"],
+        "connect_via": ["ownership", "contribution_participant"],
+    },
+    "reviewer_node": {
+        "can_own": [],
+        "typical_invocation_targets": [],
+        "typical_invocation_actions": [],
+        "typical_participant_roles": ["reviewer"],
+        "connect_via": ["ownership", "contribution_participant"],
+    },
+    "sponsor": {
+        "can_own": ["organization"],
+        "typical_invocation_targets": [],
+        "typical_invocation_actions": [],
+        "typical_participant_roles": ["sponsor"],
+        "connect_via": ["registration", "ownership", "contribution_participant"],
+    },
+    "protocol_treasury": {
+        "can_own": [],
+        "typical_invocation_targets": [],
+        "typical_invocation_actions": [],
+        "typical_participant_roles": ["sponsor"],
+        "connect_via": ["registration", "contribution_participant", "ledger"],
+    },
+}
+
+# Canonical invocation action for (source_type, target_type) pairs in operational layer.
+INVOCATION_EDGE_MATRIX: dict[tuple[str, str], str] = {
+    ("human", "agent"): "uses",
+    ("human", "skill"): "uses",
+    ("human", "tool"): "uses",
+    ("human", "workflow"): "uses",
+    ("agent", "skill"): "calls",
+    ("agent", "tool"): "uses",
+    ("agent", "llm"): "invokes_llm",
+    ("agent", "workflow"): "uses",
+    ("skill", "llm"): "invokes_llm",
+    ("skill", "tool"): "calls",
+    ("tool", "tool"): "invokes_mcp",
+    ("tool", "llm"): "invokes_llm",
+    ("workflow", "agent"): "calls",
+    ("workflow", "skill"): "calls",
+    ("workflow", "tool"): "uses",
+    ("compute_node", "llm"): "hosts_inference",
+    ("verifier_node", "llm"): "witnesses",
+}
+
+CONNECTION_ENTRYPOINTS: dict[str, dict[str, str]] = {
+    "human": {
+        "register_entity": "POST /api/v1/entities",
+        "submit_contribution": "POST /api/v1/contributions",
+        "invoke_skill": "POST /api/v1/capabilities/execute/skill",
+        "connections": "GET /api/v1/entities/{entity_id}/connections",
+    },
+    "agent": {
+        "register": "POST /api/v1/agents",
+        "run_study": "POST /api/v1/intelligence/agents/study/run",
+        "agent_card": "GET /api/v1/intelligence/entities/{entity_id}/agent-card",
+    },
+    "skill": {
+        "register": "POST /api/v1/skills",
+        "execute": "POST /api/v1/capabilities/execute/skill",
+    },
+    "tool": {
+        "register": "POST /api/v1/entities/tool",
+        "mcp_invoke": "POST /api/v1/capabilities/execute/mcp",
+    },
+    "compute_node": {
+        "register_profile": "POST /api/v1/entities/{entity_id}/compute/register",
+        "providers": "GET /api/v1/compute/providers",
+    },
+    "dataset": {"register": "POST /api/v1/entities/dataset"},
+    "workflow": {"register": "POST /api/v1/entities/workflow"},
+}
+
+
+def connection_spec_for(entity_type: str) -> dict[str, Any]:
+    """Return connection profile for an entity type."""
+    return ENTITY_CONNECTION_SPECS.get(entity_type, {})
+
+
+def invocation_action_for(source_type: str, target_type: str) -> str | None:
+    """Expected InvocationStep.action for a type pair, if defined."""
+    return INVOCATION_EDGE_MATRIX.get((source_type, target_type))
+
+
+ENTITY_CONNECTION_SCHEMA = "pocp.entity_connection.v0.1"
+
+
+def validate_invocation_edge(
+    source_type: str,
+    target_type: str,
+    action: str,
+    *,
+    strict: bool = False,
+) -> dict[str, Any]:
+    """Check operational-layer step against the invocation edge matrix."""
+    expected = invocation_action_for(source_type, target_type)
+    ok = expected is None or expected == action
+    result: dict[str, Any] = {
+        "ok": ok,
+        "source_type": source_type,
+        "target_type": target_type,
+        "action": action,
+        "expected_action": expected,
+    }
+    if strict and not ok:
+        raise ValueError(
+            f"Invocation edge ({source_type}→{target_type}) expects "
+            f"action '{expected}', got '{action}'"
+        )
+    return result
+
+
+def connection_matrix_document() -> dict[str, Any]:
+    """Portable catalog of entity connection rules — protocol layer."""
+    matrix_rows = [
+        {
+            "source_type": src,
+            "target_type": tgt,
+            "action": action,
+        }
+        for (src, tgt), action in sorted(INVOCATION_EDGE_MATRIX.items())
+    ]
+    return {
+        "schema": ENTITY_CONNECTION_SCHEMA,
+        "spec_version": "0.1",
+        "principle": "Everything connects through verified contribution.",
+        "principle_zh": "万物都有贡献，万物互联于贡献协议。",
+        "layers": CONNECTION_LAYERS,
+        "entity_connection_specs": ENTITY_CONNECTION_SPECS,
+        "invocation_edge_matrix": matrix_rows,
+        "entrypoints": CONNECTION_ENTRYPOINTS,
+        "docs": "docs/protocol/ENTITY-CONNECTION.md",
+        "matrix_api": "GET /api/v1/entities/connections/matrix",
+        "instance_api": "GET /api/v1/entities/{entity_id}/connections",
+    }
 
 
 def ontology_document() -> dict[str, Any]:
@@ -359,6 +635,12 @@ def ontology_document() -> dict[str, Any]:
             "register": "/api/v1/compute/entities/{entity_id}/register",
             "jobs": "/api/v1/compute/jobs",
             "research": "docs/DISTRIBUTED-COMPUTE-RESEARCH.md",
+        },
+        "entity_connections": {
+            "docs": "docs/protocol/ENTITY-CONNECTION.md",
+            "matrix_api": "/api/v1/entities/connections/matrix",
+            "instance_api": "/api/v1/entities/{entity_id}/connections",
+            "layer_count": len(CONNECTION_LAYERS),
         },
         "docs": "docs/ENTITY-ONTOLOGY.md",
     }

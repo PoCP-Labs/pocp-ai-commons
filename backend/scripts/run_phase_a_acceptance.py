@@ -184,6 +184,8 @@ def main() -> int:
             [
                 ("crypto_readiness", lambda: step_crypto_readiness(base)),
                 ("crypto_readiness_peer", lambda: step_crypto_readiness(node_b)),
+                ("federation_preflight", lambda: run_script("federation_pilot_preflight.py", base, [node_b])),
+                ("federation_strict_mode", lambda: run_script("federation_strict_mode_test.py", base, [node_b])),
                 ("federation_demo", lambda: run_script("federation_demo_test.py", base, [node_b])),
                 ("federation_exchange_demo", lambda: run_script("federation_exchange_demo_test.py", base, [node_b])),
                 ("peer_witness_verify", lambda: run_script("peer_witness_verify_test.py", base)),
@@ -228,6 +230,8 @@ def main() -> int:
             "crypto_readiness",
             "crypto_readiness_peer",
             "smoke_test",
+            "federation_preflight",
+            "federation_strict_mode",
             "federation_demo",
             "federation_exchange_demo",
             "peer_witness_verify",

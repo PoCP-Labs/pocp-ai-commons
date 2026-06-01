@@ -23,18 +23,14 @@ UNIFIED_PRINCIPLE_ZH = "万物都有贡献，万物互联于贡献协议。"
 ACCOUNTABILITY_PRINCIPLE = "AI witnesses. Policy finalizes. Ledger remembers."
 ACCOUNTABILITY_PRINCIPLE_ZH = "AI 见证，策略终局，账本记忆。"
 
-# All entity types that the capability layer recognizes.
-ENTITY_TYPES = (
-    "human",
-    "agent",
-    "skill",
-    "llm",
-    "tool",
-    "dataset",
-    "workflow",
-    "organization",
-    "community",
-)
+# All entity types that the capability layer recognizes (synced with entity ontology v0.3).
+def _entity_types() -> tuple[str, ...]:
+    from intelligence.entity_ontology import all_entity_types
+
+    return tuple(all_entity_types())
+
+
+ENTITY_TYPES = _entity_types()
 
 # Roles any entity may take in a contribution event (not all apply to every type).
 CONTRIBUTION_ROLES = (
@@ -107,6 +103,8 @@ def protocol_stack() -> dict[str, Any]:
                     "InvocationTrace (portable)",
                     "Contribution Proof Packet",
                     "Contribution Graph semantics",
+                    "Entity connection (structural / protocol / operational)",
+                    "Trust Policy Bundle (federation import rules)",
                     "Portable identity (portable_id)",
                     "Federation trust & signed proofs",
                 ],
@@ -186,6 +184,8 @@ def protocol_stack() -> dict[str, Any]:
         ],
         "native_primitives": [
             "entity",
+            "entity_connection",
+            "trust_policy_bundle",
             "contribution_event",
             "contribution_participant",
             "evidence_hash",
@@ -207,9 +207,10 @@ def entity_can_contribute(entity_type: str) -> bool:
 
 
 def contribution_packet_header() -> dict[str, Any]:
-    from intelligence.entity_ontology import ontology_document
+    from intelligence.entity_ontology import connection_matrix_document, ontology_document
 
     doc = ontology_document()
+    connections = connection_matrix_document()
     return {
         "protocol": PROTOCOL_NAME,
         "protocol_version": PROTOCOL_VERSION,
@@ -223,5 +224,13 @@ def contribution_packet_header() -> dict[str, Any]:
             "docs": doc["docs"],
             "entity_type_count": len(doc["entity_types"]),
             "participant_role_count": len(doc["participant_roles"]),
+        },
+        "entity_connections": {
+            "schema": "pocp.entity_connection.v0.1",
+            "spec_version": connections["spec_version"],
+            "layer_count": len(connections["layers"]),
+            "matrix_api": "/api/v1/entities/connections/matrix",
+            "instance_api": "/api/v1/entities/{entity_id}/connections",
+            "docs": connections["docs"],
         },
     }
