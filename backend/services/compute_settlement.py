@@ -471,6 +471,8 @@ def settle_bilateral(
     if treasury_entity_id and protocol_credited > 0:
         provider_ids.append(treasury_entity_id)
 
+    trace_id = (receipt.get("extra") or {}).get("trace_id") or receipt.get("trace_id")
+
     exchange_record = emit_exchange_settled(
         db,
         consumer_entity_id=consumer_id,
@@ -481,6 +483,7 @@ def settle_bilateral(
         capability=str(receipt.get("capability") or ""),
         usage=usage,
         contribution_id=contribution_id,
+        invocation_trace_id=trace_id,
         legacy_event_type="compute_settlement",
         extra_payload={
             "settlement_kind": settlement_kind,

@@ -10,6 +10,7 @@ from models.ai_usage import AIUsageLog
 from models.wallet import CreditTransaction, CreditType, Wallet
 from services.anti_abuse import check_daily_ai_burn_limit
 from services.exchange_spine import emit_exchange_settled
+from services.invocation_ledger import build_invocation_ref
 from services.ledger_chain import append_ledger_record
 from services.llama_cpp_client import llama_cpp_base_url, llama_cpp_chat_enabled, llama_cpp_chat_model
 from services.ollama_client import ollama_base_url, ollama_chat_model
@@ -198,6 +199,20 @@ async def chat_and_burn_credits(
         },
         legacy_event_type="ai_credits_burned",
         settlement_policy="ai_chat.v1",
+        invocation_ref=build_invocation_ref(
+            source_entity_id=entity_id,
+            target_entity_id=chat_provider_entity,
+            capability="reasoning",
+            usage={
+                "metering_mode": "flat",
+                "bc_debited": cost,
+                "provider": actual_provider,
+                "model": actual_model,
+            },
+            receipt_hash=receipt_hash,
+            verification_ref=receipt_hash,
+            status="settled",
+        ),
     )
     db.flush()
     return {

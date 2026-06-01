@@ -16,6 +16,7 @@ from models.wallet import CreditTransaction, Wallet
 from services.crypto_suite import active_crypto_suite, active_hash_algorithm, build_signature_block
 from services.entity_local_chain import find_exchange_ledger_record
 from services.federation_crypto import get_node_public_key_hex, sign_message
+from services.invocation_ledger import resolve_invocation_chain_digest, validate_invocation_ref
 from services.ledger_chain import _order_records_by_hash_chain
 from services.ledger_merkle import build_inclusion_bundle
 from services.crypto_suite import SUITE_V01_CLASSIC
@@ -70,6 +71,8 @@ def build_exchange_proof_packet(db: Session, exchange_id: str) -> dict | None:
     payload = record.payload or {}
     consumer_id = payload.get("consumer_entity_id")
     provider_ids = payload.get("provider_entity_ids") or []
+    invocation_ref = payload.get("invocation_ref") or {}
+    invocation_chain_digest = resolve_invocation_chain_digest(db, invocation_ref)
 
     entity_ids = set(provider_ids)
     if consumer_id:
@@ -131,10 +134,13 @@ def build_exchange_proof_packet(db: Session, exchange_id: str) -> dict | None:
             "created_at": record.created_at,
         },
         "exchange_inclusion": exchange_inclusion,
+        "invocation_ref": _jsonable(invocation_ref),
+        "invocation_chain_digest": invocation_chain_digest,
         "integrity": {
             "exchange_id": exchange_id,
             "ledger_record_hash": record.record_hash,
             "receipt_hash": payload.get("receipt_hash"),
+            "invocation_ref_valid": validate_invocation_ref(invocation_ref).get("valid"),
             "crypto_suite": active_crypto_suite(),
             "hash_algorithm": active_hash_algorithm(),
             "canonicalization": "json-sort-keys-compact-excludes-generated_at-federation-proof_hash",
@@ -203,6 +209,16 @@ def verify_exchange_proof_integrity(
     receipt_ok = bool(exchange.get("receipt_hash") or integrity.get("receipt_hash"))
     checks.append({"check": "receipt_hash_present", "valid": receipt_ok})
     valid = valid and receipt_ok
+
+    invocation_ref = proof.get("invocation_ref") or exchange.get("invocation_ref") or {}
+    ref_check = validate_invocation_ref(invocation_ref)
+    checks.append({"check": "invocation_ref", **ref_check})
+    valid = valid and ref_check.get("valid", False)
+
+    chain_digest = proof.get("invocation_chain_digest")
+    digest_ok = bool(chain_digest)
+    checks.append({"check": "invocation_chain_digest", "valid": digest_ok, "digest": chain_digest})
+    valid = valid and digest_ok
 
     federation = proof.get("federation") or {}
     sigs = federation.get("signatures") or {}

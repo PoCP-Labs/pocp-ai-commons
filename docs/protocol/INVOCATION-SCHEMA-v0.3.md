@@ -80,6 +80,38 @@ Each step may carry a **capability receipt** in `metadata` for proof export and 
 | `POST /api/v1/invocations` | Record trace (legacy human→agent→skill path) |
 | `GET /api/v1/entities/{id}/connections` | Instance operational + protocol + structural view |
 | `GET /api/v1/entities/connections/matrix` | Full type-level edge matrix |
+| `GET /api/v1/exchanges/{exchange_id}/integrity` | Verify invocation_ref ↔ receipt ↔ settlement |
+
+---
+
+## Normalized `invocation_ref` (exchange_settled v0.1)
+
+Every `exchange_settled` ledger row carries an `invocation_ref` block linking operational invocation to settlement:
+
+```json
+{
+  "spec_version": "pocp.invocation_ref.v0.1",
+  "invocation_id": "inv_abc123",
+  "trace_id": "trace_uuid",
+  "source_entity_id": "human_001",
+  "target_entity_id": "llm_001",
+  "capability_id": "cap_001",
+  "capability": "llm_inference",
+  "usage": { "metering_mode": "token", "total_tokens": 150 },
+  "receipt_hash": "sha256:…",
+  "verification_ref": "sha256:…",
+  "settlement_ref": "ex_abc123",
+  "status": "settled",
+  "timestamp": "2026-05-31T12:00:00"
+}
+```
+
+| Field | Notes |
+|-------|--------|
+| `trace_id` | Optional link to `InvocationTrace` (multi-step chains) |
+| `settlement_ref` | Exchange id (`ex_*`) — primary settlement anchor |
+| `receipt_hash` | Compute/capability receipt integrity hash |
+| `invocation_chain_digest` | In exchange proof — hash of step chain or flat ref |
 
 ---
 

@@ -13,6 +13,7 @@ from schemas import ContributionOut
 from services.entity_local_chain import build_entity_local_chain, find_exchange_ledger_record
 from services.exchange_contribution import publish_contribution_from_exchange
 from services.exchange_proof import build_exchange_proof_packet
+from services.invocation_ledger import verify_exchange_invocation_chain
 
 router = APIRouter(prefix="/api/v1", tags=["exchanges"])
 
@@ -60,6 +61,15 @@ def get_exchange_proof(exchange_id: str, db: Session = Depends(get_db)):
     if packet is None:
         raise HTTPException(status_code=404, detail="Exchange not found")
     return packet
+
+
+@router.get("/exchanges/{exchange_id}/integrity")
+def get_exchange_integrity(exchange_id: str, db: Session = Depends(get_db)):
+    """Verify invocation_ref ↔ receipt ↔ settlement linkage for an exchange."""
+    result = verify_exchange_invocation_chain(db, exchange_id)
+    if result.get("reason") == "exchange_not_found":
+        raise HTTPException(status_code=404, detail="Exchange not found")
+    return result
 
 
 @router.post(

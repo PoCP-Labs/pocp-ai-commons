@@ -38,6 +38,7 @@ from services.capability_receipt import build_step_capability_receipts
 from services.compute_attribution import build_compute_attribution_block
 from services.mcp_invocation_context import build_mcp_invocation_context
 from services.finalization import build_proof_finalization_block
+from services.invocation_ledger import compute_invocation_chain_digest
 
 POCP_PROOF_SPEC_VERSION = "0.1"
 POCP_PROOF_TYPE = "pocp_contribution_proof"
@@ -309,6 +310,17 @@ def build_contribution_proof_packet(db: Session, contribution_id: str) -> dict |
                     "model_provider": trace.model_provider,
                     "status": trace.status.value,
                     "created_at": trace.created_at,
+                    "invocation_chain_digest": compute_invocation_chain_digest(
+                        [
+                            {
+                                "step_order": step.step_order,
+                                "source_entity_id": step.source_entity_id,
+                                "target_entity_id": step.target_entity_id,
+                                "action": step.action,
+                            }
+                            for step in trace.steps
+                        ]
+                    ),
                     "steps": [
                         {
                             "step_order": step.step_order,

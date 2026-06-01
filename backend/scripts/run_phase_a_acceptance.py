@@ -137,6 +137,44 @@ def step_wallet_audit(base: str) -> tuple[bool, str]:
         return False, str(exc)
 
 
+def step_invocation_ref_integrity(base: str) -> tuple[bool, str]:
+    """Smoke: dev-login → chat → exchange integrity endpoint."""
+    payload = json.dumps({"username": "inv-ref-check", "email": "inv-ref-check@example.com"}).encode()
+    login_req = urllib.request.Request(
+        f"{base.rstrip('/')}/api/v1/auth/dev-login",
+        data=payload,
+        method="POST",
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(login_req, timeout=15) as resp:
+            login = json.loads(resp.read().decode())
+        token = login["access_token"]
+        chat_payload = json.dumps({"message": "invocation ref integrity check", "provider": "mock"}).encode()
+        chat_req = urllib.request.Request(
+            f"{base.rstrip('/')}/api/v1/ai/chat",
+            data=chat_payload,
+            method="POST",
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
+        )
+        with urllib.request.urlopen(chat_req, timeout=30) as resp:
+            chat = json.loads(resp.read().decode())
+        exchange_id = chat.get("exchange_id")
+        if not exchange_id:
+            return False, "chat response missing exchange_id"
+        integrity = get_json(f"{base.rstrip('/')}/api/v1/exchanges/{exchange_id}/integrity")
+        ok = integrity.get("valid") is True
+        return ok, json.dumps(
+            {
+                "exchange_id": exchange_id,
+                "valid": integrity.get("valid"),
+                "digest": integrity.get("invocation_chain_digest"),
+            }
+        )
+    except Exception as exc:
+        return False, str(exc)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Phase A acceptance runner")
     parser.add_argument("base", nargs="?", default=DEFAULT_BASE, help="API base URL")
@@ -165,9 +203,11 @@ def main() -> int:
         ("health", lambda: step_health(base)),
         ("intelligence/status", lambda: step_intelligence_status(base)),
         ("wallet_audit", lambda: step_wallet_audit(base)),
+        ("invocation_ref_integrity", lambda: step_invocation_ref_integrity(base)),
     ]
 
     if args.staging:
+        checks = [c for c in checks if c[0] != "invocation_ref_integrity"]
         checks.extend(
             [
                 ("dev_login_disabled", lambda: step_dev_login_disabled(base)),
@@ -227,6 +267,7 @@ def main() -> int:
             "github_oauth",
             "ledger_verify",
             "wallet_audit",
+            "invocation_ref_integrity",
             "crypto_readiness",
             "crypto_readiness_peer",
             "smoke_test",

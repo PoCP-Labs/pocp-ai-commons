@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from models.ledger import LedgerRecord
 from models.wallet import CreditTransaction
+from services.invocation_ledger import build_invocation_ref
 from services.ledger_chain import append_ledger_record
 
 SPEC_VERSION = "pocp.exchange_spine.v0.1"
@@ -64,6 +65,7 @@ def emit_exchange_settled(
     usage: dict[str, Any] | None = None,
     contribution_id: str | None = None,
     invocation_trace_id: str | None = None,
+    invocation_ref: dict[str, Any] | None = None,
     legacy_event_type: str | None = None,
     settlement_policy: str = "compute_settlement.v1",
     extra_payload: dict[str, Any] | None = None,
@@ -90,6 +92,26 @@ def emit_exchange_settled(
     db.flush()
     tx_ids = [tx.id for tx in credit_transactions if tx.id]
 
+    primary_provider = providers[0] if providers else consumer_entity_id
+    normalized_ref = invocation_ref or build_invocation_ref(
+        source_entity_id=consumer_entity_id,
+        target_entity_id=primary_provider,
+        trace_id=invocation_trace_id,
+        capability_id=capability_id,
+        capability=capability,
+        usage=usage_block,
+        receipt_hash=receipt_hash,
+        verification_ref=receipt_hash,
+        settlement_ref=exchange_id,
+        status="settled",
+    )
+    if not normalized_ref.get("settlement_ref"):
+        normalized_ref["settlement_ref"] = exchange_id
+    if receipt_hash and not normalized_ref.get("receipt_hash"):
+        normalized_ref["receipt_hash"] = receipt_hash
+    if invocation_trace_id and not normalized_ref.get("trace_id"):
+        normalized_ref["trace_id"] = invocation_trace_id
+
     payload: dict[str, Any] = {
         "exchange_id": exchange_id,
         "exchange_kind": exchange_kind,
@@ -102,6 +124,7 @@ def emit_exchange_settled(
         "credit_transaction_ids": tx_ids,
         "settlement_policy": settlement_policy,
         "spec_version": SPEC_VERSION,
+        "invocation_ref": normalized_ref,
     }
     if invocation_trace_id:
         payload["invocation_trace_id"] = invocation_trace_id
