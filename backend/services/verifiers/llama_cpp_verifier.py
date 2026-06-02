@@ -8,6 +8,7 @@ import os
 import httpx
 
 from services.verifiers.base import BaseVerifier, VerifierResult
+from services.llm_language import verifier_system_prompt
 from services.verifiers.openai_verifier import build_verifier_prompt, normalize_result
 
 
@@ -35,10 +36,7 @@ class LlamaCppVerifier(BaseVerifier):
         payload = {
             "model": self.model,
             "messages": [
-                {
-                    "role": "system",
-                    "content": "You are an AI advisory verifier for PoCP AI Commons. Return JSON only.",
-                },
+                {"role": "system", "content": verifier_system_prompt()},
                 {"role": "user", "content": prompt},
             ],
             "temperature": 0.2,

@@ -1,0 +1,27 @@
+spec_version: "0.1"
+schema: pocp.settlement_policies.v0.1
+
+policies:
+  compute_settlement.v1:
+    policy_id: compute_settlement.v1
+    version: "1.0.0"
+    kind: bilateral_metered
+    description: Token-metered bilateral compute settlement (consumer debit + provider credit)
+    metering_source: pocp_rewards.compute_metering
+    split_source: pocp_rewards.compute_metering.split
+
+  ai_chat.v1:
+    policy_id: ai_chat.v1
+    version: "1.0.0"
+    kind: flat_debit
+    description: Flat AI chat credit burn per message
+    flat_consumer_debit_env: AI_CHAT_COST_PER_MESSAGE
+    default_flat_debit: 5.0
+
+  capability_execute.v1:
+    policy_id: capability_execute.v1
+    version: "1.0.0"
+    kind: bilateral_metered
+    description: Skill/agent capability execution settlement
+    metering_source: pocp_rewards.compute_metering
+    split_source: pocp_rewards.compute_metering.split

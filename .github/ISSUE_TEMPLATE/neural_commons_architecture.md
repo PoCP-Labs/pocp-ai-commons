@@ -10,6 +10,13 @@ assignees: ""
 
 What part of the Neural Commons architecture should be designed or updated?
 
+## Phase & verification
+
+| Field | Value |
+|-------|-------|
+| **Phase** | A · B · C (see [ROADMAP-THREE-PHASES.md](../../docs/ROADMAP-THREE-PHASES.md)) |
+| **Test / acceptance** | Doc PR: `python backend/scripts/health_check.py` · code: `run_phase_a_acceptance.py` |
+
 ## Layer
 
 - [ ] Application Layer

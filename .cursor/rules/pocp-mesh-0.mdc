@@ -1,0 +1,11 @@
+---
+description: PoCP Mesh-0 federation
+globs: backend/services/federation_*.py
+alwaysApply: false
+---
+
+# Mesh-0 (`pocp-agent-mesh-0`)
+
+Full prompt: `agents/prompts/mesh-0.md` · Task: `pocp-mesh`
+
+Federation acceptance must stay green. No silent mint on import — coordinate Vault. Document peer env vars in `docs/FEDERATION*.md`.

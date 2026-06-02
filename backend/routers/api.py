@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 
 from database import get_db
@@ -184,9 +184,15 @@ def patch_entity(
 
 
 @router.get("/entities/ontology")
-def get_entities_ontology():
+def get_entities_ontology(
+    locale: str | None = Query(default=None, description="en | zh — localized display labels"),
+    accept_language: str | None = Header(default=None, alias="Accept-Language"),
+):
     """Canonical Entity type × role ontology (万物皆 Entity)."""
-    return ontology_document()
+    from services.i18n import locale_from_request, ontology_document_for_locale
+
+    resolved = locale_from_request(accept_language, locale)
+    return ontology_document_for_locale(ontology_document(), resolved)
 
 
 @router.get("/entities/connections/matrix")
@@ -422,6 +428,10 @@ def list_ledger(db: Session = Depends(get_db)):
 
 @router.get("/graph", response_model=ContributionGraph)
 def get_contribution_graph(db: Session = Depends(get_db)):
+    from services.meta_agent_registry import ensure_meta_agents
+
+    ensure_meta_agents(db)
+    db.commit()
     return build_contribution_graph(db)
 
 

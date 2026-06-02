@@ -78,7 +78,76 @@ python backend/scripts/federation_strict_mode_test.py
 
 See [ROADMAP-THREE-PHASES.md](./ROADMAP-THREE-PHASES.md) for Phase A/B/C exit criteria.
 
+**Local optimization (P0 — Exchange Spine + Wallet):** federation acceptance includes `federation_exchange_demo_test.py` and wallet audit:
+
+```bash
+python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8100 --federation http://127.0.0.1:8101
+```
+
+Protocol v0.4 index: [protocol/README.md](./protocol/README.md) · Exchange Spine: [protocol/EXCHANGE-SPINE-v0.1.md](./protocol/EXCHANGE-SPINE-v0.1.md) · Entity Dialogue: [protocol/ENTITY-DIALOGUE-PROTOCOL.md](./protocol/ENTITY-DIALOGUE-PROTOCOL.md).
+
+### Entity Dialogue API (protocol layer L2)
+
+Native envelope: `pocp.entity_dialogue.v0.1` — see [ENTITY-DIALOGUE-PROTOCOL.md](./protocol/ENTITY-DIALOGUE-PROTOCOL.md). Agent Studio mission: [agents/missions/protocol-layer-edp/MANIFEST.md](../agents/missions/protocol-layer-edp/MANIFEST.md).
+
+**Public manifest** (no auth):
+
+```bash
+curl -s http://127.0.0.1:8000/api/v1/intelligence/protocol/entity-dialogue | jq .
+# Docker Compose host port: http://127.0.0.1:8008/...
+```
+
+**Ping dialogue** (requires session — dev-login first, then Bearer token):
+
+```bash
+TOKEN=$(curl -s -X POST http://127.0.0.1:8000/api/v1/auth/dev-login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"rain","email":"rain@example.com"}' | jq -r .access_token)
+
+curl -s -X POST http://127.0.0.1:8000/api/v1/intelligence/dialogue \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "schema": "pocp.entity_dialogue.v0.1",
+    "dialogue_id": "dlg_ping_local_1",
+    "kind": "ping",
+    "from": { "entity_id": "pocp-entity-rain", "node_id": "local" },
+    "to": { "entity_id": "pocp-entity-rain", "node_id": "local" }
+  }' | jq .
+```
+
+**Protocol layer tests** (stack not required):
+
+```bash
+cd backend && python -m pytest -q tests/test_entity_dialogue.py
+```
+
 **Proof deep-link (UI):** open `http://localhost:3000/?proof=<contribution_id>` to verify a contribution proof without running the full submit flow.
+
+## Meta Agents & Agent Studio (engineering orchestration)
+
+PoCP registers **15 Meta Agents** as protocol Entities for Cursor-based development orchestration.
+
+```bash
+# Register / refresh Meta Agent entities
+python backend/scripts/ensure_meta_agents.py
+
+# Agent Studio API (stack running)
+curl http://127.0.0.1:8008/api/v1/agent-studio/dashboard
+curl http://127.0.0.1:8008/api/v1/meta-agents
+```
+
+| Resource | Purpose |
+|----------|---------|
+| Dashboard **Agent Studio** tab | Missions, handoffs, Nexus autopilot, outcomes |
+| [agents/WORKFLOW.md](../agents/WORKFLOW.md) | Start a mission + handoffs |
+| [architecture/10-AGENT-STUDIO.md](./architecture/10-AGENT-STUDIO.md) | Sub-platform architecture |
+| [agents/META-AGENTS.md](../agents/META-AGENTS.md) | Entity IDs and Cursor skill sync |
+| [agents/CURSOR-AUTOMATION.md](../agents/CURSOR-AUTOMATION.md) | Cursor SDK bridge for live handoff execution |
+
+After editing agent specs or prompts: `python agents/sync_cursor_skills.py`
+
+**Live handoffs (optional):** set `POCP_CURSOR_AUTOMATION=true` and `CURSOR_API_KEY` — see [CURSOR-AUTOMATION.md](../agents/CURSOR-AUTOMATION.md).
 
 ## Option B — Docker Compose (PostgreSQL)
 
@@ -89,8 +158,10 @@ docker compose up --build
 | Service | URL |
 |---------|-----|
 | Frontend | http://localhost:3000 |
-| API | http://localhost:8000 |
+| API | http://localhost:8008 (host maps to container :8000) |
 | PostgreSQL | localhost:5432 (pocp/pocp) |
+
+Federation stack (optional) uses **8100** / **8101** — see `docker-compose.federation.yml`.
 
 ## Smoke test
 
@@ -100,7 +171,7 @@ With the API running:
 cd backend
 python scripts/smoke_test.py
 # Or against custom URL:
-python scripts/smoke_test.py http://127.0.0.1:8000
+python scripts/smoke_test.py http://127.0.0.1:8008
 ```
 
 Expected output ends with: `OK Sprint Alpha loop: login → chat → auto-verify → approve → proof → ledger → federation`
@@ -139,7 +210,7 @@ Production public sites should set `ENABLE_DEV_LOGIN=false` and use GitHub OAuth
 
 ## Common issues (Windows)
 
-**Port 8000 already in use:** Stop the old process or use another port:
+**Port 8000 already in use:** Docker Compose publishes PoCP on **8008** by default (another app often binds 8000). Stop the conflicting container or change the host port in `docker-compose.yml`. For a bare `uvicorn` run, pick a free port:
 
 ```powershell
 netstat -ano | findstr ":8000"
@@ -164,10 +235,11 @@ For a **30–100 user pilot** after staging works, see [PILOT-LAUNCH-CHECKLIST.m
 
 ## Next steps
 
-- [Three-Phase Roadmap (Phase A/B/C)](./docs/ROADMAP-THREE-PHASES.md) — **primary execution path**
-- [Public Deploy](./docs/PUBLIC-DEPLOY.md)
+- [Entity Dialogue Protocol](./protocol/ENTITY-DIALOGUE-PROTOCOL.md) — L2 native envelope + API examples above
+- [Three-Phase Roadmap (Phase A/B/C)](./ROADMAP-THREE-PHASES.md) — **primary execution path**
+- [Public Deploy](./PUBLIC-DEPLOY.md)
 - [Pilot Launch Checklist](./PILOT-LAUNCH-CHECKLIST.md)
 - [API Spec](./API-SPEC.md)
 - [Architecture](./ARCHITECTURE.md)
 - [Sprint Alpha](./SPRINT_ALPHA.md)
-- [Roadmap](../ROADMAP.md)
+- [Roadmap](../ROADMAP.md) — legacy product phases

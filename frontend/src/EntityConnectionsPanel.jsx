@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 
 const LAYER_TABS = [
-  { id: "structural", label: "Structural", labelZh: "结构层" },
-  { id: "protocol", label: "Protocol", labelZh: "贡献协议" },
-  { id: "operational", label: "Operational", labelZh: "运行迹" },
+  { id: "structural", label: "Structural" },
+  { id: "protocol", label: "Protocol" },
+  { id: "operational", label: "Operational" },
 ];
 
 function EntityLink({ brief, onSelectEntity }) {
@@ -62,7 +62,7 @@ export default function EntityConnectionsPanel({ entityId, fetchJson, onSelectEn
       <div className="conn-panel__header">
         <div>
           <strong>Protocol connections</strong>
-          <div className="conn-panel__hint">万物互联于贡献协议 · structural · protocol · operational</div>
+          <div className="conn-panel__hint">Entity graph layers · structural · protocol · operational</div>
         </div>
         {data?.matrix_api && (
           <span className="conn-muted" title="Type-level matrix API">
@@ -110,7 +110,6 @@ export default function EntityConnectionsPanel({ entityId, fetchJson, onSelectEn
             onClick={() => setLayer(tab.id)}
           >
             {tab.label}
-            <span className="conn-tab__zh">{tab.labelZh}</span>
           </button>
         ))}
       </div>

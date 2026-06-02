@@ -4,6 +4,7 @@ from statistics import median
 from sqlalchemy.orm import Session
 
 from models.contribution import AiVerifierResult, ContributionEvent, ContributionStatus
+from services.llm_language import infer_context_language
 from services.provenance import provenance_from_evidence
 from services.verifier_registry import load_verifier_providers
 from services.verifiers.mock_verifier import MockVerifier
@@ -67,6 +68,7 @@ class MultiVerifierService:
 
         provider_payload = [r.model_dump() for r in results]
         consensus = {
+            "language_hint": infer_context_language(context),
             "avg_score": round(avg_score, 4),
             "avg_quality": round(avg_quality, 4),
             "avg_task_match": round(avg_task_match, 4),

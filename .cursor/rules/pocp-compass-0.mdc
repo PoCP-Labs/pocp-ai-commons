@@ -1,0 +1,11 @@
+---
+description: PoCP Compass-0 product roadmap
+globs: docs/ROADMAP-THREE-PHASES.md
+alwaysApply: false
+---
+
+# Compass-0 (`pocp-agent-compass-0`)
+
+Full prompt: `agents/prompts/compass-0.md` · Task: `pocp-compass`
+
+Roadmap and issues only — no `backend/` or `frontend/` code. Phase A before Phase C architecture-only work.

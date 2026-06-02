@@ -42,6 +42,7 @@ jobs:
           done
 
       - name: Run unit tests
+        id: pytest
         env:
           POCP_CRYPTO_SUITE: pocp-crypto-v0.2-hybrid
           POCP_NODE_PQC_PRIVATE_KEY: 50f1aad1c21870d89b32c33b75ad7666c313aca0ae8b20486ca5240a563de7c8
@@ -49,7 +50,28 @@ jobs:
         run: python -m pytest tests/ -q --tb=line
 
       - name: Run Phase A acceptance (single node)
+        id: acceptance
         run: python scripts/run_phase_a_acceptance.py http://127.0.0.1:8765 --skip-optional
+        continue-on-error: true
+
+      - name: Report outcomes to Agent Studio
+        if: always()
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          PYTEST_EXIT=${{ steps.pytest.outcome == 'success' && 0 || 1 }}
+          ACC_EXIT=${{ steps.acceptance.outcome == 'success' && 0 || 1 }}
+          python scripts/report_agent_studio_ci.py \
+            --api http://127.0.0.1:8765 \
+            --pytest-exit $PYTEST_EXIT \
+            --acceptance-exit $ACC_EXIT \
+            || true
+
+      - name: Fail job if acceptance failed
+        if: steps.acceptance.outcome != 'success'
+        run: exit 1
 
       - name: Pilot metrics snapshot
         run: python scripts/pilot_metrics.py http://127.0.0.1:8765 --json > pilot-metrics.json

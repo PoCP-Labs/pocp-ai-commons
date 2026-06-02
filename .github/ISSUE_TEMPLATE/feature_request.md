@@ -18,6 +18,13 @@ What problem does this solve?
 
 Describe your suggested approach.
 
+## Phase & verification
+
+| Field | Value |
+|-------|-------|
+| **Phase** | A · B · C (see [ROADMAP-THREE-PHASES.md](../../docs/ROADMAP-THREE-PHASES.md)) |
+| **Acceptance command** | Define test or `run_phase_a_acceptance.py` when touching core loop |
+
 ## Related PoCP concept
 
 - [ ] AI Credits

@@ -2,6 +2,14 @@ from contextlib import asynccontextmanager
 import asyncio
 import logging
 import os
+from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(Path(__file__).resolve().parent / ".env", override=False)
+except ImportError:
+    pass
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,6 +33,9 @@ from routers.capability_registry import router as capability_registry_router
 from routers.community_partners import router as community_partners_router
 from routers.crypto import router as crypto_router
 from routers.wallet import router as wallet_router
+from routers.meta_agents import router as meta_agents_router
+from routers.agent_studio import router as agent_studio_router
+from routers.locale import router as locale_router
 from genesis import ensure_genesis_entities
 from seed import seed_demo
 from middleware.read_only_mirror import ReadOnlyMirrorMiddleware
@@ -111,11 +122,105 @@ async def lifespan(app: FastAPI):
         record_trust_list_if_changed(db)
         db.commit()
         logger.info("Startup seed complete (full_seed=%s)", _full_seed_enabled())
+        if os.getenv("POCP_NEXUS_AUTOPILOT", "true").lower() == "true":
+            from services.agent_studio.nexus_autopilot import run_nexus_autopilot
+
+            ap_db = SessionLocal()
+            try:
+                tick = run_nexus_autopilot(ap_db)
+                ap_db.commit()
+                logger.info(
+                    "Nexus-0 autopilot: mode=%s pending=%s",
+                    tick.get("mode"),
+                    tick.get("pending_handoff_count"),
+                )
+            except Exception:
+                ap_db.rollback()
+                logger.warning("Nexus-0 autopilot tick failed", exc_info=True)
+            finally:
+                ap_db.close()
     except Exception:
         logger.exception("Startup seed failed")
         raise
     finally:
         db.close()
+
+    super_loop_task = None
+    from services.agent_studio.nexus_super_loop import (
+        cursor_backend_automation_enabled,
+        super_loop_backend_enabled,
+        super_loop_host_mode,
+    )
+
+    if super_loop_host_mode():
+        logger.info(
+            "Nexus super-loop host mode: in-container loops disabled; run scripts/run-studio-super-loop.ps1"
+        )
+
+    if super_loop_backend_enabled():
+
+        async def _nexus_super_loop() -> None:
+            from services.agent_studio.nexus_super_loop import run_nexus_super_tick
+
+            try:
+                interval = int(os.getenv("POCP_NEXUS_SUPER_LOOP_INTERVAL_SEC", "600"))
+            except ValueError:
+                interval = 600
+            await asyncio.sleep(20)
+            while True:
+                db = SessionLocal()
+                try:
+                    tick = run_nexus_super_tick(db)
+                    db.commit()
+                    logger.info(
+                        "Nexus super-loop: nexus=%s cursor_processed=%s pending=%s human_required=%s",
+                        (tick.get("nexus") or {}).get("mode"),
+                        (tick.get("cursor") or {}).get("processed_count"),
+                        tick.get("pending_for_cursor"),
+                        tick.get("human_required"),
+                    )
+                except Exception:
+                    db.rollback()
+                    logger.warning("Nexus super-loop tick failed", exc_info=True)
+                finally:
+                    db.close()
+                await asyncio.sleep(interval)
+
+        super_loop_task = asyncio.create_task(_nexus_super_loop())
+        logger.info("Nexus super-loop background task started (PDCA + Cursor + heal)")
+
+    cursor_task = None
+    if super_loop_task is None and cursor_backend_automation_enabled():
+
+        async def _cursor_automation_loop() -> None:
+            from services.agent_studio.cursor_automation import run_cursor_automation_tick
+            from services.agent_studio.cursor_bridge import automation_enabled
+
+            try:
+                interval = int(os.getenv("POCP_CURSOR_AUTOMATION_INTERVAL_SEC", "300"))
+            except ValueError:
+                interval = 300
+            await asyncio.sleep(15)
+            while True:
+                if automation_enabled():
+                    db = SessionLocal()
+                    try:
+                        tick = run_cursor_automation_tick(db)
+                        db.commit()
+                        if tick.get("processed"):
+                            logger.info(
+                                "Cursor automation: processed %s handoff(s)",
+                                len(tick["processed"]),
+                            )
+                    except Exception:
+                        db.rollback()
+                        logger.warning("Cursor automation tick failed", exc_info=True)
+                    finally:
+                        db.close()
+                await asyncio.sleep(interval)
+
+        cursor_task = asyncio.create_task(_cursor_automation_loop())
+        logger.info("Cursor automation background loop started")
 
     if os.getenv("POCP_FEDERATION_SYNC_ON_STARTUP", "false").lower() == "true":
         if load_trusted_nodes():
@@ -140,12 +245,13 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    if balance_task is not None:
-        balance_task.cancel()
-        try:
-            await balance_task
-        except asyncio.CancelledError:
-            pass
+    for task in (balance_task, cursor_task, super_loop_task):
+        if task is not None:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
 
 app = FastAPI(
@@ -184,6 +290,9 @@ app.include_router(capability_registry_router)
 app.include_router(compute_router)
 app.include_router(crypto_router)
 app.include_router(wallet_router)
+app.include_router(meta_agents_router)
+app.include_router(agent_studio_router)
+app.include_router(locale_router)
 
 
 @app.get("/.well-known/pocp-node.json")

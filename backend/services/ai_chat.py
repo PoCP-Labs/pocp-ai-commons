@@ -12,8 +12,13 @@ from services.anti_abuse import check_daily_ai_burn_limit
 from services.exchange_spine import emit_exchange_settled
 from services.invocation_ledger import build_invocation_ref
 from services.ledger_chain import append_ledger_record
+from services.settlement_policy import policy_tag
 from services.llama_cpp_client import llama_cpp_base_url, llama_cpp_chat_enabled, llama_cpp_chat_model
 from services.ollama_client import ollama_base_url, ollama_chat_model
+from services.llm_language import (
+    conversational_system_prompt,
+    detect_language_hint,
+)
 from services.vllm_client import vllm_base_url, vllm_chat_enabled, vllm_chat_model
 
 AI_CHAT_COST_PER_MESSAGE = float(os.getenv("AI_CHAT_COST_PER_MESSAGE", "5"))
@@ -27,8 +32,10 @@ async def generate_ai_reply(
     system_content: str | None = None,
 ) -> tuple[str, str, str]:
     provider = (provider or "mock").lower()
-    system = system_content or (
-        "You are PoCP AI Commons assistant. Be helpful, concise, and educational."
+    system = conversational_system_prompt(
+        base=system_content
+        or "You are PoCP AI Commons assistant. Be helpful, concise, and educational.",
+        domain="ai_chat",
     )
     if provider == "openai" and os.getenv("OPENAI_API_KEY"):
         model = model or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
@@ -183,6 +190,7 @@ async def chat_and_burn_credits(
     chat_provider_entity = os.getenv("POCP_CHAT_PROVIDER_ENTITY_ID", LUMEN_0_ID)
     receipt_material = f"{entity_id}|{actual_provider}|{actual_model}|{cost}|{message[:128]}"
     receipt_hash = f"sha256:{hashlib.sha256(receipt_material.encode()).hexdigest()}"
+    chat_policy_id = "ai_chat.v1"
     exchange_record = emit_exchange_settled(
         db,
         consumer_entity_id=entity_id,
@@ -198,7 +206,8 @@ async def chat_and_burn_credits(
             "model": actual_model,
         },
         legacy_event_type="ai_credits_burned",
-        settlement_policy="ai_chat.v1",
+        settlement_policy=chat_policy_id,
+        settlement_policy_tag=policy_tag(chat_policy_id),
         invocation_ref=build_invocation_ref(
             source_entity_id=entity_id,
             target_entity_id=chat_provider_entity,
@@ -215,7 +224,7 @@ async def chat_and_burn_credits(
         ),
     )
     db.flush()
-    return {
+    out: dict = {
         "reply": reply,
         "credits_spent": cost,
         "remaining_credits": wallet.ai_credits,
@@ -223,3 +232,6 @@ async def chat_and_burn_credits(
         "model": actual_model,
         "exchange_id": (exchange_record.payload or {}).get("exchange_id"),
     }
+    if os.getenv("POCP_LLM_DETECT_LANGUAGE", "true").lower() in ("1", "true", "yes"):
+        out["language_hint"] = detect_language_hint(message)
+    return out

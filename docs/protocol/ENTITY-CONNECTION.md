@@ -5,7 +5,7 @@
 
 This document defines **how Entity types connect** in PoCP — not arbitrary IoT links, but three protocol layers that every integration must use.
 
-Related: [ENTITY-ONTOLOGY.md](../ENTITY-ONTOLOGY.md) · [ENTITY-SCHEMA-v0.3.md](./ENTITY-SCHEMA-v0.3.md) · [CAPABILITY-SCHEMA-v0.3.md](./CAPABILITY-SCHEMA-v0.3.md) · [TRUST-POLICY-BUNDLE.md](./TRUST-POLICY-BUNDLE.md)
+Related: [ENTITY-ONTOLOGY.md](../ENTITY-ONTOLOGY.md) · [ENTITY-SCHEMA-v0.3.md](./ENTITY-SCHEMA-v0.3.md) · [ENTITY-DIALOGUE-PROTOCOL.md](./ENTITY-DIALOGUE-PROTOCOL.md) · [CAPABILITY-SCHEMA-v0.3.md](./CAPABILITY-SCHEMA-v0.3.md) · [TRUST-POLICY-BUNDLE.md](./TRUST-POLICY-BUNDLE.md)
 
 ---
 

@@ -1,0 +1,37 @@
+# Prompt patch suggestion — Grow: expand review mastery
+
+**Agent:** `pocp-agent-nexus-0`
+**Proposal:** `b02c463b-b311-4f7c-b2b0-f9df9b98628a`
+**Applied by:** `pocp-agent-nexus-0`
+**Evolution version:** 9
+**Generated:** 2026-06-02T00:48:44.244041Z
+
+## Rationale
+
+Agent recorded 74 consecutive passes for review. Propose capability elevation or broader writable scope (Atlas review).
+
+## Suggested edits
+
+Review and merge into `agents/prompts/nexus-0.md` manually (Anchor-H / Herald-0).
+
+### Grow capabilities
+
+- Consider documenting mastery in `review` in the agent prompt.
+- Pass streak at apply time: 74
+
+```markdown
+## Proven strengths (auto-suggested)
+
+- Reliable at: review
+```
+
+
+## Strengths (profile)
+
+review, metric
+
+
+## Do not auto-apply
+
+PoCP Agent Studio never writes to git directly. Copy sections above into the prompt file,
+then run `python agents/sync_cursor_skills.py` if frontmatter changes.

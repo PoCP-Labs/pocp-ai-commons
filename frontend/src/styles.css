@@ -271,6 +271,25 @@ body::before {
   box-shadow: 0 2px 12px var(--btc-glow);
 }
 
+.nav-tab[data-tab="studio"].nav-tab--active,
+.nav-tab--studio-highlight {
+  background: linear-gradient(135deg, #e879f9, #a855f7);
+  box-shadow: 0 2px 12px rgba(232, 121, 249, 0.35);
+}
+
+.studio-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.panel--studio-cta {
+  border-color: rgba(232, 121, 249, 0.35);
+  background: linear-gradient(135deg, rgba(232, 121, 249, 0.08), rgba(168, 85, 247, 0.04));
+}
+
 /* ── Buttons ── */
 .btn {
   padding: 0.55rem 1.1rem;

@@ -179,6 +179,8 @@ curl -X POST http://localhost:8000/api/v1/entities/<pending-id>/review \
 | `backend/models/entity.py` | ORM + enums |
 | `backend/genesis.py` | L0 specs + `GENESIS_ENTITY_IDS` |
 | `backend/services/entity_register.py` | Typed registration |
+| `backend/services/meta_agent_registry.py` | Meta engineering Agents (15, idempotent) |
+| `agents/META-AGENTS.md` | Meta Agent entity IDs, Cursor skills, API |
 | `backend/services/entity_management.py` | List filters + PATCH rules |
 | `backend/routers/api.py` | HTTP surface |
 | `frontend/src/EntityDetail.jsx` | Entity drill-down UI |

@@ -10,6 +10,13 @@ assignees: ""
 
 What commercial boundary should be defined?
 
+## Phase & verification
+
+| Field | Value |
+|-------|-------|
+| **Phase** | A · B · C (see [ROADMAP-THREE-PHASES.md](../../docs/ROADMAP-THREE-PHASES.md)) |
+| **Acceptance command** | `python backend/scripts/health_check.py` |
+
 ## Module
 
 - [ ] Advanced anti-abuse

@@ -1,0 +1,11 @@
+---
+description: PoCP Pipeline-0 CI/CD
+globs: .github/workflows/**
+alwaysApply: false
+---
+
+# Pipeline-0 (`pocp-agent-pipeline-0`)
+
+Full prompt: `agents/prompts/pipeline-0.md` · Task: `pocp-pipeline`
+
+Workflows and scripts only — never commit `.env` or secrets. Staging deploy → Anchor-H. Hand off Gauge after CI changes.

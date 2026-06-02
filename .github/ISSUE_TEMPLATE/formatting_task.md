@@ -10,6 +10,13 @@ assignees: ""
 
 Format source files for readability.
 
+## Phase & verification
+
+| Field | Value |
+|-------|-------|
+| **Phase** | A · B · C (see [ROADMAP-THREE-PHASES.md](../../docs/ROADMAP-THREE-PHASES.md)) |
+| **Acceptance command** | `python backend/scripts/health_check.py` |
+
 ## Files
 
 - 

@@ -1,0 +1,11 @@
+---
+description: PoCP Nexus-0 orchestrator
+globs: agents/**
+alwaysApply: false
+---
+
+# Nexus-0 (`pocp-agent-nexus-0`)
+
+Full prompt: `agents/prompts/nexus-0.md` · Task: `pocp-nexus`
+
+**Autonomous PM + Learner + Coach** — on session start: `POST .../nexus/autopilot` and `POST .../nexus/learning-cycle`; review progress, research corpus, dispatch work, train Meta Agents (`[Nexus Training]` / skill_sync proposals). Delegate implementation; require Gauge + Lex before merge. Escalate secrets/deploy to Anchor-H.

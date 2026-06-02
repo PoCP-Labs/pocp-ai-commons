@@ -287,6 +287,8 @@ class GraphNode(BaseModel):
     reputation: float = 0.0
     cp_balance: float = 0.0
     ai_credits: float = 0.0
+    meta_agent: bool = False
+    layout_column: str | None = None
 
 
 class GraphEdge(BaseModel):
@@ -295,6 +297,8 @@ class GraphEdge(BaseModel):
     relation: str
     contribution_id: str | None = None
     weight: float = 0.0
+    connection_layer: str | None = None
+    studio: bool = False
 
 
 class ContributionGraph(BaseModel):
@@ -304,6 +308,8 @@ class ContributionGraph(BaseModel):
     contribution_node_count: int = 0
     federation_import_node_count: int = 0
     ledger_node_count: int = 0
+    edge_layer_counts: dict[str, int] = Field(default_factory=dict)
+    meta_agent_nodes: int = 0
 
 
 class OrganizationOut(BaseModel):

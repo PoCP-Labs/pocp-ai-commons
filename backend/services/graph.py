@@ -40,10 +40,12 @@ _OPERATIONAL_RELATIONS = frozenset(
 
 
 def infer_connection_layer(edge: dict) -> str:
-    """Map graph edge relation to structural / protocol / operational layer."""
+    """Map graph edge relation to structural / protocol / operational / studio layer."""
     explicit = edge.get("connection_layer")
-    if explicit in ("structural", "protocol", "operational"):
+    if explicit in ("structural", "protocol", "operational", "studio"):
         return explicit
+    if edge.get("relation") in ("reports_to", "orchestrates", "handoff_to", "maintains"):
+        return "studio"
     relation = edge.get("relation") or ""
     if relation in _STRUCTURAL_RELATIONS:
         return "structural"
@@ -430,11 +432,22 @@ def build_contribution_graph(db: Session) -> dict:
         append_edge=_append_edge,
     )
 
+    from services.agent_studio.graph_edges import append_meta_agent_studio_graph_edges
+
+    studio_graph = append_meta_agent_studio_graph_edges(
+        db,
+        edges=edges,
+        nodes=nodes,
+        node_ids=node_ids,
+        entity_map=entity_map,
+        append_edge=_append_edge,
+    )
+
     contribution_nodes = sum(1 for n in nodes if n["entity_type"] == "contribution")
     exchange_nodes = sum(1 for n in nodes if n["entity_type"] == "exchange")
     federation_import_nodes = sum(1 for n in nodes if n["entity_type"] == "federation_import")
     ledger_nodes = sum(1 for n in nodes if n["entity_type"] == "ledger")
-    layer_counts = {"structural": 0, "protocol": 0, "operational": 0}
+    layer_counts = {"structural": 0, "protocol": 0, "operational": 0, "studio": 0}
     for edge in edges:
         layer = edge.get("connection_layer") or infer_connection_layer(edge)
         if layer in layer_counts:
@@ -451,6 +464,9 @@ def build_contribution_graph(db: Session) -> dict:
             "structural": "ownership & accountability (owns, created, founded)",
             "protocol": "contribution participants & verification (submits, witnesses, …)",
             "operational": "invocation trace (uses, calls, invokes_llm, …)",
+            "studio": "Agent Studio orchestration (reports_to, orchestrates, handoff_to, maintains)",
         },
         "edge_layer_counts": layer_counts,
+        "agent_studio_graph": studio_graph,
+        "meta_agent_nodes": studio_graph.get("meta_agent_nodes", 0),
     }

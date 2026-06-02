@@ -23,6 +23,7 @@ from services.exchange_spine import emit_exchange_settled, infer_exchange_kind
 from services.ledger_chain import append_ledger_record
 from services.market_pricing import resolve_intel_listing_price, resolve_rate_overrides
 from services.protocol_config import get_rewards_config
+from services.settlement_policy import policy_tag
 
 
 def _wallet(db: Session, entity_id: str) -> Wallet | None:
@@ -472,6 +473,7 @@ def settle_bilateral(
         provider_ids.append(treasury_entity_id)
 
     trace_id = (receipt.get("extra") or {}).get("trace_id") or receipt.get("trace_id")
+    settlement_policy_id = "compute_settlement.v1"
 
     exchange_record = emit_exchange_settled(
         db,
@@ -485,6 +487,8 @@ def settle_bilateral(
         contribution_id=contribution_id,
         invocation_trace_id=trace_id,
         legacy_event_type="compute_settlement",
+        settlement_policy=settlement_policy_id,
+        settlement_policy_tag=policy_tag(settlement_policy_id),
         extra_payload={
             "settlement_kind": settlement_kind,
             "settlement": settlement_meta,

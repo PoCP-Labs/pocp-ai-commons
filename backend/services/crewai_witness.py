@@ -15,6 +15,7 @@ import yaml
 
 from services.ai_chat import generate_ai_reply
 from services.verifiers.base import VerifierResult
+from services.llm_language import verifier_system_prompt
 from services.verifiers.openai_verifier import build_verifier_prompt, normalize_result
 
 _CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "crewai_witness.yaml"
@@ -125,11 +126,8 @@ async def _llm_role_review(agent: dict[str, Any], context: dict) -> dict[str, An
     provider = os.getenv("CREWAI_WITNESS_LLM_PROVIDER", "mock").lower()
     model = os.getenv("CREWAI_WITNESS_MODEL") or None
     prompt = build_verifier_prompt(context)
-    system = (
-        f"You are {agent.get('role')} in a PoCP AI Commons witness crew.\n"
-        f"Goal: {agent.get('goal')}\n"
-        "Return JSON only with keys: task_match, quality, originality, impact, "
-        "evidence_score, risk_score, suggested_cp, suggested_credits, rationale, concerns."
+    system = verifier_system_prompt(
+        role_label=f"{agent.get('role')} in a PoCP witness crew (goal: {agent.get('goal')})"
     )
     if provider == "mock":
         return _mock_role_review(agent, context)

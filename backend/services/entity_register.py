@@ -132,6 +132,7 @@ def register_workflow(
     version: str = "1.0.0",
     entrypoint: str | None = None,
     activate: bool = True,
+    entity_id: str | None = None,
 ) -> Entity:
     metadata = {
         "steps": steps or [],
@@ -147,6 +148,7 @@ def register_workflow(
         creator_id=maintainer_id,
         status=EntityStatus.active if activate else EntityStatus.pending,
         metadata=metadata,
+        entity_id=entity_id,
     )
 
 

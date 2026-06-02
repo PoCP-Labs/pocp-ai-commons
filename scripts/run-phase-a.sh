@@ -21,9 +21,9 @@ if $FEDERATION; then
   NODE_B="http://127.0.0.1:8101"
   FED_ARG="--federation $NODE_B"
 else
-  echo "Starting single-node stack (:8000 API, :3000 UI)…"
+  echo "Starting single-node stack (:8008 API, :3000 UI)…"
   docker compose up -d --build
-  BASE="http://127.0.0.1:8000"
+  BASE="http://127.0.0.1:8008"
   FED_ARG=""
 fi
 

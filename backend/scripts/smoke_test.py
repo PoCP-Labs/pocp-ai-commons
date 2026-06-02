@@ -5,7 +5,7 @@ import sys
 import urllib.error
 import urllib.request
 
-BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8000"
+BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8008"
 
 
 def req(method: str, path: str, body: dict | None = None, token: str | None = None) -> dict | list:
@@ -134,9 +134,14 @@ def main() -> None:
     assert "pocp-entity-r-matrix-dataset" in dataset_ids, "Demo dataset entity missing"
 
     contributions = req("GET", "/api/v1/contributions")
-    demo = next(
-        (c for c in contributions if "matrix" in (c.get("description") or "").lower()),
-        None,
+    matrix_contribs = [
+        c for c in contributions if "matrix" in (c.get("description") or "").lower()
+    ]
+    # Prefer the seeded pilot demo (most participants) over ad-hoc matrix study notes.
+    demo = (
+        max(matrix_contribs, key=lambda c: len(c.get("participants") or []), default=None)
+        if matrix_contribs
+        else None
     )
     if demo and demo.get("participants"):
         roles = {p["role"] for p in demo["participants"]}

@@ -3,6 +3,7 @@ import os
 
 import httpx
 
+from services.llm_language import infer_context_language, verifier_system_prompt
 from services.verifiers.base import BaseVerifier, VerifierResult
 
 
@@ -33,7 +34,7 @@ class OpenAIVerifier(BaseVerifier):
                 json={
                     "model": self.model,
                     "messages": [
-                        {"role": "system", "content": "You are an AI advisory verifier for PoCP AI Commons. Return JSON only."},
+                        {"role": "system", "content": verifier_system_prompt()},
                         {"role": "user", "content": prompt},
                     ],
                     "temperature": 0.1,
@@ -47,6 +48,7 @@ class OpenAIVerifier(BaseVerifier):
 
 
 def build_verifier_prompt(context: dict) -> str:
+    lang_hint = infer_context_language(context)
     return f"""
 You are Clarion-0, an AI advisory verifier for PoCP AI Commons.
 You are a Reviewer Assistant / Contribution Verifier Agent.
@@ -68,6 +70,8 @@ Clarion-0 review guardrails:
 - Do not inflate rewards when evidence is weak.
 - Flag plagiarism, spam, unsafe content, unverifiable claims, license issues, and self-review risks.
 - Finalization authority belongs to published policy + witness quorum, not to this prompt.
+
+Contributor language hint (for rationale/concerns text only): {lang_hint}
 
 Return JSON only:
 {{

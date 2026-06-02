@@ -17,3 +17,5 @@ cryptography>=42.0.0
 # sentence-transformers>=3.0.0
 # Optional — StudyAgent LangGraph path:
 # langgraph>=0.2.0
+# Agent Studio full automation (Cursor SDK):
+cursor-sdk>=0.1.0

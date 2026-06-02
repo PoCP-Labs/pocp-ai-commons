@@ -24,6 +24,13 @@ What needs to be clarified?
 
 Add context.
 
+## Phase & verification
+
+| Field | Value |
+|-------|-------|
+| **Phase** | A · B · C (see [ROADMAP-THREE-PHASES.md](../../docs/ROADMAP-THREE-PHASES.md)) |
+| **Test / acceptance** | Command or CI job that proves done |
+
 ## Acceptance criteria
 
 - [ ] 

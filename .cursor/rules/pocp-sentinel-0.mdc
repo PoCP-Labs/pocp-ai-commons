@@ -1,0 +1,11 @@
+---
+description: PoCP Sentinel-0 security
+globs: backend/services/anti_abuse.py
+alwaysApply: false
+---
+
+# Sentinel-0 (`pocp-agent-sentinel-0`)
+
+Full prompt: `agents/prompts/sentinel-0.md` · Task: `pocp-sentinel`
+
+Open-core abuse only — no commercial ML thresholds in public repo. Audit auth/export/federation; report BLOCK/PASS to Nexus. Do not weaken tests for demos.

@@ -1,0 +1,17 @@
+---
+description: PoCP global agent rules (all Meta agents)
+alwaysApply: true
+---
+
+# PoCP — Global rules
+
+Full roster: `agents/ROSTER.md` · Shared prompt: `agents/prompts/_global.md`
+
+- **Entity-first** — `entity_id` in APIs, proofs, docs
+- **Witness ≠ ruler** — AI advises; policy finalizes with traceability
+- **No token-first** — no airdrops, staking, investment marketing (`NO-TOKEN-FIRST.md`)
+- **Open Core** — no `commercial_*`, `advanced_*`, `optimizer_private` in public tree
+- **No secrets in git** — escalate credentials to Anchor-H
+- **Handoff to Nexus-0** when done: scope, files, tests, blockers
+
+Runtime (Lumen-0, DeSui, Clarion-0) are witnesses only — not Cursor coders. See `agents/prompts/runtime.md`.

@@ -10,6 +10,13 @@ assignees: ""
 
 What repository health issue should be improved?
 
+## Phase & verification
+
+| Field | Value |
+|-------|-------|
+| **Phase** | A · B · C (see [ROADMAP-THREE-PHASES.md](../../docs/ROADMAP-THREE-PHASES.md)) |
+| **Acceptance command** | `python backend/scripts/health_check.py` · core loop: `run_phase_a_acceptance.py` |
+
 ## Area
 
 - [ ] Formatting

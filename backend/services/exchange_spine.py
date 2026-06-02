@@ -11,6 +11,7 @@ from models.ledger import LedgerRecord
 from models.wallet import CreditTransaction
 from services.invocation_ledger import build_invocation_ref
 from services.ledger_chain import append_ledger_record
+from services.settlement_policy import policy_tag
 
 SPEC_VERSION = "pocp.exchange_spine.v0.1"
 
@@ -68,6 +69,7 @@ def emit_exchange_settled(
     invocation_ref: dict[str, Any] | None = None,
     legacy_event_type: str | None = None,
     settlement_policy: str = "compute_settlement.v1",
+    settlement_policy_tag: dict[str, Any] | None = None,
     extra_payload: dict[str, Any] | None = None,
 ) -> LedgerRecord:
     """Append exchange_settled and bind credit_transactions via ledger_record_id."""
@@ -112,6 +114,8 @@ def emit_exchange_settled(
     if invocation_trace_id and not normalized_ref.get("trace_id"):
         normalized_ref["trace_id"] = invocation_trace_id
 
+    policy_meta = settlement_policy_tag or policy_tag(settlement_policy)
+
     payload: dict[str, Any] = {
         "exchange_id": exchange_id,
         "exchange_kind": exchange_kind,
@@ -123,6 +127,9 @@ def emit_exchange_settled(
         "usage": usage_block,
         "credit_transaction_ids": tx_ids,
         "settlement_policy": settlement_policy,
+        "settlement_policy_id": policy_meta.get("settlement_policy_id"),
+        "settlement_policy_version": policy_meta.get("settlement_policy_version"),
+        "policy_hash": policy_meta.get("policy_hash"),
         "spec_version": SPEC_VERSION,
         "invocation_ref": normalized_ref,
     }

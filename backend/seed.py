@@ -24,6 +24,7 @@ from services.entity_dedup import merge_rain_duplicates
 from services.entity_register import register_dataset, register_entity, register_tool
 from services.compute_seed import ensure_demo_compute_profiles
 from services.invocation import record_invocation
+from services.entity_catalog import ensure_platform_entity_catalog
 from services.org_foundation import ensure_pocp_org_foundation
 
 R_DOCS_TOOL_ID = "pocp-entity-r-docs-tool"
@@ -125,14 +126,23 @@ def build_demo_participants(
 
 
 def _find_demo_contribution(db: Session) -> ContributionEvent | None:
-    return (
+    candidates = (
         db.query(ContributionEvent)
         .filter(
             ContributionEvent.primary_entity_id == RAIN_ID,
             ContributionEvent.description.contains("matrix"),
         )
         .order_by(ContributionEvent.created_at)
-        .first()
+        .all()
+    )
+    if not candidates:
+        return None
+    # Upgrade the canonical seeded demo (richest participant graph), not ad-hoc matrix notes.
+    return max(
+        candidates,
+        key=lambda c: db.query(ContributionParticipant)
+        .filter(ContributionParticipant.contribution_id == c.id)
+        .count(),
     )
 
 
@@ -245,6 +255,7 @@ def seed_demo(db: Session) -> None:
             org=pocp_commons,
         )
         upgrade_demo_pilot_topology(db)
+        ensure_platform_entity_catalog(db)
         ensure_demo_accounts(db, existing_rain, existing_bob)
         db.commit()
         return
@@ -433,4 +444,5 @@ def seed_demo(db: Session) -> None:
     )
 
     task.status = TaskStatus.completed
+    ensure_platform_entity_catalog(db)
     db.commit()

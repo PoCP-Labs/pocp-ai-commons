@@ -73,8 +73,8 @@ export default function ComputePoolPanel({ fetchJson, me, entities }) {
   if (!me) {
     return (
       <section className="panel" style={{ marginTop: 16 }}>
-        <h2 className="panel__title section-heading--ai">Org 算力池</h2>
-        <p className="empty-state">Dev Login 后可为组织充值算力池。</p>
+        <h2 className="panel__title section-heading--ai">Org compute pool</h2>
+        <p className="empty-state">Dev Login to deposit AI Credits into an organization compute pool.</p>
       </section>
     );
   }
@@ -83,14 +83,14 @@ export default function ComputePoolPanel({ fetchJson, me, entities }) {
 
   return (
     <section className="panel" style={{ marginTop: 16 }}>
-      <h2 className="panel__title section-heading--ai">Org 算力池</h2>
+      <h2 className="panel__title section-heading--ai">Org compute pool</h2>
       <p className="panel__subtitle">
-        组织级算力储备 · 赞助方注入 AIC · 供 precompute / 赤字突发使用
+        Organization-level compute reserve · sponsors deposit AIC · used for precompute and deficit burst
       </p>
 
       <div className="profile-card profile-card--wallet" style={{ marginBottom: 16 }}>
         <div className="profile-card__balance">
-          你的钱包:{" "}
+          Your wallet:{" "}
           <span className="ai-credits">
             <strong>{credits ?? "—"}</strong>
           </span>{" "}
@@ -122,15 +122,15 @@ export default function ComputePoolPanel({ fetchJson, me, entities }) {
           {summary && (
             <div className="mini-card" style={{ marginBottom: 16 }}>
               <div>
-                池余额: <strong>{summary.balance_credits ?? 0}</strong> AIC
+                Pool balance: <strong>{summary.balance_credits ?? 0}</strong> AIC
               </div>
               <div className="entity-row__mission" style={{ marginTop: 6 }}>
-                累计注入 {summary.total_deposited ?? 0} · 累计消耗 {summary.total_spent ?? 0}
+                Deposited {summary.total_deposited ?? 0} · Spent {summary.total_spent ?? 0}
                 {summary.precompute_runs != null ? ` · precompute ${summary.precompute_runs}` : ""}
               </div>
               {summary.deficit_burst_limit != null && (
                 <div className="entity-row__mission" style={{ marginTop: 4 }}>
-                  赤字突发上限: {summary.deficit_burst_limit} AIC
+                  Deficit burst limit: {summary.deficit_burst_limit} AIC
                 </div>
               )}
             </div>
@@ -148,7 +148,7 @@ export default function ComputePoolPanel({ fetchJson, me, entities }) {
               />
             </label>
             <button type="submit" className="btn btn--primary" disabled={loading || !orgId}>
-              充值算力池
+              Deposit to pool
             </button>
           </form>
         </>

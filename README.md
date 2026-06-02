@@ -263,6 +263,7 @@ These four documents are the project's genesis block:
 | [GENESIS.md](./GENESIS.md) | Why PoCP is a new species for the AI age |
 | [AI-COMMONS.md](./AI-COMMONS.md) | First application: the AI commons network |
 | [PROTOCOL-SPEC-v0.1.md](./PROTOCOL-SPEC-v0.1.md) | Minimal protocol spec for implementation |
+| [docs/protocol/README.md](./docs/protocol/README.md) | **Protocol v0.4 index** — capability-first exchange spine |
 | [docs/README.md](./docs/README.md) | Full documentation index |
 
 **Genesis translations:** [中文](docs/genesis/zh-CN.md) · [Français](docs/genesis/fr.md) · [Deutsch](docs/genesis/de.md) · [العربية](docs/genesis/ar.md) · [Русский](docs/genesis/ru.md)
@@ -271,15 +272,15 @@ These four documents are the project's genesis block:
 
 ## Roadmap
 
-| Phase | Focus |
-|-------|--------|
-| **0 — Genesis** | README, Genesis, AI Commons, Protocol spec, repo setup |
-| **1 — MVP** | Login, wallet, AI chat, tasks, submission, AI review, human review, ledger |
-| **2 — Pilot** | 30–100 early users, verified tasks, anti-abuse testing |
-| **3 — Contribution Graph** | Human + Agent + Skill records, reputation, graph explorer |
-| **4 — Protocol Expansion** | Decentralized verification, on-chain anchoring, governance by contribution |
+| Phase | Horizon | Goal | Success signal |
+|-------|---------|------|----------------|
+| **A** | 4–8 weeks | Demonstrable public loop — fork → verify contribution in 30 min | `run_phase_a_acceptance.py` green; staging with OAuth |
+| **B** | 2–4 months | Operable distributed network — multi-node compute/MCP | Third-party peer node 30 days uptime |
+| **C** | 6–12 months | Contribution Internet prototype — protocol forked by other apps | 2+ apps exchange same proof/federation format |
 
-Details: [ROADMAP.md](./ROADMAP.md)
+**Current status:** `v0.3.0-alpha` (Phase A engineering) **done**; **local optimization** (Exchange Spine + Wallet) in progress; **public staging deferred**.
+
+Details: [docs/ROADMAP-THREE-PHASES.md](./docs/ROADMAP-THREE-PHASES.md) · legacy product phases: [ROADMAP.md](./ROADMAP.md)
 
 ---
 
@@ -304,8 +305,10 @@ docker compose up --build
 | Service | URL |
 |---------|-----|
 | Frontend dashboard | http://localhost:3000 |
-| API health | http://localhost:8000/health |
-| API docs | http://localhost:8000/docs |
+| API health | http://localhost:8008/health |
+| API docs | http://localhost:8008/docs |
+
+Host port **8008** avoids conflicts when another app already uses 8000. Federation demo uses **8100** / **8101** — see [docs/LOCAL-SETUP.md](./docs/LOCAL-SETUP.md).
 
 **Demo:** First boot seeds genesis entities and the R-language study scenario with one completed verify → approve loop.
 
@@ -323,11 +326,13 @@ POCP_FULL_SEED=true docker compose up --build
 
 See [docs/LOCAL-SETUP.md](./docs/LOCAL-SETUP.md) for dev login, verifiers, and SQLite mode.
 
+**Deploy:** [PUBLIC-DEPLOY.md](./docs/PUBLIC-DEPLOY.md) · [DEPLOY-ALIYUN.md](./docs/DEPLOY-ALIYUN.md) (Alibaba Cloud ECS)
+
 ---
 
 ## Development Status
 
-PoCP AI Commons is in **Genesis MVP** stage.
+PoCP AI Commons is in **Genesis MVP** stage — `v0.3.0-alpha` (Phase A engineering) **done**; **local optimization** in progress; **public staging deferred**.
 
 The current goal is to prove one loop end-to-end:
 
@@ -338,6 +343,32 @@ A person completes a contribution task
 → system issues CP and AI Credits
 → contribution enters ledger + graph Merkle proof
 ```
+
+**Local optimization (now):** see [docs/ROADMAP-THREE-PHASES.md](./docs/ROADMAP-THREE-PHASES.md).
+
+| Priority | Work | Exit signal |
+|----------|------|-------------|
+| **P0** | Exchange Spine E2E | `federation_exchange_demo_test.py` green in federation acceptance |
+| **P0** | Wallet transaction replay | `GET /wallets/audit` valid; constitution tests green |
+| **P1** | Federation L1 exchange import | B node imports A exchange proof without BC mint |
+| **P1** | Live compute adapter wire | `test_akash_live_wire.py` + stub→live config path documented |
+| **P2** | Protocol Layer — Entity Dialogue (EDP) | `pytest test_entity_dialogue` green; see [docs/protocol/ENTITY-DIALOGUE-PROTOCOL.md](./docs/protocol/ENTITY-DIALOGUE-PROTOCOL.md) · [agents/missions/protocol-layer-edp/MANIFEST.md](./agents/missions/protocol-layer-edp/MANIFEST.md) |
+
+---
+
+## Meta Agents & Agent Studio
+
+Engineering orchestration for PoCP development — 15 Meta Agents (Nexus, Atlas, Forge, …) registered as protocol Entities with Cursor Skills, missions, and handoffs.
+
+| Document | Purpose |
+|----------|---------|
+| [agents/META-AGENTS.md](./agents/META-AGENTS.md) | Entity IDs, API, skill sync |
+| [agents/ROSTER.md](./agents/ROSTER.md) | Roles, paths, handoff matrix |
+| [docs/architecture/10-AGENT-STUDIO.md](./docs/architecture/10-AGENT-STUDIO.md) | Agent Studio sub-platform |
+| [agents/WORKFLOW.md](./agents/WORKFLOW.md) | Start working with Agent Studio |
+| [agents/CURSOR-AUTOMATION.md](./agents/CURSOR-AUTOMATION.md) | Cursor SDK bridge for live handoff execution |
+
+Dashboard: **Agent Studio** tab · API: `/api/v1/agent-studio/*`
 
 ---
 

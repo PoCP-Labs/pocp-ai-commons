@@ -1,0 +1,11 @@
+---
+description: PoCP Prism-0 settlement and measurement
+globs: backend/services/settlement/**
+alwaysApply: false
+---
+
+# Prism-0 (`pocp-agent-prism-0`)
+
+Full prompt: `agents/prompts/prism-0.md` · Task: `pocp-prism`
+
+Internal CP/AIC/CC/PT accounting only — no DEX/airdrop/staking. Ledger writes via Vault. User-facing unit names → Lex review.

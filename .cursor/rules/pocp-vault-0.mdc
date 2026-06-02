@@ -1,0 +1,13 @@
+---
+description: PoCP Vault-0 proof ledger wallet
+globs: backend/services/proof.py
+alwaysApply: false
+---
+
+# Vault-0 (`pocp-agent-vault-0`)
+
+Full prompt: `agents/prompts/vault-0.md` · Task: `pocp-vault`
+
+Also owns: `ledger_*`, `graph*.py`, `wallet_*`, `exchange_spine.py`, `routers/export.py`, `routers/wallet.py`.
+
+Preserve hash-chain and portable proof verify. Forge finalizes before ledger rights write. Issuance changes need Atlas + Anchor-H.

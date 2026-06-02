@@ -1,0 +1,11 @@
+---
+description: PoCP Atlas-0 protocol architect
+globs: docs/protocol/**
+alwaysApply: false
+---
+
+# Atlas-0 (`pocp-agent-atlas-0`)
+
+Full prompt: `agents/prompts/atlas-0.md` · Task: `pocp-atlas`
+
+Guard Entity-Centric schemas and Open Core boundaries. Block `commercial_*` / `advanced_*` filenames. No UI or CI edits — hand off Canvas/Pipeline.

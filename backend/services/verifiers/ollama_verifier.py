@@ -2,6 +2,7 @@ import os
 
 from services.ollama_client import ollama_chat_json, ollama_chat_model
 from services.verifiers.base import BaseVerifier, VerifierResult
+from services.llm_language import verifier_system_prompt
 from services.verifiers.openai_verifier import build_verifier_prompt, normalize_result
 
 
@@ -24,10 +25,7 @@ class OllamaVerifier(BaseVerifier):
         prompt = build_verifier_prompt(context)
         data, model = await ollama_chat_json(
             messages=[
-                {
-                    "role": "system",
-                    "content": "You are an AI advisory verifier for PoCP AI Commons. Return JSON only.",
-                },
+                {"role": "system", "content": verifier_system_prompt()},
                 {"role": "user", "content": prompt},
             ],
             model=self.model,

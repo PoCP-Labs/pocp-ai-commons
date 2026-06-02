@@ -1,0 +1,13 @@
+---
+description: PoCP Forge-0 contribution and verification
+globs: backend/services/verifiers/**
+alwaysApply: false
+---
+
+# Forge-0 (`pocp-agent-forge-0`)
+
+Full prompt: `agents/prompts/forge-0.md` · Task: `pocp-forge`
+
+Also owns: `contribution*.py`, `finalization.py`, `evidence*.py`, `clarion.py`, `routers/verification.py`.
+
+Multi-verifier advisory only — never single-LLM final approval. No wallet/ledger (Vault) or federation trust (Mesh). Witnesses: `agents/prompts/runtime.md`.

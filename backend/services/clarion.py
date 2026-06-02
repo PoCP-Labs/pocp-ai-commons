@@ -17,6 +17,7 @@ from services.evidence import POCP_META_KEY, evidence_types, standardize_evidenc
 from services.evidence_validate import validate_evidence_full
 from services.expert_cards import expert_cards_from_contribution
 from services.provenance import provenance_from_evidence
+from services.llm_language import infer_context_language
 from services.reward_advisory import build_reward_advisory
 
 CLARION_AGENT_ID = "pocp-entity-clarion-0"
@@ -228,8 +229,13 @@ def build_clarion_review_packet(db: Session, contribution: ContributionEvent) ->
     suggested_cp = reward_advisory.get("recommended", {}).get("cp") or heuristic["suggested_cp"]
     suggested_credits = reward_advisory.get("recommended", {}).get("ai_credits") or heuristic["suggested_credits"]
 
+    ctx_for_lang = {
+        "task": {"title": task_title, "description": task_description},
+        "contribution": {"description": contribution_description, "evidence": evidence},
+    }
     return {
         "schema_version": CLARION_PACKET_VERSION,
+        "language_hint": infer_context_language(ctx_for_lang),
         "review_packet_type": "clarion_unified_advisory_review",
         "decision_boundary": "traceable_finalization",
         "agent": {

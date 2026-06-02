@@ -102,6 +102,8 @@ def get_node_info():
             f"{backend_url}/api/v1/federation/settlements",
             f"{backend_url}/api/v1/intelligence/federation/export/{{contribution_id}}",
             f"{backend_url}/api/v1/intelligence/protocol",
+            f"{backend_url}/api/v1/intelligence/protocol/entity-dialogue",
+            f"{backend_url}/api/v1/intelligence/dialogue",
         ],
     )
 

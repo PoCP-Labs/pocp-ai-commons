@@ -18,14 +18,16 @@ const ENTITY_COLORS = {
 
 /** Protocol connection layers — aligned with docs/protocol/ENTITY-CONNECTION.md */
 export const CONNECTION_LAYERS = [
-  { id: "structural", label: "Structural", labelZh: "结构层", color: "#f7931a" },
-  { id: "protocol", label: "Protocol", labelZh: "贡献协议", color: "#fbbf24" },
-  { id: "operational", label: "Operational", labelZh: "运行迹", color: "#22d3ee" },
+  { id: "structural", label: "Structural", color: "#f7931a" },
+  { id: "studio", label: "Agent Studio", color: "#e879f9" },
+  { id: "protocol", label: "Protocol", color: "#fbbf24" },
+  { id: "operational", label: "Operational", color: "#22d3ee" },
 ];
 
 const LAYER_BY_ID = Object.fromEntries(CONNECTION_LAYERS.map((l) => [l.id, l]));
 
 const STRUCTURAL_RELATIONS = new Set(["owns", "created", "founded"]);
+const STUDIO_RELATIONS = new Set(["reports_to", "orchestrates", "handoff_to", "maintains"]);
 const OPERATIONAL_RELATIONS = new Set([
   "uses",
   "calls",
@@ -40,6 +42,7 @@ export function resolveConnectionLayer(edge) {
     return edge.connection_layer;
   }
   const rel = edge?.relation || "";
+  if (STUDIO_RELATIONS.has(rel) || edge?.studio) return "studio";
   if (STRUCTURAL_RELATIONS.has(rel)) return "structural";
   if (OPERATIONAL_RELATIONS.has(rel)) return "operational";
   return "protocol";
@@ -47,6 +50,7 @@ export function resolveConnectionLayer(edge) {
 
 const LAYOUT_COLUMNS = [
   "human",
+  "meta_agent",
   "agent",
   "skill",
   "tool",
@@ -85,6 +89,8 @@ function layerStrokeStyle(layerId) {
   switch (layerId) {
     case "structural":
       return { strokeWidth: 1, strokeOpacity: 0.42, strokeDasharray: undefined };
+    case "studio":
+      return { strokeWidth: 1.2, strokeOpacity: 0.58, strokeDasharray: "6 4" };
     case "operational":
       return { strokeWidth: 1.35, strokeOpacity: 0.55, strokeDasharray: undefined };
     default:
@@ -92,11 +98,17 @@ function layerStrokeStyle(layerId) {
   }
 }
 
+function layoutColumnKey(node) {
+  if (node.meta_agent) return "meta_agent";
+  return node.layout_column || node.entity_type;
+}
+
 function layoutNodes(nodes) {
   const byType = {};
   nodes.forEach((n) => {
-    if (!byType[n.entity_type]) byType[n.entity_type] = [];
-    byType[n.entity_type].push(n);
+    const col = layoutColumnKey(n);
+    if (!byType[col]) byType[col] = [];
+    byType[col].push(n);
   });
   const positions = {};
   const colWidth = 168;
@@ -122,29 +134,55 @@ function layoutNodes(nodes) {
   return positions;
 }
 
+const HUB_ENTITY_TYPES = new Set(["contribution", "ledger", "exchange", "federation_import"]);
+
+function isMetaAgentNode(n) {
+  return Boolean(n?.meta_agent) || (typeof n?.id === "string" && n.id.startsWith("pocp-agent-"));
+}
+
 function buildEntityNodes(entities, graph) {
   const graphById = Object.fromEntries(
     (graph?.nodes || [])
-      .filter((n) => n.entity_type !== "contribution")
+      .filter((n) => !HUB_ENTITY_TYPES.has(n.entity_type))
       .map((n) => [n.id, n])
   );
-  return (entities || []).map((e) => {
-    const g = graphById[e.id];
+  const merged = new Map();
+  (entities || []).forEach((e) => {
+    merged.set(e.id, { ...e, ...(graphById[e.id] || {}) });
+  });
+  Object.values(graphById).forEach((g) => {
+    if (!merged.has(g.id)) {
+      merged.set(g.id, g);
+    }
+  });
+  const list = Array.from(merged.values()).map((e) => {
+    const g = graphById[e.id] || e;
     return {
       id: e.id,
-      entity_type: e.entity_type,
-      name: e.name,
-      reputation: g?.reputation ?? 0,
-      cp_balance: g?.cp_balance ?? 0,
-      ai_credits: g?.ai_credits ?? 0,
+      entity_type: e.entity_type || g.entity_type,
+      name: e.name || g.name,
+      reputation: g.reputation ?? e.reputation ?? 0,
+      cp_balance: g.cp_balance ?? e.cp_balance ?? 0,
+      ai_credits: g.ai_credits ?? e.ai_credits ?? 0,
+      meta_agent: isMetaAgentNode(g) || isMetaAgentNode(e),
+      layout_column: g.layout_column || (isMetaAgentNode(g) ? "meta_agent" : undefined),
     };
   });
+  list.sort((a, b) => {
+    const colA = layoutColumnKey(a);
+    const colB = layoutColumnKey(b);
+    if (colA !== colB) return 0;
+    if (colA === "meta_agent") return (a.name || "").localeCompare(b.name || "");
+    return 0;
+  });
+  return list;
 }
 
 export default function ContributionGraphView({ graph, entities = [] }) {
   const [activeLayers, setActiveLayers] = useState(() =>
     Object.fromEntries(CONNECTION_LAYERS.map((l) => [l.id, true]))
   );
+  const [focusMetaAgents, setFocusMetaAgents] = useState(false);
 
   const toggleLayer = (layerId) => {
     setActiveLayers((prev) => {
@@ -158,26 +196,37 @@ export default function ContributionGraphView({ graph, entities = [] }) {
 
   const { entityNodes, hubNodes, visibleEdges, positions, width, height, connectedIds, layerCounts } =
     useMemo(() => {
-      const entityNodes = buildEntityNodes(entities, graph);
-      const hubNodes = (graph?.nodes || []).filter(
-        (n) =>
-          n.entity_type === "contribution" ||
-          n.entity_type === "federation_import" ||
-          n.entity_type === "ledger" ||
-          n.entity_type === "exchange"
-      );
+      let entityNodes = buildEntityNodes(entities, graph);
+      if (focusMetaAgents) {
+        entityNodes = entityNodes.filter((n) => n.meta_agent);
+      }
+      const hubNodes = focusMetaAgents
+        ? []
+        : (graph?.nodes || []).filter(
+            (n) =>
+              n.entity_type === "contribution" ||
+              n.entity_type === "federation_import" ||
+              n.entity_type === "ledger" ||
+              n.entity_type === "exchange"
+          );
 
       const allEdges = (graph?.edges || []).map((e) => ({
         ...e,
         connection_layer: resolveConnectionLayer(e),
       }));
 
-      const counts = { structural: 0, protocol: 0, operational: 0 };
+      const counts = { structural: 0, studio: 0, protocol: 0, operational: 0 };
       allEdges.forEach((e) => {
         counts[e.connection_layer] = (counts[e.connection_layer] || 0) + 1;
       });
 
-      const visibleEdges = allEdges.filter((e) => activeLayers[e.connection_layer]);
+      let visibleEdges = allEdges.filter((e) => activeLayers[e.connection_layer]);
+      if (focusMetaAgents) {
+        const metaIds = new Set(entityNodes.map((n) => n.id));
+        visibleEdges = visibleEdges.filter(
+          (e) => metaIds.has(e.source) && metaIds.has(e.target)
+        );
+      }
 
       const connectedIds = new Set();
       visibleEdges.forEach((e) => {
@@ -201,17 +250,30 @@ export default function ContributionGraphView({ graph, entities = [] }) {
         connectedIds,
         layerCounts: graph?.edge_layer_counts || counts,
       };
-    }, [graph, entities, activeLayers]);
+    }, [graph, entities, activeLayers, focusMetaAgents]);
 
-  const entityCount = entities.length;
+  const metaAgentCount =
+    graph?.meta_agent_nodes ??
+    buildEntityNodes(entities, graph).filter((n) => n.meta_agent).length;
+
+  const entityCount = Math.max(entities.length, (graph?.nodes || []).length);
   const hubCount = hubNodes.length;
 
   if (!entityCount) {
     return <p className="empty-state">No entities yet — start the backend to seed the demo network.</p>;
   }
 
+  const metaAgentsMissing = metaAgentCount === 0;
+
   return (
     <div className="graph-frame">
+      {metaAgentsMissing && (
+        <p className="form-hint form-hint--warn" style={{ marginBottom: 12 }}>
+          Meta Agents are not registered yet. Click <strong>Refresh</strong> in the header after restarting the
+          backend (<code>docker compose restart backend</code>). The API should expose{" "}
+          <code>/api/v1/meta-agents/ensure</code>.
+        </p>
+      )}
       <p className="panel__subtitle graph-frame__subtitle">
         Contribution neural network — {entityCount} entities · {hubCount} hub{hubCount === 1 ? "" : "s"}
         {graph?.ledger_node_count != null && graph.ledger_node_count > 0
@@ -222,6 +284,16 @@ export default function ContributionGraphView({ graph, entities = [] }) {
 
       <div className="graph-layer-controls">
         <span className="graph-layer-controls__title">Connection layers</span>
+        <button
+          type="button"
+          className={`graph-layer-toggle${focusMetaAgents ? " graph-layer-toggle--active" : ""}`}
+          onClick={() => setFocusMetaAgents((v) => !v)}
+          title="Show only Meta Agents (Nexus-0, Forge-0, …) and studio edges between them"
+        >
+          <span className="graph-layer-toggle__swatch" style={{ background: "#e879f9" }} />
+          Meta Agents only
+          <span className="graph-layer-toggle__count">{metaAgentCount}</span>
+        </button>
         {CONNECTION_LAYERS.map((layer) => {
           const on = activeLayers[layer.id];
           const count = layerCounts[layer.id] ?? 0;
@@ -235,7 +307,6 @@ export default function ContributionGraphView({ graph, entities = [] }) {
             >
               <span className="graph-layer-toggle__swatch" style={{ background: layer.color }} />
               {layer.label}
-              <span className="graph-layer-toggle__zh">{layer.labelZh}</span>
               <span className="graph-layer-toggle__count">{count}</span>
             </button>
           );
@@ -249,8 +320,12 @@ export default function ContributionGraphView({ graph, entities = [] }) {
             {type}
           </span>
         ))}
+        <span className="graph-legend__item" style={{ opacity: 0.85 }}>
+          <span className="graph-legend__swatch" style={{ background: "#e879f9", boxShadow: "0 0 6px #e879f9" }} />
+          meta_agent column · pink border
+        </span>
         <span className="graph-legend__item" style={{ opacity: 0.7 }}>
-          dashed outline = registered, no visible edge in active layers
+          dashed outline = no edge in active layers
         </span>
       </div>
 
@@ -356,7 +431,7 @@ export default function ContributionGraphView({ graph, entities = [] }) {
         {entityNodes.map((node) => {
           const pos = positions[node.id];
           if (!pos) return null;
-          const color = ENTITY_COLORS[node.entity_type] || "#5c6573";
+          const color = node.meta_agent ? "#e879f9" : ENTITY_COLORS[node.entity_type] || "#5c6573";
           const isolated = !connectedIds.has(node.id);
 
           return (
@@ -365,16 +440,16 @@ export default function ContributionGraphView({ graph, entities = [] }) {
                 width={108}
                 height={52}
                 rx={8}
-                fill="#111820"
+                fill={node.meta_agent ? "#1a1028" : "#111820"}
                 stroke={color}
-                strokeWidth={1.5}
+                strokeWidth={node.meta_agent ? 2 : 1.5}
                 strokeDasharray={isolated ? "4 3" : undefined}
                 opacity={isolated ? 0.75 : 1}
               />
               <rect width={108} height={3} rx={8} fill={color} opacity={isolated ? 0.5 : 0.9} />
               <text
                 x={54}
-                y={24}
+                y={node.meta_agent ? 20 : 24}
                 textAnchor="middle"
                 fontSize={11}
                 fontWeight="600"
@@ -383,9 +458,22 @@ export default function ContributionGraphView({ graph, entities = [] }) {
               >
                 {node.name.length > 14 ? `${node.name.slice(0, 13)}…` : node.name}
               </text>
+              {node.meta_agent && (
+                <text
+                  x={54}
+                  y={34}
+                  textAnchor="middle"
+                  fontSize={7}
+                  fill="#e879f9"
+                  fontFamily="JetBrains Mono, monospace"
+                  letterSpacing="0.1em"
+                >
+                  META AGENT
+                </text>
+              )}
               <text
                 x={54}
-                y={40}
+                y={node.meta_agent ? 44 : 40}
                 textAnchor="middle"
                 fontSize={8}
                 fill={color}

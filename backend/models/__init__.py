@@ -1,3 +1,10 @@
+from models.agent_studio import (
+    AgentStudioHandoff,
+    AgentStudioMemory,
+    AgentStudioMission,
+    AgentStudioOutcome,
+    AgentStudioProposal,
+)
 from models.agent import Agent
 from models.agent_feedback import AgentFeedback
 from models.capability import EntityCapability
@@ -12,6 +19,7 @@ from models.contribution import (
     ContributionParticipant,
     HumanReview,
 )
+from models.contribution_dispute import ContributionDispute
 from models.entity import Entity
 from models.federation import FederatedImport, FederationSettlement
 from models.invocation import InvocationStep, InvocationTrace
@@ -27,6 +35,11 @@ __all__ = [
     "EntityCapability",
     "Skill",
     "Agent",
+    "AgentStudioHandoff",
+    "AgentStudioMemory",
+    "AgentStudioMission",
+    "AgentStudioOutcome",
+    "AgentStudioProposal",
     "AgentFeedback",
     "ReputationAuditEntry",
     "Organization",
@@ -35,6 +48,7 @@ __all__ = [
     "ContributionParticipant",
     "AiVerifierResult",
     "HumanReview",
+    "ContributionDispute",
     "InvocationTrace",
     "InvocationStep",
     "Wallet",

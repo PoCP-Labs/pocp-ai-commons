@@ -24,6 +24,8 @@ Community translations live under `docs/genesis/` (e.g. [zh-CN.md](./genesis/zh-
 
 Optional `*_zh` fields in JSON responses exist for i18n clients; English fields are authoritative.
 
+**Bilingual UI (en / zh):** see [I18N-GUIDE.md](./I18N-GUIDE.md) — locale switcher, `Accept-Language`, and `GET /api/v1/entities/ontology?locale=zh`.
+
 ## Adding copy
 
 1. Write new user-facing text in English first.

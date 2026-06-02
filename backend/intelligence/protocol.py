@@ -104,6 +104,7 @@ def protocol_stack() -> dict[str, Any]:
                     "Contribution Proof Packet",
                     "Contribution Graph semantics",
                     "Entity connection (structural / protocol / operational)",
+                    "Entity Dialogue (pocp.entity_dialogue.v0.1 — L2 envelope)",
                     "Trust Policy Bundle (federation import rules)",
                     "Portable identity (portable_id)",
                     "Federation trust & signed proofs",
@@ -185,6 +186,7 @@ def protocol_stack() -> dict[str, Any]:
         "native_primitives": [
             "entity",
             "entity_connection",
+            "entity_dialogue",
             "trust_policy_bundle",
             "contribution_event",
             "contribution_participant",
@@ -232,5 +234,12 @@ def contribution_packet_header() -> dict[str, Any]:
             "matrix_api": "/api/v1/entities/connections/matrix",
             "instance_api": "/api/v1/entities/{entity_id}/connections",
             "docs": connections["docs"],
+        },
+        "entity_dialogue": {
+            "schema": "pocp.entity_dialogue.v0.1",
+            "manifest_api": "/api/v1/intelligence/protocol/entity-dialogue",
+            "dialogue_api": "/api/v1/intelligence/dialogue",
+            "entity_dialogue_api": "/api/v1/intelligence/entities/{entity_id}/dialogue",
+            "docs": "docs/protocol/ENTITY-DIALOGUE-PROTOCOL.md",
         },
     }

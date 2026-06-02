@@ -14,9 +14,9 @@ if ($Federation) {
     $NodeB = "http://127.0.0.1:8101"
     $FedArgs = @("--federation", $NodeB)
 } else {
-    Write-Host "Starting single-node stack (:8000 API, :3000 UI)…"
+    Write-Host "Starting single-node stack (:8008 API, :3000 UI)…"
     docker compose up -d --build
-    $Base = "http://127.0.0.1:8000"
+    $Base = "http://127.0.0.1:8008"
     $FedArgs = @()
 }
 

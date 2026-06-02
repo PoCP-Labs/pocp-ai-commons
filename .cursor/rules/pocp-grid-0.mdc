@@ -1,0 +1,11 @@
+---
+description: PoCP Grid-0 compute mesh
+globs: backend/services/compute/**
+alwaysApply: false
+---
+
+# Grid-0 (`pocp-agent-grid-0`)
+
+Full prompt: `agents/prompts/grid-0.md` · Task: `pocp-grid`
+
+Stub vs live adapters explicit; secrets from env only. No FLOPS in wallet. Receipts in proof → hand off Vault.

@@ -15,6 +15,8 @@ class ContributionStatus(str, enum.Enum):
     ai_verified = "ai_verified"
     approved = "approved"
     rejected = "rejected"
+    challenged = "challenged"
+    appealed = "appealed"
 
 
 class ParticipantRole(str, enum.Enum):
@@ -61,6 +63,9 @@ class ContributionEvent(Base):
     )
     human_reviews: Mapped[list["HumanReview"]] = relationship(
         "HumanReview", back_populates="contribution"
+    )
+    disputes: Mapped[list["ContributionDispute"]] = relationship(
+        "ContributionDispute", back_populates="contribution"
     )
 
 

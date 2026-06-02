@@ -18,6 +18,13 @@ How does this help the Sprint Alpha loop?
 Login → AI Credits → AI Chat → Contribution → AI Verify → Human Review → CP/Credits → Ledger
 ```
 
+## Phase & verification
+
+| Field | Value |
+|-------|-------|
+| **Phase** | A (MVP loop) · see [ROADMAP-THREE-PHASES.md](../../docs/ROADMAP-THREE-PHASES.md) |
+| **Acceptance command** | `python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8000` |
+
 ## Scope
 
 Included:

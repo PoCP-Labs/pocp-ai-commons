@@ -4,6 +4,8 @@ How to run **PoCP AI Commons** on the public internet (full stack: API + Postgre
 
 For local development only, see [LOCAL-SETUP.md](./LOCAL-SETUP.md).
 
+For **Alibaba Cloud ECS**, see [DEPLOY-ALIYUN.md](./DEPLOY-ALIYUN.md).
+
 **Language:** Production UI and API defaults are [English-first](./LANGUAGE-POLICY.md).
 
 For a **static manifesto site** without the live app, see [GITHUB-PAGES.md](./GITHUB-PAGES.md) and [DEPLOY-CHECKLIST.md](./DEPLOY-CHECKLIST.md).

@@ -24,6 +24,7 @@ from services.compute_settlement import settle_intel_provider
 from services.intel_receipt import build_intel_receipt
 from services.anti_abuse import check_daily_ai_burn_limit
 from services.exchange_spine import emit_exchange_settled
+from services.settlement_policy import policy_tag
 from services.ledger_chain import append_ledger_record
 
 SKILL_EXECUTE_COST = float(os.getenv("SKILL_EXECUTE_COST", str(AI_CHAT_COST_PER_MESSAGE)))
@@ -142,6 +143,7 @@ async def _burn_credits_for_execution(
         },
         legacy_event_type="ai_credits_burned",
         settlement_policy="capability_execute.v1",
+        settlement_policy_tag=policy_tag("capability_execute.v1"),
     )
     db.flush()
     return {

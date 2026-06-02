@@ -1,6 +1,6 @@
 # PoCP Entity Ontology
 
-**Version:** 0.1  
+**Version:** 0.2  
 **Principle:** *Everything connects through verified contribution.*  
 **中文：** *万物都有贡献，万物互联于贡献协议。*
 
@@ -15,24 +15,28 @@ An **Entity** is a first-class subject in the Contribution Internet:
 | Property | Meaning |
 |----------|---------|
 | **Identity** | Stable UUID, portable metadata, optional federation peer mapping |
-| **Type** | One of nine canonical `entity_type` values |
+| **Type** | One of fourteen canonical `entity_type` values |
 | **Ownership** | Non-human entities require a human or organization `owner_id` |
 | **Status** | `active`, `inactive`, or `pending` |
 | **Metadata** | Type-specific JSON contract (tool endpoints, skill frontmatter, workflow steps, …) |
 
 **Not an Entity:** arbitrary physical objects, anonymous one-off API calls, or unregistered model invocations with no provenance anchor.
 
-**Is an Entity:** humans, organizations, agents, skills, LLMs, tools, datasets, workflows, and communities that appear in contribution graphs, ledgers, or proofs.
+**Is an Entity:** humans, organizations, agents, skills, LLMs, tools, datasets, workflows, communities, compute/verifier/reviewer nodes, sponsors, and protocol treasury subjects that appear in contribution graphs, ledgers, or proofs.
 
 ---
 
-## 2. Nine Entity Types
+## 2. Fourteen Entity Types
+
+Fourteen types span **core subjects** (participants in contribution graphs) and **infrastructure subjects** (compute, verification, review queues, sponsorship pools, protocol treasury).
 
 ```mermaid
 flowchart TB
   subgraph anchors [Accountability anchors]
     H[Human]
     O[Organization]
+    SP[Sponsor]
+    PT[Protocol Treasury]
   end
   subgraph executors [Execution layer]
     A[Agent]
@@ -49,6 +53,11 @@ flowchart TB
   subgraph social [Social layer]
     C[Community]
   end
+  subgraph infra [Infrastructure layer]
+    CN[Compute Node]
+    VN[Verifier Node]
+    RN[Reviewer Node]
+  end
   H --> A
   O --> A
   A --> S
@@ -57,7 +66,16 @@ flowchart TB
   W --> A
   D --> S
   C --> O
+  O --> CN
+  O --> VN
+  H --> RN
+  O --> SP
+  O --> PT
+  CN --> L
+  VN --> L
 ```
+
+### Core types (9)
 
 | Type | English | 中文 | Accountability anchor? | Typical roles |
 |------|---------|------|------------------------|---------------|
@@ -71,6 +89,16 @@ flowchart TB
 | `workflow` | Workflow | 工作流 | No | coordinator |
 | `community` | Community | 社区 | No | sponsor, witness |
 
+### Infrastructure types (5)
+
+| Type | English | 中文 | Accountability anchor? | Typical roles |
+|------|---------|------|------------------------|---------------|
+| `compute_node` | Compute Node | 算力节点 | No (needs owner) | model_provider, tool_provider |
+| `verifier_node` | Verifier Node | 验证节点 | No (needs owner) | verifier, witness |
+| `reviewer_node` | Reviewer Node | 审查节点 | No (needs owner) | reviewer |
+| `sponsor` | Sponsor | 赞助实体 | **Yes** | sponsor |
+| `protocol_treasury` | Protocol Treasury | 协议金库 | **Yes** (governance-bound) | sponsor |
+
 ### Type metadata contracts
 
 | Type | Expected `metadata` keys |
@@ -83,6 +111,11 @@ flowchart TB
 | `workflow` | `steps`, `version`, `entrypoint` |
 | `organization` | `org_type`, `governance_proxy_id`, `mission` |
 | `community` | `roles`, `portable_id`, `pattern_borrowed` |
+| `compute_node` | `compute_profile`, `region`, `hardware`, `capabilities`, `verification_methods` |
+| `verifier_node` | `verifier_kinds`, `service_endpoints`, `trust_level` |
+| `reviewer_node` | `review_policy`, `queue_capacity`, `supported_task_types` |
+| `sponsor` | `pool_balance`, `sponsor_policy`, `accepted_units` |
+| `protocol_treasury` | `treasury_policy`, `fee_schedule`, `governance_entity_id` |
 
 ---
 
@@ -119,7 +152,7 @@ Humans and organizations are accountability anchors; AI entities advise only.
 |------|--------|
 | Final review | Only `human` entities may hold `reviewer` with final authority |
 | AI advisory | `llm` and `agent` verifiers/witnesses produce scores and feedback — not binding approval |
-| Ownership | `agent`, `skill`, `tool`, `dataset`, `workflow` must have `owner_id` → human or organization |
+| Ownership | `agent`, `skill`, `tool`, `dataset`, `workflow`, `compute_node`, `verifier_node`, `reviewer_node` must have `owner_id` → human or organization |
 | Multi-verifier | Protocol supports N-of-M AI verification (e.g. Lumen-0 + DeSui) before policy finalization |
 
 ---
@@ -183,6 +216,8 @@ Submission validation: when `POCP_VALIDATE_PARTICIPANT_ONTOLOGY=true` (default),
 |--------|---------|
 | `backend/intelligence/entity_ontology.py` | Canonical specs, validation, `ontology_document()` |
 | `backend/services/entity_register.py` | Typed registration + participant validation |
+| `backend/services/entity_catalog.py` | Platform catalog bootstrap — `ensure_platform_entity_catalog()`, `audit_entity_catalog()` |
+| `backend/scripts/audit_entities.py` | CLI audit/repair against live DB (`--repair`) |
 | `backend/models/entity.py` | ORM model and enums |
 | `docs/SCHEMA.md` | Persistence schema |
 
@@ -199,11 +234,36 @@ Genesis registers exemplar entities that **instantiate** this ontology:
 | Clarion-0 | `community` | External inspiration / pattern memory |
 | PoCP AI Commons | `organization` | Sponsor and governance container |
 
-They are not separate types — they are **named instances** of the nine types above.
+They are not separate types — they are **named instances** of the fourteen types above.
 
 ---
 
-## 9. FAQ
+## 9. Platform Entity Catalog (stable IDs)
+
+Phase A kernel registers **infrastructure entities** with stable portable IDs via `ensure_platform_entity_catalog()`. These IDs are idempotent — repair scripts and seed paths reuse them rather than generating UUIDs.
+
+| Type | Stable `entity_id` | Registered name |
+|------|-------------------|-----------------|
+| `compute_node` | `pocp-entity-local-compute` | Local Compute Node |
+| `verifier_node` | `pocp-entity-local-verifier` | Local Verifier Node |
+| `reviewer_node` | `pocp-entity-bob-reviewer` | Bob Review Queue |
+| `sponsor` | `pocp-entity-rain-sponsor` | Rain Sponsor Pool |
+| `protocol_treasury` | `pocp-entity-protocol-treasury` | PoCP Protocol Treasury |
+| `workflow` (demo) | `pocp-entity-study-workflow` | Study Notes Workflow |
+
+**Audit acceptance:**
+
+```bash
+python backend/scripts/audit_entities.py --repair
+# Complete: True; missing_types: []
+cd backend && python -m pytest tests/test_entity_catalog.py -q
+```
+
+Organization and Rain genesis entities cross-link these IDs in `metadata` (`compute_node_id`, `verifier_node_id`, `sponsor_entity_id`, etc.) for discovery without hard-coded lookups in application code.
+
+---
+
+## 10. FAQ
 
 **Q: Does「万物」mean every object in the physical world?**  
 A: No. It means every *contribution-relevant subject* in the network — anything that can be named, attributed, verified, and connected in the contribution graph.

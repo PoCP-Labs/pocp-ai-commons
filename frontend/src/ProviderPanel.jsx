@@ -225,7 +225,7 @@ export default function ProviderPanel({ fetchJson, me, entities }) {
     return (
       <section className="panel">
         <h2 className="panel__title section-heading--ai">Provider Panel</h2>
-        <p className="panel__subtitle">卖算力、卖能力 — 在 PoCP 网络上按单位计费</p>
+        <p className="panel__subtitle">Sell compute and capabilities — metered on the PoCP network</p>
         <p className="empty-state">Dev Login to register as a compute or capability provider.</p>
       </section>
     );
@@ -235,7 +235,7 @@ export default function ProviderPanel({ fetchJson, me, entities }) {
     <section className="panel">
       <h2 className="panel__title section-heading--ai">Provider Panel</h2>
       <p className="panel__subtitle">
-        卖算力、卖能力 · 他人调用后获得 AI Credits (AIC)
+        Sell compute and capabilities · earn AI Credits (AIC) when others invoke your offers
       </p>
 
       {nodeManifest?.facets?.length > 0 && (
@@ -300,7 +300,7 @@ export default function ProviderPanel({ fetchJson, me, entities }) {
       {message && <p className="alert alert--info">{message}</p>}
 
       <h3 className="panel__subtitle" style={{ marginTop: 24 }}>
-        卖算力 (Compute)
+        Offer compute
       </h3>
       <form onSubmit={registerCompute}>
         <label className="form-row">
@@ -399,7 +399,7 @@ export default function ProviderPanel({ fetchJson, me, entities }) {
         })}
 
       <h3 className="panel__subtitle" style={{ marginTop: 32 }}>
-        卖能力 (Capability)
+        Offer capability
       </h3>
       <form onSubmit={registerCapability}>
         <label className="form-row">

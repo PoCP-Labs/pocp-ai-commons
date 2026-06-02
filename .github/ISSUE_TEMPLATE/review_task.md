@@ -10,6 +10,13 @@ assignees: ""
 
 Link PR, issue, spec, or document.
 
+## Phase & verification
+
+| Field | Value |
+|-------|-------|
+| **Phase** | A · B · C (see [ROADMAP-THREE-PHASES.md](../../docs/ROADMAP-THREE-PHASES.md)) |
+| **Acceptance command** | PR author's test plan + `run_phase_a_acceptance.py` when code changes |
+
 ## Review focus
 
 - [ ] Correctness

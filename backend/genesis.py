@@ -228,8 +228,8 @@ def ensure_genesis_entities(db: Session) -> None:
     from services.org_foundation import ensure_pocp_org_foundation
 
     ensure_pocp_org_foundation(db)
+
+    from services.meta_agent_registry import ensure_meta_agents
+
+    ensure_meta_agents(db)
     db.flush()
-
-    from services.org_foundation import ensure_pocp_org_foundation
-
-    ensure_pocp_org_foundation(db)

@@ -353,7 +353,7 @@ export default function EntityDetail({
                       .catch((err) => window.alert(err.message || "Publish failed"));
                   }}
                 >
-                  发布为贡献
+                  Publish as contribution
                 </button>
               )}
             </div>

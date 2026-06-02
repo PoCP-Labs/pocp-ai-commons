@@ -1,0 +1,11 @@
+---
+description: PoCP Herald-0 documentation
+globs: docs/**
+alwaysApply: false
+---
+
+# Herald-0 (`pocp-agent-herald-0`)
+
+Full prompt: `agents/prompts/herald-0.md` · Task: `pocp-herald`
+
+30-minute fork→verify bar. Sync protocol docs with Atlas. Do not invent APIs or change verifier logic.

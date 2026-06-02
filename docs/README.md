@@ -13,10 +13,23 @@ PoCP AI Commons documentation is organized around the **Genesis Package** and th
 | [../PROTOCOL-SPEC-v0.1.md](../PROTOCOL-SPEC-v0.1.md) | Minimal protocol spec for builders |
 | [genesis/README.md](./genesis/README.md) | Genesis manifesto translations |
 
+## Meta Agents & Agent Studio
+
+| Document | Purpose |
+|----------|---------|
+| [../agents/META-AGENTS.md](../agents/META-AGENTS.md) | Meta Agent entity IDs, API, Cursor skill sync |
+| [../agents/ROSTER.md](../agents/ROSTER.md) | Roles, writable paths, handoff matrix |
+| [../agents/WORKFLOW.md](../agents/WORKFLOW.md) | Agent Studio quick start |
+| [architecture/10-AGENT-STUDIO.md](./architecture/10-AGENT-STUDIO.md) | Missions, handoffs, outcomes, Nexus autopilot |
+| [../agents/CURSOR-AUTOMATION.md](../agents/CURSOR-AUTOMATION.md) | Cursor bridge for live handoff execution |
+
 ## Protocol & implementation
 
 | Document | Purpose |
 |----------|---------|
+| [protocol/README.md](./protocol/README.md) | **Protocol v0.4 index** — capability-first exchange spine |
+| [protocol/ENTITY-DIALOGUE-PROTOCOL.md](./protocol/ENTITY-DIALOGUE-PROTOCOL.md) | **Entity Dialogue** — L2 native envelope (`pocp.entity_dialogue.v0.1`) |
+| [../agents/missions/protocol-layer-edp/MANIFEST.md](../agents/missions/protocol-layer-edp/MANIFEST.md) | Protocol layer mission — Issues PL-1..PL-10 |
 | [PROTOCOL.md](./PROTOCOL.md) | Protocol concepts and objects |
 | [SCHEMA.md](./SCHEMA.md) | Database schema reference |
 | [API-SPEC.md](./API-SPEC.md) | HTTP API reference |
@@ -49,6 +62,7 @@ PoCP AI Commons documentation is organized around the **Genesis Package** and th
 | [architecture/07-SETTLEMENT-LAYER.md](./architecture/07-SETTLEMENT-LAYER.md) | Settlement and attribution |
 | [architecture/08-REPUTATION-GOVERNANCE.md](./architecture/08-REPUTATION-GOVERNANCE.md) | Reputation and governance |
 | [architecture/09-NEURAL-GRAPH.md](./architecture/09-NEURAL-GRAPH.md) | Neural graph and network topology |
+| [architecture/10-AGENT-STUDIO.md](./architecture/10-AGENT-STUDIO.md) | Agent Studio — Meta Agent orchestration |
 
 ### Network specs & integration
 
@@ -91,6 +105,7 @@ PoCP AI Commons documentation is organized around the **Genesis Package** and th
 
 | Document | Purpose |
 |----------|---------|
+| [ENTITY-EQUALITY.md](./ENTITY-EQUALITY.md) | Entity-equal policy finalization (witness vs finalizer) |
 | [../NO-TOKEN-FIRST.md](../NO-TOKEN-FIRST.md) | Why PoCP starts with contribution, not tokens |
 | [../AI-CREDITS-CP-REPUTATION.md](../AI-CREDITS-CP-REPUTATION.md) | CP, AI Credits, and reputation |
 | [AI-CREDITS-GUIDE.md](./AI-CREDITS-GUIDE.md) | Operator guide for credits |
@@ -111,6 +126,8 @@ PoCP AI Commons documentation is organized around the **Genesis Package** and th
 | Document | Purpose |
 |----------|---------|
 | [LOCAL-SETUP.md](./LOCAL-SETUP.md) | Local development setup |
+| [ROADMAP-THREE-PHASES.md](./ROADMAP-THREE-PHASES.md) | **Local optimization P0** — Exchange Spine + Wallet exit signals |
+| [protocol/README.md](./protocol/README.md) | Protocol v0.4 index (capability-first exchange spine) |
 | [DATABASE.md](./DATABASE.md) | PostgreSQL vs SQLite |
 | [SPRINT_ALPHA.md](./SPRINT_ALPHA.md) | MVP loop walkthrough |
 | [PUBLIC-DEMO.md](./PUBLIC-DEMO.md) | Demo scenario (R study materials) |

@@ -1,0 +1,11 @@
+---
+description: PoCP Gauge-0 QA and acceptance
+globs: backend/tests/**
+alwaysApply: false
+---
+
+# Gauge-0 (`pocp-agent-gauge-0`)
+
+Full prompt: `agents/prompts/gauge-0.md` · Task: `pocp-gauge`
+
+Tests and acceptance only — no product `backend/services/**`. Run `run_phase_a_acceptance.py` for gate reports to Nexus.

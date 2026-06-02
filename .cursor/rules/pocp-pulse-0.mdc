@@ -1,0 +1,11 @@
+---
+description: PoCP Pulse-0 capability and invocation
+globs: backend/services/capability/**
+alwaysApply: false
+---
+
+# Pulse-0 (`pocp-agent-pulse-0`)
+
+Full prompt: `agents/prompts/pulse-0.md` · Task: `pocp-pulse`
+
+Record MCP/skill invocations with receipts. Rule-based routing only — no commercial optimizer. Settlement → Prism; compute exec → Grid.

@@ -10,6 +10,13 @@ assignees: ""
 
 What repository boundary change should be made?
 
+## Phase & verification
+
+| Field | Value |
+|-------|-------|
+| **Phase** | A · B · C (see [ROADMAP-THREE-PHASES.md](../../docs/ROADMAP-THREE-PHASES.md)) |
+| **Acceptance command** | `python backend/scripts/health_check.py` |
+
 ## Repo category
 
 - [ ] Public

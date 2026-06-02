@@ -10,25 +10,46 @@ import SubmitFlow from "./SubmitFlow";
 import CryptoReadinessPanel from "./CryptoReadinessPanel";
 import ProofVerifyPanel, { CryptoReadinessBadge, LedgerVerifyBadge } from "./ProofVerifyPanel";
 import WalletPanel from "./WalletPanel";
+import AgentStudioPanel from "./AgentStudioPanel";
+import { getAcceptLanguage, LocaleSwitcher, useI18n } from "./i18n/index.jsx";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "http://localhost:8008";
 const TOKEN_KEY = "pocp_token";
 
 /** Seeded demo personas (dev-login only). See docs/LOCAL-SETUP.md */
 const DEV_PERSONAS = [
-  { id: "rain", label: "Rain — founder / sponsor", username: "rain", email: "rain@example.com" },
-  { id: "bob", label: "Bob — governance proxy / reviewer", username: "bob", email: "bob@example.com" },
-  { id: "guest", label: "New guest (random)", username: null, email: null },
+  { id: "rain", labelKey: "persona.rain", username: "rain", email: "rain@example.com" },
+  { id: "bob", labelKey: "persona.bob", username: "bob", email: "bob@example.com" },
+  { id: "guest", labelKey: "persona.guest", username: null, email: null },
 ];
 
-const LOOP_STEPS = [
-  "Contribute",
-  "Verify",
-  "CP",
-  "AI Credits",
-  "AI Use",
-  "More Contribution",
+const LOOP_STEP_KEYS = [
+  "loop.contribute",
+  "loop.verify",
+  "loop.cp",
+  "loop.aiCredits",
+  "loop.aiUse",
+  "loop.more",
 ];
+
+const VALID_TABS = new Set([
+  "dashboard",
+  "studio",
+  "ecosystem",
+  "provider",
+  "workflow",
+  "verify",
+  "account",
+  "chat",
+  "graph",
+  "entities",
+]);
+
+function tabFromLocation() {
+  const params = new URLSearchParams(window.location.search);
+  const t = params.get("tab");
+  return t && VALID_TABS.has(t) ? t : "dashboard";
+}
 
 function getToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -42,6 +63,7 @@ function setToken(token) {
 async function fetchJson(path, options = {}) {
   const token = getToken();
   const headers = {
+    "Accept-Language": getAcceptLanguage(),
     ...(options.body ? { "Content-Type": "application/json" } : {}),
     ...(options.headers || {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -52,6 +74,30 @@ async function fetchJson(path, options = {}) {
     throw new Error(detail || `HTTP ${res.status}`);
   }
   return res.json();
+}
+
+async function fetchJsonOptional(path, fallback) {
+  try {
+    return await fetchJson(path);
+  } catch {
+    return fallback;
+  }
+}
+
+async function checkPocpHealth() {
+  const res = await fetch(`${API}/health`);
+  if (!res.ok) {
+    throw new Error(
+      `API at ${API} returned HTTP ${res.status} (not PoCP — port may be used by another app).`
+    );
+  }
+  const h = await res.json();
+  if (h.service !== "pocp-ai-commons") {
+    throw new Error(
+      `API at ${API} is not PoCP (got service=${h.service ?? "unknown"}). Use docker compose or port 8008.`
+    );
+  }
+  return h;
 }
 
 const GENESIS_IDS = new Set(["pocp-entity-lumen-0", "pocp-entity-desui"]);
@@ -71,7 +117,7 @@ const LEDGER_EVENT_LABELS = {
   registration_grant: "Starter AI Credits granted",
   ai_credits_burned: "AI Credits used",
   compute_provided: "Compute provided",
-  intel_provided: "Capability provided (算力/能力)",
+  intel_provided: "Capability provided",
   protocol_fee_collected: "Protocol fee collected",
   protocol_tokens_burned: "Protocol tokens burned",
   compute_settlement: "Compute settlement",
@@ -187,15 +233,16 @@ function LedgerBlockPanel({ record, height }) {
 }
 
 function AdvisoryBanner() {
+  const { t } = useI18n();
   return (
     <div className="alert alert--info" style={{ marginBottom: "1rem" }}>
-      <strong>AI is advisory; humans decide.</strong> AI verifiers suggest scores and credits. Final approval stays with
-      human reviewers — every step is recorded in the ledger.
+      <strong>{t("advisory.banner")}</strong> {t("advisory.detail")}
     </div>
   );
 }
 
 export default function App() {
+  const { t } = useI18n();
   const [entities, setEntities] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [contributions, setContributions] = useState([]);
@@ -217,7 +264,8 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(false);
   const [devPersona, setDevPersona] = useState("rain");
   const [error, setError] = useState(null);
-  const [tab, setTab] = useState("dashboard");
+  const [dataLoading, setDataLoading] = useState(false);
+  const [tab, setTab] = useState(() => tabFromLocation());
   const [apiVersion, setApiVersion] = useState("—");
   const [aiUsage, setAiUsage] = useState([]);
   const [selectedEntityId, setSelectedEntityId] = useState(null);
@@ -228,6 +276,15 @@ export default function App() {
   const [proofContributionId, setProofContributionId] = useState("");
   const [walletRefreshKey, setWalletRefreshKey] = useState(0);
   const [focusedLedgerHash, setFocusedLedgerHash] = useState(null);
+
+  const goToTab = useCallback((id) => {
+    if (!VALID_TABS.has(id)) return;
+    setTab(id);
+    const url = new URL(window.location.href);
+    if (id === "dashboard") url.searchParams.delete("tab");
+    else url.searchParams.set("tab", id);
+    window.history.replaceState({}, "", url);
+  }, []);
 
   const loadProfile = useCallback(async () => {
     if (!getToken()) {
@@ -274,16 +331,35 @@ export default function App() {
 
   const load = useCallback(async () => {
     setError(null);
+    setDataLoading(true);
     try {
+      await checkPocpHealth();
+      try {
+        await fetchJson("/api/v1/meta-agents/ensure", { method: "POST" });
+      } catch {
+        /* legacy stack without meta-agents router */
+      }
+      try {
+        await fetchJson("/api/v1/agent-studio/ensure-agents", { method: "POST" });
+      } catch {
+        /* optional — graph still works if studio already seeded */
+      }
+      try {
+        const q = new URLSearchParams();
+        if (profile?.entity?.id) q.set("sponsor_entity_id", profile.entity.id);
+        await fetchJson(`/api/v1/agent-studio/nexus/autopilot?${q.toString()}`, { method: "POST" });
+      } catch {
+        /* Nexus PM autopilot optional on older backends */
+      }
       const [e, t, c, inv, w, r, l, g] = await Promise.all([
-        fetchJson(entitiesQuery()),
-        fetchJson("/api/v1/tasks"),
-        fetchJson("/api/v1/contributions"),
-        fetchJson("/api/v1/invocations"),
-        fetchJson("/api/v1/wallets"),
-        fetchJson("/api/v1/reputation"),
-        fetchJson("/api/v1/ledger"),
-        fetchJson("/api/v1/graph"),
+        fetchJsonOptional(entitiesQuery(), []),
+        fetchJsonOptional("/api/v1/tasks", []),
+        fetchJsonOptional("/api/v1/contributions", []),
+        fetchJsonOptional("/api/v1/invocations", []),
+        fetchJsonOptional("/api/v1/wallets", []),
+        fetchJsonOptional("/api/v1/reputation", []),
+        fetchJsonOptional("/api/v1/ledger", []),
+        fetchJsonOptional("/api/v1/graph", { nodes: [], edges: [] }),
       ]);
       setEntities(e);
       setTasks(t);
@@ -327,8 +403,10 @@ export default function App() {
       if (msg.includes("fetch") || msg.includes("Failed") || msg.includes("NetworkError")) {
         setApiVersion("offline");
       }
+    } finally {
+      setDataLoading(false);
     }
-  }, [entitiesQuery]);
+  }, [entitiesQuery, profile?.entity?.id]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -340,7 +418,7 @@ export default function App() {
     const proofId = params.get("proof") || params.get("contribution");
     if (proofId) {
       setProofContributionId(proofId);
-      setTab("verify");
+      params.set("tab", "verify");
       params.delete("proof");
       params.delete("contribution");
     }
@@ -348,8 +426,7 @@ export default function App() {
     window.history.replaceState({}, "", next);
     load();
     loadProfile();
-    fetch(`${API}/health`)
-      .then((r) => r.json())
+    checkPocpHealth()
       .then((h) => setApiVersion(h.version || "—"))
       .catch(() => setApiVersion("offline"));
   }, [load, loadProfile]);
@@ -465,14 +542,14 @@ export default function App() {
   const openEntity = (entityId) => {
     if (entityId) {
       setSelectedEntityId(entityId);
-      setTab("entities");
+      goToTab("entities");
     }
   };
 
   const openContribution = (contributionId) => {
     if (contributionId) {
       setProofContributionId(contributionId);
-      setTab("verify");
+      goToTab("verify");
     }
   };
 
@@ -480,12 +557,13 @@ export default function App() {
     const hash = ledgerLink?.ledger_record_hash || ledgerLink?.ledger_record_id;
     if (hash) {
       setFocusedLedgerHash(hash);
-      setTab("dashboard");
+      goToTab("dashboard");
     }
   };
 
   const tabs = [
     { id: "dashboard", label: "Network" },
+    { id: "studio", label: "Agent Studio" },
     { id: "ecosystem", label: "Ecosystem" },
     { id: "provider", label: "Compute / Capability" },
     { id: "workflow", label: "Contribute" },
@@ -502,11 +580,11 @@ export default function App() {
         <div className="network-bar__item">
           <span className={`network-bar__dot${error ? " network-bar__dot--warn" : ""}`} />
           <span>
-            Network: <span className="network-bar__value">PoCP Commons</span>
+            {t("network.name")}: <span className="network-bar__value">PoCP Commons</span>
           </span>
         </div>
         <div className="network-bar__item">
-          Blocks: <span className="network-bar__value">{ledger.length}</span>
+          {t("network.blocks")}: <span className="network-bar__value">{ledger.length}</span>
         </div>
         <LedgerVerifyBadge verify={ledgerVerify} anchor={ledgerAnchor} />
         {walletAudit && (
@@ -526,13 +604,45 @@ export default function App() {
           </div>
         )}
         <div className="network-bar__item">
-          Entities: <span className="network-bar__value">{entities.length}</span>
+          {t("network.entities")}: <span className="network-bar__value">{entities.length}</span>
         </div>
         <div className="network-bar__item">
-          Contributions: <span className="network-bar__value">{contributions.length}</span>
+          {t("network.contributions")}: <span className="network-bar__value">{contributions.length}</span>
         </div>
         <div className="network-bar__item">
-          Protocol: <span className="network-bar__ai">v{apiVersion}</span>
+          {t("network.protocol")}: <span className="network-bar__ai">v{apiVersion}</span>
+        </div>
+        <div className="network-bar__item network-bar__item--audit" title={API}>
+          {t("network.api")}:{" "}
+          <span className="network-bar__mono">
+            {apiVersion === "offline" ? t("network.offline") : API.replace(/^https?:\/\//, "")}
+          </span>
+        </div>
+        {dataLoading && (
+          <div className="network-bar__item">
+            <span className="network-bar__value">{t("network.syncing")}</span>
+          </div>
+        )}
+        <div className="network-bar__item">
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => load()}
+            disabled={dataLoading}
+            title="Reload entities, graph, ledger"
+          >
+            {dataLoading ? t("network.refreshing") : t("network.refresh")}
+          </button>
+        </div>
+        <div className="network-bar__item">
+          <button
+            type="button"
+            className={`btn btn--sm${tab === "studio" ? " btn--primary" : " btn--ghost"}`}
+            onClick={() => goToTab("studio")}
+            title="Meta Agent orchestration (Nexus-0, missions, handoffs)"
+          >
+            Agent Studio
+          </button>
         </div>
       </div>
 
@@ -543,26 +653,25 @@ export default function App() {
             <h1 className="brand__title">
               PoCP <span>AI Commons</span>
             </h1>
-            <p className="brand__tagline">
-              Earn AI access through verified contribution · Genesis MVP
-            </p>
+            <p className="brand__tagline">{t("brand.tagline")}</p>
           </div>
         </div>
         <div className="auth-panel">
+          <LocaleSwitcher />
           {profile ? (
             <>
               <div className="wallet-chip">
-                {profile.user.username} · <strong>{profile.wallet.ai_credits}</strong> AI Credits ·{" "}
+                {profile.user.username} · <strong>{profile.wallet.ai_credits}</strong> {t("auth.aiCredits")} ·{" "}
                 <strong style={{ color: "var(--btc)" }}>{profile.wallet.cp_balance}</strong> CP
               </div>
               <button type="button" className="btn btn--ghost" onClick={logout}>
-                Disconnect
+                {t("auth.disconnect")}
               </button>
             </>
           ) : (
             <>
               <a href={`${API}/api/v1/auth/github/login`} className="btn btn--ghost" style={{ textDecoration: "none" }}>
-                GitHub Login
+                {t("auth.github")}
               </a>
               <select
                 className="auth-persona-select"
@@ -573,12 +682,12 @@ export default function App() {
               >
                 {DEV_PERSONAS.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.label}
+                    {t(p.labelKey)}
                   </option>
                 ))}
               </select>
               <button type="button" className="btn btn--primary" onClick={devLogin} disabled={authLoading}>
-                {authLoading ? "Connecting…" : "Dev Login"}
+                {authLoading ? t("auth.connecting") : t("auth.devLogin")}
               </button>
             </>
           )}
@@ -586,10 +695,10 @@ export default function App() {
       </header>
 
       <div className="loop-strip">
-        {LOOP_STEPS.map((step, i) => (
-          <span key={step}>
-            <span className={`loop-strip__step${i <= 2 ? " loop-strip__step--active" : ""}`}>{step}</span>
-            {i < LOOP_STEPS.length - 1 && <span className="loop-strip__arrow"> → </span>}
+        {LOOP_STEP_KEYS.map((stepKey, i) => (
+          <span key={stepKey}>
+            <span className={`loop-strip__step${i <= 2 ? " loop-strip__step--active" : ""}`}>{t(stepKey)}</span>
+            {i < LOOP_STEP_KEYS.length - 1 && <span className="loop-strip__arrow"> → </span>}
           </span>
         ))}
       </div>
@@ -599,8 +708,9 @@ export default function App() {
           <button
             key={id}
             type="button"
-            className={`nav-tab${tab === id ? " nav-tab--active" : ""}`}
-            onClick={() => setTab(id)}
+            data-tab={id}
+            className={`nav-tab${tab === id ? " nav-tab--active" : ""}${id === "studio" ? " nav-tab--studio-highlight" : ""}`}
+            onClick={() => goToTab(id)}
           >
             {label}
           </button>
@@ -609,8 +719,8 @@ export default function App() {
 
       {error && (
         <div className="alert alert--error">
-          {error.includes("fetch")
-            ? `Node unreachable (${error}). Start backend: cd backend && python -m uvicorn main:app --port 8000`
+          {error.includes("fetch") || error.includes("Failed to fetch")
+            ? t("error.nodeUnreachable", { detail: error, api: API })
             : error}
         </div>
       )}
@@ -730,6 +840,10 @@ export default function App() {
         </section>
       )}
 
+      {tab === "studio" && (
+        <AgentStudioPanel fetchJson={fetchJson} me={profile} />
+      )}
+
       {tab === "ecosystem" && (
         <EcosystemPanel fetchJson={fetchJson} authenticated={!!profile} onSelectEntity={openEntity} />
       )}
@@ -757,7 +871,7 @@ export default function App() {
             onComplete={load}
             onProofLink={(id) => {
               setProofContributionId(id);
-              setTab("verify");
+              goToTab("verify");
             }}
             onSelectEntity={openEntity}
           />
@@ -846,12 +960,40 @@ export default function App() {
       {tab === "graph" && (
         <section className="panel">
           <h2 className="panel__title section-heading--ai">Contribution Graph</h2>
+          <p className="form-hint" style={{ marginBottom: 12 }}>
+            Meta Agents (Nexus-0, Forge-0, …) sit in the dedicated <strong>meta_agent</strong> column
+            (pink border, <strong>META AGENT</strong> label). Use <strong>Meta Agents only</strong> to focus
+            the roster, and enable the <strong>Agent Studio</strong> layer for orchestration edges
+            {graph?.meta_agent_nodes > 0
+              ? ` (${graph.meta_agent_nodes} agents`
+              : " — refresh after backend starts"}
+            {graph?.edge_layer_counts?.studio > 0
+              ? `, ${graph.edge_layer_counts.studio} studio edges).`
+              : graph?.meta_agent_nodes > 0
+                ? ")."
+                : "."}
+          </p>
           <ContributionGraphView graph={graph} entities={entities} />
         </section>
       )}
 
       {tab === "dashboard" && (
         <>
+          <section className="panel panel--studio-cta">
+            <div className="studio-cta">
+              <div>
+                <h2 className="panel__title" style={{ marginBottom: 4 }}>
+                  Agent Studio
+                </h2>
+                <p className="panel__subtitle" style={{ margin: 0 }}>
+                  15 Meta Agents · Nexus-0 PM · missions · handoffs · Cursor automation
+                </p>
+              </div>
+              <button type="button" className="btn btn--primary" onClick={() => goToTab("studio")}>
+                Open Agent Studio
+              </button>
+            </div>
+          </section>
           <div className="stats-grid">
             <div className="stat-block">
               <div className="stat-block__label">Entities</div>
@@ -927,12 +1069,12 @@ export default function App() {
                 tabIndex={0}
                 onClick={() => {
                   setSelectedEntityId(e.id);
-                  setTab("entities");
+                  goToTab("entities");
                 }}
                 onKeyDown={(ev) => {
                   if (ev.key === "Enter") {
                     setSelectedEntityId(e.id);
-                    setTab("entities");
+                    goToTab("entities");
                   }
                 }}
                 style={{ cursor: "pointer" }}

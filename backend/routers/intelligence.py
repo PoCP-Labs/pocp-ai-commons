@@ -22,6 +22,11 @@ from services.remote_witness import run_witness
 from services.a2a_agent_card import build_entity_agent_card, build_node_agent_card
 from services.a2a_task_bridge import handle_jsonrpc_call
 from services.entity_connections import entity_connection_matrix
+from services.entity_dialogue import (
+    ENTITY_DIALOGUE_SCHEMA,
+    dialogue_manifest,
+    route_dialogue,
+)
 from models.user_account import UserAccount
 from routers.auth import require_current_user
 
@@ -133,6 +138,7 @@ def protocol_primitives():
     from services.rights_conversion import CONVERSION_SCHEMA, RIGHTS_RULES_SCHEMA
 
     from intelligence.entity_ontology import ENTITY_CONNECTION_SCHEMA, connection_matrix_document
+    from services.entity_dialogue import ENTITY_DIALOGUE_SCHEMA, ENTITY_DIALOGUE_RESPONSE_SCHEMA
     from services.trust_policy_bundle import TRUST_POLICY_BUNDLE_SCHEMA, trust_policy_bundle_manifest
 
     return {
@@ -140,6 +146,8 @@ def protocol_primitives():
         "contribution_to_rights_conversion_schema": CONVERSION_SCHEMA,
         "capability_receipt_schema": CAPABILITY_RECEIPT_SCHEMA,
         "entity_connection_schema": ENTITY_CONNECTION_SCHEMA,
+        "entity_dialogue_schema": ENTITY_DIALOGUE_SCHEMA,
+        "entity_dialogue_response_schema": ENTITY_DIALOGUE_RESPONSE_SCHEMA,
         "trust_policy_bundle_schema": TRUST_POLICY_BUNDLE_SCHEMA,
         "entity_connections": connection_matrix_document(),
         "trust_policy_bundle": trust_policy_bundle_manifest(),
@@ -160,6 +168,60 @@ def protocol_trust_policy_bundle():
     from services.trust_policy_bundle import trust_policy_bundle_manifest
 
     return trust_policy_bundle_manifest()
+
+
+@router.get("/protocol/entity-dialogue")
+def protocol_entity_dialogue():
+    """Entity Dialogue Protocol manifest — L2 native envelope for Entity communication."""
+    return dialogue_manifest()
+
+
+class EntityDialogueIn(BaseModel):
+    schema: str = Field(alias="schema")
+    dialogue_id: str
+    kind: str
+    from_: dict = Field(alias="from")
+    to: dict
+    payload: dict = Field(default_factory=dict)
+    refs: dict = Field(default_factory=dict)
+    crypto: dict | None = None
+
+    model_config = {"populate_by_name": True}
+
+
+@router.post("/dialogue")
+def node_dialogue(
+    body: EntityDialogueIn,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    """Route pocp.entity_dialogue.v0.1 envelope on this node (native Entity dialogue entry)."""
+    if body.schema != ENTITY_DIALOGUE_SCHEMA:
+        raise HTTPException(status_code=400, detail=f"schema must be {ENTITY_DIALOGUE_SCHEMA}")
+    envelope = body.model_dump(by_alias=True)
+    if not envelope.get("from", {}).get("entity_id"):
+        envelope["from"] = {**envelope["from"], "entity_id": current_user.entity_id}
+    response = route_dialogue(db, envelope)
+    db.commit()
+    return response
+
+
+@router.post("/entities/{entity_id}/dialogue")
+def entity_dialogue(
+    entity_id: str,
+    body: EntityDialogueIn,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    """Route dialogue envelope targeted at a specific Entity."""
+    if body.schema != ENTITY_DIALOGUE_SCHEMA:
+        raise HTTPException(status_code=400, detail=f"schema must be {ENTITY_DIALOGUE_SCHEMA}")
+    envelope = body.model_dump(by_alias=True)
+    if not envelope.get("from", {}).get("entity_id"):
+        envelope["from"] = {**envelope["from"], "entity_id": current_user.entity_id}
+    response = route_dialogue(db, envelope, expected_target_entity_id=entity_id)
+    db.commit()
+    return response
 
 
 @router.get("/compute/status")

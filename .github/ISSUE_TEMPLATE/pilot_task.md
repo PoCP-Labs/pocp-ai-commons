@@ -17,6 +17,13 @@ assignees: ""
 - [ ] Code / tests
 - [ ] Community / reviewer recruitment
 
+## Phase & verification
+
+| Field | Value |
+|-------|-------|
+| **Phase** | A (MVP loop) · B (multi-node) · C (protocol SDK) |
+| **Acceptance command** | e.g. `python backend/scripts/pilot_metrics.py https://api…` or `run_phase_a_acceptance.py` |
+
 ## Acceptance criteria
 
 - [ ] 

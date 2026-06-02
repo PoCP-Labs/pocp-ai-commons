@@ -102,7 +102,23 @@ Nodes expose proof and portable entity APIs. Trusted nodes can import proofs and
 React + Vite dashboard (`frontend/src/`):
 
 - Network status bar, wallet, AI chat, contribution workflow, graph explorer, entity profiles
+- **Agent Studio** tab — Meta Agent missions, handoffs, Nexus autopilot
 - Dark “contribution network” UI theme
+
+## Agent Studio & Meta Agents
+
+Engineering orchestration sub-platform for 15 Meta Agents (Nexus-0 PM, Forge, Vault, …).
+
+| Component | Location |
+|-----------|----------|
+| API | `backend/routers/agent_studio.py`, `backend/routers/meta_agents.py` |
+| Services | `backend/services/agent_studio/` |
+| Registry | `backend/meta_agents_spec.py` |
+| Prompts & workflow | `agents/prompts/`, `agents/ROSTER.md` |
+
+Nexus-0 decomposes [ROADMAP-THREE-PHASES.md](./ROADMAP-THREE-PHASES.md) goals into missions and handoffs. Meta Agents do **not** finalize CP/AI Credits on live contributions.
+
+See [architecture/10-AGENT-STUDIO.md](./architecture/10-AGENT-STUDIO.md) · [agents/META-AGENTS.md](../agents/META-AGENTS.md).
 
 ## Deployment
 

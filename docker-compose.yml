@@ -6,7 +6,8 @@ services:
       POSTGRES_PASSWORD: pocp
       POSTGRES_DB: pocp
     ports:
-      - "5432:5432"
+      # Host port 5435 (5432–5434 often taken on Windows dev machines)
+      - "5435:5432"
     volumes:
       - pocp_pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -19,7 +20,8 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      # 8000 is often taken by other local stacks (e.g. ai-sfoms-factory); use 8008 for PoCP.
+      - "8008:8000"
     # No --reload: volume-mounted source changes were trapping startup in a reload loop.
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
     environment:
@@ -29,8 +31,14 @@ services:
       POCP_WAIT_FOR_DB_SECONDS: "60"
       ENABLE_DEV_LOGIN: "true"
       ENABLE_MOCK_VERIFIER: "true"
+      BACKEND_URL: "http://localhost:8008"
+      POCP_REPO_ROOT: "/workspace"
+      # With POCP_NEXUS_SUPER_LOOP_HOST=true in backend/.env, run super-loop on the Windows host instead.
+    env_file:
+      - ./backend/.env
     volumes:
       - ./backend:/app
+      - .:/workspace
     depends_on:
       postgres:
         condition: service_healthy
@@ -41,7 +49,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=http://localhost:8008
     volumes:
       - ./frontend:/app
       - /app/node_modules

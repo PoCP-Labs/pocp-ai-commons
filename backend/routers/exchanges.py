@@ -14,8 +14,29 @@ from services.entity_local_chain import build_entity_local_chain, find_exchange_
 from services.exchange_contribution import publish_contribution_from_exchange
 from services.exchange_proof import build_exchange_proof_packet
 from services.invocation_ledger import verify_exchange_invocation_chain
+from services.settlement_policy import list_settlement_policies, replay_bilateral_quote
 
 router = APIRouter(prefix="/api/v1", tags=["exchanges"])
+
+
+@router.get("/settlement-policies")
+def get_settlement_policies():
+    return {"policies": list_settlement_policies()}
+
+
+@router.post("/settlement-policies/replay")
+def replay_settlement_policy(body: dict, db: Session = Depends(get_db)):
+    """Offline-style replay quote for a receipt + policy_id (no wallet mutation)."""
+    receipt = body.get("receipt")
+    policy_id = body.get("policy_id") or "compute_settlement.v1"
+    if not isinstance(receipt, dict):
+        raise HTTPException(status_code=400, detail="receipt object required")
+    return replay_bilateral_quote(
+        receipt,
+        policy_id=policy_id,
+        db=db,
+        skill_entity_id=body.get("skill_entity_id"),
+    )
 
 
 class ExchangePublishContributionIn(BaseModel):

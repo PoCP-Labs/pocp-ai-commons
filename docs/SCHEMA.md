@@ -8,12 +8,12 @@
 
 First-class intelligent subjects in the network.
 
-**Ontology:** See [ENTITY-ONTOLOGY.md](./ENTITY-ONTOLOGY.md) for the nine canonical types, eleven participant roles, accountability rules, and API endpoints (`GET /api/v1/entities/ontology`).
+**Ontology:** See [ENTITY-ONTOLOGY.md](./ENTITY-ONTOLOGY.md) for the fourteen canonical types, eleven participant roles, accountability rules, and API endpoints (`GET /api/v1/entities/ontology`).
 
 | Column | Type | Notes |
 |--------|------|-------|
-| id | UUID | Primary key |
-| entity_type | enum | `human`, `agent`, `skill`, `llm`, `tool`, `dataset`, `workflow`, `organization`, `community` |
+| id | UUID | Primary key (stable portable IDs allowed, e.g. `pocp-entity-local-compute`) |
+| entity_type | enum | `human`, `agent`, `skill`, `llm`, `tool`, `dataset`, `workflow`, `compute_node`, `verifier_node`, `reviewer_node`, `organization`, `community`, `sponsor`, `protocol_treasury` |
 | name | string | Display name |
 | description | text | Optional |
 | owner_id | UUID FK → entities | Human/org owner for non-human entities |

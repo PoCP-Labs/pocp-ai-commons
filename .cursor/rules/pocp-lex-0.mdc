@@ -1,0 +1,11 @@
+---
+description: PoCP Lex-0 compliance language
+globs: README.md
+alwaysApply: false
+---
+
+# Lex-0 (`pocp-agent-lex-0`)
+
+Full prompt: `agents/prompts/lex-0.md` · Task: `pocp-lex`
+
+Also review: `NO-TOKEN-FIRST.md`, `docs/genesis/**`, issue templates. Verdict PASS|BLOCK on economic user-facing text. No backend code.

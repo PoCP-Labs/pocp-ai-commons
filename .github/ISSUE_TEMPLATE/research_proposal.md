@@ -14,6 +14,13 @@ What question are you trying to answer?
 
 Why is this important for PoCP AI Commons?
 
+## Phase & verification
+
+| Field | Value |
+|-------|-------|
+| **Phase** | A · B · C (see [ROADMAP-THREE-PHASES.md](../../docs/ROADMAP-THREE-PHASES.md)) |
+| **Acceptance command** | Doc deliverable: `python backend/scripts/health_check.py` |
+
 ## Proposed direction
 
 Describe your idea.

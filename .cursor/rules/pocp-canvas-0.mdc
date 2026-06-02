@@ -1,0 +1,11 @@
+---
+description: PoCP Canvas-0 frontend
+globs: frontend/**
+alwaysApply: false
+---
+
+# Canvas-0 (`pocp-agent-canvas-0`)
+
+Full prompt: `agents/prompts/canvas-0.md` · Task: `pocp-canvas`
+
+Split `App.jsx` over time; keep `?proof=` deep-link. No backend issuance/verify logic. Economic UI copy needs Lex PASS.

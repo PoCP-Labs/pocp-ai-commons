@@ -34,6 +34,7 @@ Public staging is **not blocked on engineering** — it is **deferred by choice*
 | **P1** | Live compute adapter wire | `test_akash_live_wire.py` + stub→live config path documented |
 | **P2** | Split unpushed wave for review | Wallet → Settlement → Live adapters as separate PRs |
 | **P2** | Frontend provider/ecosystem UX | ProviderPanel + WalletPanel usable in local federation demo |
+| **P2** | Protocol Layer — Entity Dialogue (EDP) | `pytest tests/test_entity_dialogue.py` green; dialogue in LOCAL-SETUP; mission `protocol_layer_edp` — [agents/missions/protocol-layer-edp/MANIFEST.md](../agents/missions/protocol-layer-edp/MANIFEST.md) |
 
 **Local acceptance (full federation):**
 
@@ -109,7 +110,7 @@ Phase C         →  protocol SDK  →  2+ forks exchange proof packets
 - [x] CrewAI witness registration + E2E script (`crewai_witness_e2e_test.py`)
 - [x] Local federation acceptance green (`run_phase_a_acceptance.py --federation`)
 - [ ] Staging: `ENABLE_CREWAI_WITNESS=true` on demo/staging instance
-- [ ] Pilot metrics gate in CI (optional `--strict` threshold for pilot launch, not demo stack)
+- [ ] Pilot metrics gate in CI — `python backend/scripts/pilot_metrics.py <staging_url> --json` artifact; optional `--strict` for Epic B launch (not demo stack)
 
 ### P2 — Nice in Phase A
 
@@ -193,6 +194,7 @@ python backend/scripts/run_phase_a_acceptance.py https://api.your-domain.com --s
 
 | Artifact | Location |
 |----------|----------|
+| Agent Studio handoff vs ROADMAP | `agents/scripts/roadmap_handoff_crosscheck.py` · reconcile: `agents/patches/compass-0-reconcile-a86cc259.md` · training: `agents/patches/compass-0-training-112f783c.md` |
 | Phase A acceptance | `backend/scripts/run_phase_a_acceptance.py` |
 | Federation CI | `.github/workflows/phase-a-federation.yml` |
 | Staging env template | `backend/.env.staging.example` |
@@ -203,3 +205,5 @@ python backend/scripts/run_phase_a_acceptance.py https://api.your-domain.com --s
 | Pilot checklist | [PILOT-LAUNCH-CHECKLIST.md](./PILOT-LAUNCH-CHECKLIST.md) |
 
 **Principle unchanged:** automation-first, traceable finalization — intelligence can live in AI; rights memory cannot live in a black box.
+
+**Legacy:** [ROADMAP.md](../ROADMAP.md) (Phase 0–4 epics) is historical; use this file for execution priority.
