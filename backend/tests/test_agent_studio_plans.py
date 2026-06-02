@@ -42,6 +42,14 @@ class AgentStudioPlanTests(unittest.TestCase):
         self.assertIn("PA-1", scopes)
         self.assertIn("PA-4", scopes)
 
+    def test_spawn_capability_internet_handoffs(self):
+        result = create_mission_from_plan(self.db, "capability_internet")
+        self.assertEqual(result["plan_id"], "capability_internet")
+        self.assertEqual(result["handoff_count"], 9)
+        scopes = " ".join(h["scope"] for h in result["handoffs"])
+        self.assertIn("CI-1", scopes)
+        self.assertIn("MINIMUM-LIVING-NETWORK", scopes)
+
     def test_protocol_layer_edp_plan_handoffs(self):
         result = create_mission_from_plan(self.db, "protocol_layer_edp")
         self.assertEqual(result["plan_id"], "protocol_layer_edp")

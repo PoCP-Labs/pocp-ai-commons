@@ -30,6 +30,7 @@ from services.entity_register import (
     register_verifier_node,
     register_workflow,
 )
+from services.node.store import get_node_by_entity, register_node
 
 POCP_ORG_NAME = "PoCP AI Commons"
 
@@ -242,6 +243,31 @@ def _link_catalog_metadata(db: Session, *, org: Entity, rain: Entity) -> None:
             entity.metadata_ = meta
 
 
+def _ensure_node_profiles(db: Session, *, backend_url: str) -> list[str]:
+    """Register NodeProfile rows for infrastructure entities (idempotent)."""
+    created: list[str] = []
+    specs: list[tuple[str, str, str | None]] = [
+        (LOCAL_COMPUTE_NODE_ID, "compute", backend_url),
+        (LOCAL_VERIFIER_NODE_ID, "verifier", backend_url),
+        (BOB_REVIEWER_NODE_ID, "reviewer", None),
+        (RAIN_SPONSOR_ID, "service", None),
+        (PROTOCOL_TREASURY_ID, "treasury", None),
+    ]
+    for entity_id, node_type, base_url in specs:
+        if db.get(Entity, entity_id) is None:
+            continue
+        if get_node_by_entity(db, entity_id) is not None:
+            continue
+        record = register_node(
+            db,
+            entity_id=entity_id,
+            node_type=node_type,
+            base_url=base_url,
+        )
+        created.append(record.id)
+    return created
+
+
 def ensure_platform_entity_catalog(db: Session) -> dict[str, Any]:
     """Idempotently register infrastructure entities, capabilities, and demo ownership."""
     rain = db.get(Entity, RAIN_ID)
@@ -255,6 +281,8 @@ def ensure_platform_entity_catalog(db: Session) -> dict[str, Any]:
     capabilities = seed_platform_capabilities(
         db, rain_id=rain.id, maintainer_id=org.id
     )
+    backend = os.getenv("BACKEND_URL", "http://127.0.0.1:8008").rstrip("/")
+    node_profiles = _ensure_node_profiles(db, backend_url=backend)
     _link_catalog_metadata(db, org=org, rain=rain)
 
     return {
@@ -262,5 +290,6 @@ def ensure_platform_entity_catalog(db: Session) -> dict[str, Any]:
         "infrastructure_created": infrastructure,
         "ownership_assigned": ownership,
         "capabilities_created": capabilities,
+        "node_profiles_created": node_profiles,
         "audit": audit_entity_catalog(db),
     }

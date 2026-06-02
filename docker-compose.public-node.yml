@@ -1,0 +1,22 @@
+# Public node overlay for VPS / cloud deployment.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.public-node.yml up -d --build
+#
+# This keeps Postgres private and binds backend/frontend only to loopback, so Caddy/Nginx on the host
+# can terminate TLS and expose 443 without leaking raw container ports publicly.
+
+services:
+  postgres:
+    ports: !override []
+    restart: always
+
+  backend:
+    ports: !override
+      - "127.0.0.1:8008:8000"
+    restart: always
+
+  frontend:
+    ports: !override
+      - "127.0.0.1:3000:80"
+    restart: always

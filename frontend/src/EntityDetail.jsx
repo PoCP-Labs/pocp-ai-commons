@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import ComputeAttributionPanel from "./ComputeAttributionPanel";
 import EntityConnectionsPanel from "./EntityConnectionsPanel";
+import ProtocolDialoguePanel from "./ProtocolDialoguePanel";
 import EntityWalletActivity from "./EntityWalletActivity";
 import FederationTrustPanel from "./FederationTrustPanel";
 import LogOutreachForm from "./LogOutreachForm";
@@ -77,6 +78,7 @@ export default function EntityDetail({
   onSelectEntity,
   onOpenContribution,
   onOpenLedger,
+  me = null,
 }) {
   const [audit, setAudit] = useState([]);
   const [portable, setPortable] = useState(null);
@@ -387,6 +389,15 @@ export default function EntityDetail({
           fetchJson={fetchJson}
           onSelectEntity={onSelectEntity}
           ontologyConnections={ontologySlice?.connections}
+        />
+      )}
+
+      {fetchJson && authenticated && me?.entity?.id && (
+        <ProtocolDialoguePanel
+          entityId={entity.id}
+          entity={entity}
+          fetchJson={fetchJson}
+          meEntityId={me.entity.id}
         />
       )}
 

@@ -139,6 +139,7 @@ def protocol_primitives():
 
     from intelligence.entity_ontology import ENTITY_CONNECTION_SCHEMA, connection_matrix_document
     from services.entity_dialogue import ENTITY_DIALOGUE_SCHEMA, ENTITY_DIALOGUE_RESPONSE_SCHEMA
+    from services.network.protocol_bridge import PROTOCOL_EVENT_SCHEMA
     from services.trust_policy_bundle import TRUST_POLICY_BUNDLE_SCHEMA, trust_policy_bundle_manifest
 
     return {
@@ -148,6 +149,7 @@ def protocol_primitives():
         "entity_connection_schema": ENTITY_CONNECTION_SCHEMA,
         "entity_dialogue_schema": ENTITY_DIALOGUE_SCHEMA,
         "entity_dialogue_response_schema": ENTITY_DIALOGUE_RESPONSE_SCHEMA,
+        "protocol_event_schema": PROTOCOL_EVENT_SCHEMA,
         "trust_policy_bundle_schema": TRUST_POLICY_BUNDLE_SCHEMA,
         "entity_connections": connection_matrix_document(),
         "trust_policy_bundle": trust_policy_bundle_manifest(),
@@ -190,7 +192,7 @@ class EntityDialogueIn(BaseModel):
 
 
 @router.post("/dialogue")
-def node_dialogue(
+async def node_dialogue(
     body: EntityDialogueIn,
     db: Session = Depends(get_db),
     current_user: UserAccount = Depends(require_current_user),
@@ -201,13 +203,13 @@ def node_dialogue(
     envelope = body.model_dump(by_alias=True)
     if not envelope.get("from", {}).get("entity_id"):
         envelope["from"] = {**envelope["from"], "entity_id": current_user.entity_id}
-    response = route_dialogue(db, envelope)
+    response = await route_dialogue(db, envelope)
     db.commit()
     return response
 
 
 @router.post("/entities/{entity_id}/dialogue")
-def entity_dialogue(
+async def entity_dialogue(
     entity_id: str,
     body: EntityDialogueIn,
     db: Session = Depends(get_db),
@@ -219,9 +221,161 @@ def entity_dialogue(
     envelope = body.model_dump(by_alias=True)
     if not envelope.get("from", {}).get("entity_id"):
         envelope["from"] = {**envelope["from"], "entity_id": current_user.entity_id}
-    response = route_dialogue(db, envelope, expected_target_entity_id=entity_id)
+    response = await route_dialogue(db, envelope, expected_target_entity_id=entity_id)
     db.commit()
     return response
+
+
+@router.get("/protocol/network")
+def protocol_network_overlay():
+    """Protocol Event Network overlay manifest — L1.5 Bitcoin-inspired propagation."""
+    from services.network.manifest import network_overlay_manifest
+
+    return network_overlay_manifest()
+
+
+@router.get("/protocol/merkle")
+def protocol_merkle_unified():
+    """Unified Merkle algorithm shared by ledger, graph, and ProtocolEvent batches."""
+    from services.merkle_canonical import MERKLE_ALGORITHM, MERKLE_LEAF_PREFIX
+
+    return {
+        "schema": "pocp.merkle_unified.v0.1",
+        "algorithm": MERKLE_ALGORITHM,
+        "leaf_prefix": MERKLE_LEAF_PREFIX,
+        "ledger_merkle_api": "/api/v1/ledger/export",
+        "overlay_batch_api": "/api/v1/intelligence/network/overlay/batch",
+        "code": "backend/services/merkle_canonical.py",
+        "docs": "docs/protocol/PROTOCOL-EVENT-NETWORK.md",
+    }
+
+
+class OverlayEventIn(BaseModel):
+    event_type: str
+    payload: dict = Field(default_factory=dict)
+    entity_id: str | None = None
+    node_id: str | None = None
+    previous_event_hash: str | None = None
+
+
+@router.get("/network/overlay/status")
+def network_overlay_status():
+    from services.network.runtime import overlay_status
+
+    return overlay_status()
+
+
+class OverlayGossipReceiveIn(BaseModel):
+    schema: str = "pocp.overlay_gossip.v0.1"
+    source_node_id: str
+    events: list[dict] = Field(default_factory=list)
+    batch: dict | None = None
+
+
+@router.post("/network/overlay/gossip/receive")
+def network_overlay_gossip_receive(body: OverlayGossipReceiveIn):
+    """Inbound overlay gossip from a trusted federation peer."""
+    from services.network.gossip import receive_gossip_payload
+
+    try:
+        return receive_gossip_payload(body.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/network/overlay/gossip/push")
+def network_overlay_gossip_push(
+    current_user: UserAccount = Depends(require_current_user),
+):
+    """Push last sealed batch (or current mempool drain) to trusted peers."""
+    from services.network.gossip import push_gossip_to_trusted_peers
+    from services.network.runtime import overlay_mempool, seal_batch
+
+    events = overlay_mempool().pending()
+    if events:
+        sealed = seal_batch()
+        if not sealed.get("sealed"):
+            raise HTTPException(status_code=400, detail=sealed.get("reason", "seal_failed"))
+        return push_gossip_to_trusted_peers(events=sealed["events"], batch=sealed.get("batch"))
+
+    from services.network.persistence import last_batch_from_db, list_events_from_db
+
+    batch = last_batch_from_db()
+    if not batch:
+        raise HTTPException(status_code=400, detail="no_batch_to_gossip")
+    event_docs = list_events_from_db(mempool_status="sealed", limit=500)
+    batch_events = [e for e in event_docs if e.get("batch_id") == batch.get("batch_id")]
+    return push_gossip_to_trusted_peers(events=batch_events or event_docs, batch=batch)
+
+
+@router.get("/network/overlay/events")
+def network_overlay_list_events(
+    mempool_status: str | None = None,
+    event_type: str | None = None,
+    limit: int = 20,
+):
+    from services.network.persistence import list_events_from_db, overlay_persist_enabled
+
+    return {
+        "schema": "pocp.network_overlay_events.v0.2",
+        "persist_enabled": overlay_persist_enabled(),
+        "events": list_events_from_db(
+            mempool_status=mempool_status,
+            event_type=event_type,
+            limit=min(limit, 100),
+        ),
+    }
+
+
+@router.post("/network/overlay/events", status_code=201)
+def network_overlay_enqueue(
+    body: OverlayEventIn,
+    current_user: UserAccount = Depends(require_current_user),
+):
+    from services.network.runtime import enqueue_event
+    from services.network.types import ProtocolEvent
+
+    event = ProtocolEvent.create(
+        body.event_type,
+        body.payload,
+        entity_id=body.entity_id or current_user.entity_id,
+        node_id=body.node_id,
+        previous_event_hash=body.previous_event_hash,
+    )
+    return enqueue_event(event)
+
+
+@router.post("/network/overlay/batch")
+def network_overlay_batch(
+    current_user: UserAccount = Depends(require_current_user),
+):
+    from services.compute_registry import compute_status_manifest
+    from services.network.runtime import seal_batch
+
+    node_id = compute_status_manifest().get("node_id")
+    return seal_batch(created_by_node_id=node_id)
+
+
+@router.post("/network/overlay/demo")
+def network_overlay_demo():
+    from services.network.examples.bitcoin_inspired_network_demo import (
+        run_bitcoin_inspired_network_demo,
+    )
+    from services.network.protocol_bridge import event_batch_to_dict, protocol_event_to_dict
+
+    result = run_bitcoin_inspired_network_demo()
+    return {
+        "schema": "pocp.network_overlay_demo.v0.1",
+        "peers": len(result["peers"]),
+        "events": [protocol_event_to_dict(e) for e in result["events"]],
+        "batch": event_batch_to_dict(result["batch"]),
+        "merkle_root": result["merkle_root"],
+        "confirmation": {
+            "level": result["confirmation"].level,
+            "label": result["confirmation"].label,
+            "finalized": result["confirmation"].finalized,
+        },
+    }
 
 
 @router.get("/compute/status")

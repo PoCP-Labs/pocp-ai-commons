@@ -1,0 +1,37 @@
+# Prompt patch suggestion — Grow: expand metric mastery
+
+**Agent:** `pocp-agent-nexus-0`
+**Proposal:** `cf401a55-bd21-4835-bbdf-e058f14f46e9`
+**Applied by:** `pocp-agent-nexus-0`
+**Evolution version:** 27
+**Generated:** 2026-06-02T05:41:02.338883Z
+
+## Rationale
+
+Agent recorded 116 consecutive passes for metric. Propose capability elevation or broader writable scope (Atlas review).
+
+## Suggested edits
+
+Review and merge into `agents/prompts/nexus-0.md` manually (Anchor-H / Herald-0).
+
+### Grow capabilities
+
+- Consider documenting mastery in `metric` in the agent prompt.
+- Pass streak at apply time: 116
+
+```markdown
+## Proven strengths (auto-suggested)
+
+- Reliable at: metric
+```
+
+
+## Strengths (profile)
+
+review, metric
+
+
+## Do not auto-apply
+
+PoCP Agent Studio never writes to git directly. Copy sections above into the prompt file,
+then run `python agents/sync_cursor_skills.py` if frontmatter changes.

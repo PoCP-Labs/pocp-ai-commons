@@ -1,0 +1,118 @@
+from __future__ import annotations
+
+from services.capability.service import CapabilityService
+from services.economy.token_account import TokenAccountService
+from services.events.event_log import ProtocolEventLog
+from services.reputation_graph.service import ReputationGraphService
+from services.capability_internet.invocation import InvocationService
+from services.node.profile import NodeProfileService
+from services.capability_internet.proof import ProofService
+from services.public_node.registry import PublicNodeRegistry
+from services.reputation.service import ReputationService
+from services.settlement.service import SettlementParticipant, SettlementService
+from services.verification.service import VerificationService
+
+def run_public_skill_node_closed_loop() -> dict:
+    human_entity_id = "human_001"
+    skill_entity_id = "skill_code_review_001"
+    verifier_entity_id = "verifier_ai_001"
+
+    nodes = NodeProfileService()
+    public_registry = PublicNodeRegistry()
+    capabilities = CapabilityService()
+    invocations = InvocationService()
+    proofs = ProofService()
+    verifications = VerificationService()
+    settlements = SettlementService()
+    accounts = TokenAccountService()
+    reputation = ReputationService()
+    graph = ReputationGraphService()
+    events = ProtocolEventLog()
+
+    skill_node = nodes.register_node(
+        entity_id=skill_entity_id,
+        node_type="service",
+        public_key="ed25519:example-public-key",
+        base_url="https://skill.example.com",
+    )
+    endpoint = nodes.public_endpoint(skill_node)
+    public_registry.register(skill_node, endpoint, capabilities=["code_review"])
+    events.append("NodeRegistered", skill_node.__dict__, entity_id=skill_entity_id, node_id=skill_node.node_id)
+
+    capability = capabilities.publish(
+        entity_id=skill_entity_id,
+        node_id=skill_node.node_id,
+        capability_type="code_review",
+        name="Python Code Review",
+        unit="skill_invocation",
+        price={"AIC": 5},
+    )
+    events.append("CapabilityPublished", capability.__dict__, entity_id=skill_entity_id, node_id=skill_node.node_id)
+
+    invocation = invocations.create(
+        task_id="task_001",
+        caller_entity_id=human_entity_id,
+        callee_entity_id=skill_entity_id,
+        capability_id=capability.capability_id,
+        input_hash="sha256:input",
+        cost_unit="AIC",
+        cost_amount=5,
+    )
+    invocation = invocations.complete(invocation, output_hash="sha256:output")
+    events.append("InvocationCompleted", invocation.__dict__, entity_id=human_entity_id)
+
+    proof = proofs.submit(
+        entity_id=skill_entity_id,
+        node_id=skill_node.node_id,
+        proof_type="skill_invocation_result",
+        invocation_id=invocation.invocation_id,
+        task_id=invocation.task_id,
+        input_hash=invocation.input_hash,
+        output_hash=invocation.output_hash,
+        evidence_ref="https://skill.example.com/proofs/001",
+        signature="sig_example",
+    )
+    events.append("ProofSubmitted", proof.__dict__, entity_id=skill_entity_id, node_id=skill_node.node_id)
+
+    verification = verifications.ai_advisory_verify(proof=proof, verifier_entity_id=verifier_entity_id)
+    events.append("VerificationCompleted", verification.__dict__, entity_id=verifier_entity_id)
+
+    settlement = settlements.create(
+        task_id=invocation.task_id,
+        invocation_id=invocation.invocation_id,
+        verification=verification,
+        participants=[
+            SettlementParticipant(skill_entity_id, "skill_provider", "AIC", 5, "Provided verified code review capability."),
+            SettlementParticipant(human_entity_id, "requester", "CP", 1, "Created task and participated in verified loop."),
+        ],
+    )
+    events.append("SettlementExecuted", settlement.__dict__, entity_id=skill_entity_id)
+
+    skill_account = accounts.create(skill_entity_id)
+    accounts.credit(skill_account, "AIC", 5)
+
+    skill_rep = reputation.success(skill_entity_id, scope="code_review")
+    edges = graph.closed_loop_edges(
+        entity_id=skill_entity_id,
+        node_id=skill_node.node_id,
+        capability_id=capability.capability_id,
+        invocation_id=invocation.invocation_id,
+        proof_id=proof.proof_id,
+        verification_id=verification.verification_id,
+        settlement_id=settlement.settlement_id,
+        reputation_id=skill_rep.reputation_id,
+    )
+
+    return {
+        "skill_node": skill_node,
+        "endpoint": endpoint,
+        "capability": capability,
+        "invocation": invocation,
+        "proof": proof,
+        "verification": verification,
+        "settlement": settlement,
+        "skill_account": skill_account,
+        "skill_reputation": skill_rep,
+        "graph_edges": edges,
+        "events": events.events,
+    }

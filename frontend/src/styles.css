@@ -659,6 +659,18 @@ body::before {
   border-radius: 4px;
 }
 
+.remote-tag {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  color: #a78bfa;
+  background: rgba(167, 139, 250, 0.12);
+  border: 1px solid rgba(167, 139, 250, 0.3);
+}
+
 /* ── Entity list ── */
 .entity-row {
   display: flex;

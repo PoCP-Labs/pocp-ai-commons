@@ -313,11 +313,155 @@ PROTOCOL_LAYER_EDP_PLAN: MissionPlan = {
     ],
 }
 
+CAPABILITY_INTERNET_PLAN: MissionPlan = {
+    "id": "capability_internet",
+    "title": "Capability Internet — 12-layer protocol reference",
+    "description": (
+        "CI-1..CI-12: Entity→Node→Capability→Invocation→Proof→Settlement→Reputation. "
+        "See docs/CAPABILITY-INTERNET-PROTOCOL.md and agents/missions/capability-internet/MANIFEST.md"
+    ),
+    "kind": "evolve",
+    "handoffs": [
+        {
+            "from_agent_entity_id": NEXUS_ID,
+            "to_agent_entity_id": "pocp-agent-atlas-0",
+            "scope": (
+                "[CI-1/CI-2] Entity + Node layer: NodeProfile schema, "
+                "GET /.well-known/pocp-node.json draft, link entity_catalog. "
+                "Docs: POCP-NETWORK-ARCHITECTURE.md L1-L2"
+            ),
+            "tests_run": "pytest test_entity_ontology test_entity_catalog -q",
+        },
+        {
+            "from_agent_entity_id": "pocp-agent-atlas-0",
+            "to_agent_entity_id": "pocp-agent-pulse-0",
+            "scope": (
+                "[CI-4/CI-5/CI-6] Capability registry public API, rule router → search, "
+                "invocation state machine alignment with INVOCATION-SCHEMA-v0.3"
+            ),
+            "tests_run": "pytest -k 'capability or invocation' -q",
+        },
+        {
+            "from_agent_entity_id": NEXUS_ID,
+            "to_agent_entity_id": "pocp-agent-vault-0",
+            "scope": (
+                "[CI-6/CI-7/CI-9] Invocation→Proof→Settlement chain in one export; "
+                "invocation_chain_digest on all settled exchanges. MINIMUM-LIVING-NETWORK.md"
+            ),
+            "tests_run": "pytest -k 'invocation_ledger or proof or exchange' -q",
+        },
+        {
+            "from_agent_entity_id": NEXUS_ID,
+            "to_agent_entity_id": "pocp-agent-forge-0",
+            "scope": (
+                "[CI-8] Verification network: challenge/appeal, verifier_node entity wiring, "
+                "standalone verifier API sketch"
+            ),
+            "tests_run": "pytest -k verification_challenge -q",
+        },
+        {
+            "from_agent_entity_id": NEXUS_ID,
+            "to_agent_entity_id": "pocp-agent-mesh-0",
+            "scope": (
+                "[CI-5] Discovery: federation peer manifests, public skill node template, "
+                "minimum living network step 3-4 (discover + handshake)"
+            ),
+            "tests_run": "run_phase_a_acceptance.py --federation",
+        },
+        {
+            "from_agent_entity_id": NEXUS_ID,
+            "to_agent_entity_id": "pocp-agent-sentinel-0",
+            "scope": (
+                "[CI-10/CI-11] Reputation event-sourcing scaffold + governance PIP template; "
+                "no commercial ranking optimizer"
+            ),
+            "tests_run": "spec review + pytest reputation -q",
+        },
+        {
+            "from_agent_entity_id": NEXUS_ID,
+            "to_agent_entity_id": "pocp-agent-prism-0",
+            "scope": (
+                "[CI-12] Protocol economy: CP/AIC/CC metering audit, settlement_policy.yaml, "
+                "Lex NO-TOKEN-FIRST compliance check"
+            ),
+            "tests_run": "pytest -k settlement_policy -q",
+        },
+        {
+            "from_agent_entity_id": "pocp-agent-gauge-0",
+            "to_agent_entity_id": NEXUS_ID,
+            "scope": (
+                "[CI gate] Minimum living network checklist + audit_entities + federation acceptance; "
+                "close capability_internet wave-1 when green"
+            ),
+            "tests_run": "audit_entities.py --repair && run_phase_a_acceptance.py --federation",
+        },
+        {
+            "from_agent_entity_id": NEXUS_ID,
+            "to_agent_entity_id": "pocp-agent-herald-0",
+            "scope": (
+                "Publish CAPABILITY-INTERNET-PROTOCOL.md + MINIMUM-LIVING-NETWORK in README trail; "
+                "30-min fork→verify includes capability invoke"
+            ),
+            "tests_run": "docs review",
+        },
+    ],
+}
+
+PROTOCOL_NATIVE_STACK_PLAN: MissionPlan = {
+    "id": "protocol_native_stack",
+    "title": "Protocol Native Stack — Dialogue L2 + Event Overlay L1.5",
+    "description": (
+        "Unify Entity Dialogue, ProtocolEvent overlay, binding map, and API. "
+        "Bitcoin-inspired propagation without PoW/token."
+    ),
+    "kind": "evolve",
+    "handoffs": [
+        {
+            "from_agent_entity_id": NEXUS_ID,
+            "to_agent_entity_id": "pocp-agent-atlas-0",
+            "scope": "[PN-1] Five-layer stack + BINDING-TO-DIALOGUE complete.",
+            "tests_run": "protocol doc review",
+        },
+        {
+            "from_agent_entity_id": NEXUS_ID,
+            "to_agent_entity_id": "pocp-agent-pulse-0",
+            "scope": "[PN-2] Dialogue invoke + overlay emit; broadcast E2E.",
+            "tests_run": "pytest test_entity_dialogue test_protocol_network -q",
+        },
+        {
+            "from_agent_entity_id": NEXUS_ID,
+            "to_agent_entity_id": "pocp-agent-vault-0",
+            "scope": "[PN-3] EventBatch Merkle ↔ ledger_merkle; proof dialogue refs.",
+            "tests_run": "pytest test_bitcoin_inspired test_protocol_network -q",
+        },
+        {
+            "from_agent_entity_id": NEXUS_ID,
+            "to_agent_entity_id": "pocp-agent-mesh-0",
+            "scope": "[PN-4] Federation manifest overlay endpoints; federation_offer events.",
+            "tests_run": "pytest test_federation test_protocol_network -q",
+        },
+        {
+            "from_agent_entity_id": NEXUS_ID,
+            "to_agent_entity_id": "pocp-agent-canvas-0",
+            "scope": "[PN-5] Protocol stack UI: dialogue + overlay status.",
+            "tests_run": "npm run build",
+        },
+        {
+            "from_agent_entity_id": "pocp-agent-gauge-0",
+            "to_agent_entity_id": NEXUS_ID,
+            "scope": "[PN-6] Gate: smoke + protocol_network green.",
+            "tests_run": "python backend/scripts/bitcoin_inspired_network_smoke.py",
+        },
+    ],
+}
+
 MISSION_PLANS: dict[str, MissionPlan] = {
     PHASE_A_P0_PLAN["id"]: PHASE_A_P0_PLAN,
     PHASE_A_KERNEL_PLAN["id"]: PHASE_A_KERNEL_PLAN,
+    CAPABILITY_INTERNET_PLAN["id"]: CAPABILITY_INTERNET_PLAN,
     PHASE_A_FULL_PLAN["id"]: PHASE_A_FULL_PLAN,
     PROTOCOL_LAYER_EDP_PLAN["id"]: PROTOCOL_LAYER_EDP_PLAN,
+    PROTOCOL_NATIVE_STACK_PLAN["id"]: PROTOCOL_NATIVE_STACK_PLAN,
 }
 
 

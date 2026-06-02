@@ -36,6 +36,9 @@ def _load_env() -> None:
     os.environ.setdefault("BACKEND_URL", "http://127.0.0.1:8008")
     os.environ.setdefault("POCP_CURSOR_AUTOMATION", "true")
     os.environ.setdefault("POCP_NEXUS_AUTOPILOT", "true")
+    os.environ.setdefault("POCP_NEXUS_SUPER_LOOP_HOST", "true")
+    os.environ.setdefault("POCP_NEXUS_SUPER_LOOP", "false")
+    os.environ.setdefault("POCP_STUDIO_AUTO_EVOLVE", "true")
 
 
 _load_env()

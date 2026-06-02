@@ -1,0 +1,32 @@
+from __future__ import annotations
+from dataclasses import dataclass, field
+from typing import Any
+import uuid
+from services.capability_internet.proof import Proof
+
+@dataclass
+class Verification:
+    verification_id: str
+    proof_id: str
+    verifier_entity_id: str
+    invocation_id: str | None = None
+    verification_type: str = "ai_advisory"
+    score: float | None = None
+    decision: str = "pending"
+    reason: str = ""
+    status: str = "pending"
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+class VerificationService:
+    def ai_advisory_verify(self, proof: Proof, verifier_entity_id: str) -> Verification:
+        score = 0.85 if proof.output_hash else 0.55
+        return Verification(
+            verification_id=f"verify_{uuid.uuid4().hex[:16]}",
+            proof_id=proof.proof_id,
+            invocation_id=proof.invocation_id,
+            verifier_entity_id=verifier_entity_id,
+            score=score,
+            decision="approved" if score >= 0.70 else "needs_review",
+            reason="Reference AI advisory verification based on proof completeness.",
+            status="completed",
+        )

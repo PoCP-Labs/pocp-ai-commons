@@ -169,6 +169,38 @@ def cursor_run_pending(
     return result
 
 
+@router.get("/automation/status")
+def studio_automation_status(db: Session = Depends(get_db)):
+    """Single pane: host vs Docker loops, Cursor readiness, pending work."""
+    ensure_meta_agents(db)
+    from services.agent_studio.nexus_super_loop import (
+        cursor_backend_automation_enabled,
+        last_super_tick,
+        super_loop_backend_enabled,
+        super_loop_host_mode,
+    )
+
+    cursor = {
+        **automation_status(),
+        "pending_for_cursor": count_pending_for_cursor(db),
+        "last_tick": last_automation_tick(),
+    }
+    return {
+        "host_mode": super_loop_host_mode(),
+        "docker_super_loop": super_loop_backend_enabled(),
+        "docker_cursor_loop": cursor_backend_automation_enabled(),
+        "recommended_action": (
+            "Run .\\scripts\\start-agent-studio-automation.ps1 on Windows host"
+            if super_loop_host_mode()
+            else "Set POCP_NEXUS_SUPER_LOOP=true or POCP_NEXUS_SUPER_LOOP_HOST=true in backend/.env"
+        ),
+        "cursor": cursor,
+        "super_loop": super_loop_status(),
+        "last_super_tick": last_super_tick(),
+        "nexus_pm": nexus_pm_status(db),
+    }
+
+
 @router.get("/nexus/super-loop/status")
 def nexus_super_loop_status_endpoint():
     return super_loop_status()

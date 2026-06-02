@@ -1,0 +1,26 @@
+from __future__ import annotations
+
+from backend.services.examples.public_skill_node_closed_loop import run_public_skill_node_closed_loop
+
+def main() -> int:
+    result = run_public_skill_node_closed_loop()
+    required = [
+        "skill_node", "endpoint", "capability", "invocation", "proof", "verification",
+        "settlement", "skill_account", "skill_reputation", "graph_edges", "events",
+    ]
+    missing = [key for key in required if key not in result]
+    if missing:
+        print(f"[FAIL] Missing result keys: {missing}")
+        return 1
+    print("[OK] Capability Internet closed loop smoke passed.")
+    print(f"Capability: {result['capability'].capability_type}")
+    print(f"Invocation: {result['invocation'].invocation_id}")
+    print(f"Proof: {result['proof'].proof_id}")
+    print(f"Settlement: {result['settlement'].settlement_id}")
+    print(f"Reputation score: {result['skill_reputation'].score}")
+    print(f"Graph edges: {len(result['graph_edges'])}")
+    print(f"Protocol events: {len(result['events'])}")
+    return 0
+
+if __name__ == "__main__":
+    raise SystemExit(main())

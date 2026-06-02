@@ -33,7 +33,12 @@ services:
       ENABLE_MOCK_VERIFIER: "true"
       BACKEND_URL: "http://localhost:8008"
       POCP_REPO_ROOT: "/workspace"
-      # With POCP_NEXUS_SUPER_LOOP_HOST=true in backend/.env, run super-loop on the Windows host instead.
+      # Cursor/super-loop run on Windows host — not inside this container (avoids bridge errors).
+      POCP_NEXUS_SUPER_LOOP_HOST: "true"
+      POCP_NEXUS_SUPER_LOOP: "false"
+      POCP_NEXUS_AUTOPILOT: "true"
+      POCP_CURSOR_AUTOMATION: "true"
+      POCP_STUDIO_AUTO_EVOLVE: "true"
     env_file:
       - ./backend/.env
     volumes:

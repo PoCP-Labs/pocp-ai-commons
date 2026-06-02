@@ -1,0 +1,29 @@
+name: Capability Internet Docs Check
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  docs-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check key protocol docs exist
+        run: |
+          test -f CAPABILITY-INTERNET-PROTOCOL.md
+          test -f POCP-NETWORK-ARCHITECTURE.md
+          test -f MINIMUM-LIVING-NETWORK.md
+          test -f docs/protocol/CAPABILITY-SCHEMA.md
+          test -f docs/protocol/INVOCATION-LEDGER-SPEC.md
+          test -f docs/protocol/SETTLEMENT-SPEC.md
+          echo "Protocol docs exist."
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile smoke script
+        run: |
+          python -m py_compile backend/scripts/capability_internet_smoke.py

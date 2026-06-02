@@ -2,7 +2,7 @@
 
 **Goal:** Run a production node that is **not** Genesis — separate VPS, Postgres, keys, domain — and optionally trust or mirror Genesis / peer nodes.
 
-See: [docs/FEDERATION-OPERATOR-RUNBOOK.md](../docs/FEDERATION-OPERATOR-RUNBOOK.md) · [docs/FEDERATION-DEMO.md](../docs/FEDERATION-DEMO.md)
+See: [deploy/PUBLIC-NODE-NETWORK.md](./PUBLIC-NODE-NETWORK.md) · [docs/FEDERATION-OPERATOR-RUNBOOK.md](../docs/FEDERATION-OPERATOR-RUNBOOK.md) · [docs/FEDERATION-DEMO.md](../docs/FEDERATION-DEMO.md)
 
 ---
 
@@ -65,7 +65,7 @@ Set in `backend/.env` as one line or use `backend/config/trusted_nodes.yaml` (if
 ## 3. Start stack
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.public-node.yml up -d --build
 ```
 
 Use **separate** `POSTGRES_PASSWORD` and volume from Genesis. Do not share database.

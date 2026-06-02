@@ -105,6 +105,7 @@ def protocol_stack() -> dict[str, Any]:
                     "Contribution Graph semantics",
                     "Entity connection (structural / protocol / operational)",
                     "Entity Dialogue (pocp.entity_dialogue.v0.1 — L2 envelope)",
+                    "Protocol Event Network (pocp.protocol_event.v0.1 — L1.5 overlay)",
                     "Trust Policy Bundle (federation import rules)",
                     "Portable identity (portable_id)",
                     "Federation trust & signed proofs",
@@ -187,6 +188,7 @@ def protocol_stack() -> dict[str, Any]:
             "entity",
             "entity_connection",
             "entity_dialogue",
+            "protocol_event_network",
             "trust_policy_bundle",
             "contribution_event",
             "contribution_participant",
@@ -241,5 +243,11 @@ def contribution_packet_header() -> dict[str, Any]:
             "dialogue_api": "/api/v1/intelligence/dialogue",
             "entity_dialogue_api": "/api/v1/intelligence/entities/{entity_id}/dialogue",
             "docs": "docs/protocol/ENTITY-DIALOGUE-PROTOCOL.md",
+        },
+        "protocol_event_network": {
+            "schema": "pocp.protocol_event.v0.1",
+            "manifest_api": "/api/v1/intelligence/protocol/network",
+            "overlay_status": "/api/v1/intelligence/network/overlay/status",
+            "docs": "docs/protocol/PROTOCOL-EVENT-NETWORK.md",
         },
     }

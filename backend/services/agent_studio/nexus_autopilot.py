@@ -71,6 +71,17 @@ PROJECT_GOALS: list[dict[str, Any]] = [
         "plan_id": "phase_a_kernel",
     },
     {
+        "id": "capability_internet_wave1",
+        "priority": 1,
+        "phase": "CI",
+        "title": "Capability Internet — minimum living network",
+        "description": "12-layer protocol reference; NodeProfile + proof chain + federation discover.",
+        "owner_agent_id": "pocp-agent-atlas-0",
+        "support_agent_ids": ["pocp-agent-pulse-0", "pocp-agent-vault-0", "pocp-agent-gauge-0"],
+        "exit_signal": "MINIMUM-LIVING-NETWORK.md checklist green",
+        "plan_id": "capability_internet",
+    },
+    {
         "id": "pa_kernel_federation_acceptance",
         "priority": 0,
         "phase": "PA-4",

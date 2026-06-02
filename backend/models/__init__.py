@@ -21,7 +21,10 @@ from models.contribution import (
 )
 from models.contribution_dispute import ContributionDispute
 from models.entity import Entity
+from models.node_profile import NodeProfileRecord
+from models.protocol_overlay import ProtocolOverlayBatch, ProtocolOverlayEvent
 from models.federation import FederatedImport, FederationSettlement
+from models.capability_invocation import CapabilityInvocationRecord
 from models.invocation import InvocationStep, InvocationTrace
 from models.ledger import LedgerRecord
 from models.organization import Organization
@@ -32,6 +35,7 @@ from models.wallet import CreditTransaction, ReputationScore, Wallet
 
 __all__ = [
     "Entity",
+    "NodeProfileRecord",
     "EntityCapability",
     "Skill",
     "Agent",
@@ -49,6 +53,7 @@ __all__ = [
     "AiVerifierResult",
     "HumanReview",
     "ContributionDispute",
+    "CapabilityInvocationRecord",
     "InvocationTrace",
     "InvocationStep",
     "Wallet",
@@ -62,4 +67,6 @@ __all__ = [
     "CodeAttributionRecord",
     "ExternalInspirationRecord",
     "ComputeJobRecord",
+    "ProtocolOverlayEvent",
+    "ProtocolOverlayBatch",
 ]

@@ -36,7 +36,14 @@ class EntityCatalogTests(unittest.TestCase):
             owner_id=rain.id,
             creator_id=rain.id,
         )
-        self.db.add_all([bob, org])
+        skill = Entity(
+            entity_type=EntityType.skill,
+            name="R-Tutor Skill",
+            status=EntityStatus.active,
+            owner_id=rain.id,
+            creator_id=rain.id,
+        )
+        self.db.add_all([bob, org, skill])
         self.db.commit()
         ensure_pocp_org_foundation(self.db)
         self.db.commit()

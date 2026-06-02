@@ -403,6 +403,15 @@ def build_contribution_graph(db: Session) -> dict:
         append_edge=_append_edge,
     )
 
+    from services.federation_entity_mirror import append_federation_mirror_graph_edges
+
+    append_federation_mirror_graph_edges(
+        db,
+        edges=edges,
+        entity_map=entity_map,
+        append_edge=_append_edge,
+    )
+
     from services.federation_community import append_federated_import_graph_edges
 
     append_federated_import_graph_edges(

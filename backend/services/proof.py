@@ -337,6 +337,15 @@ def build_contribution_proof_packet(db: Session, contribution_id: str) -> dict |
                         for step in trace.steps
                         if (step.metadata_ or {}).get("compute_receipt")
                     ],
+                    "dialogue_refs": [
+                        {
+                            "step_order": step.step_order,
+                            "dialogue_id": (step.metadata_ or {}).get("dialogue_id"),
+                            "dialogue_kind": (step.metadata_ or {}).get("dialogue_kind"),
+                        }
+                        for step in trace.steps
+                        if (step.metadata_ or {}).get("dialogue_id")
+                    ],
                 }
                 for trace in invocations
             ],
@@ -440,6 +449,12 @@ def build_contribution_proof_packet(db: Session, contribution_id: str) -> dict |
     graph_inclusion = build_contribution_graph_inclusion(full_graph["edges"], contribution.id)
     if graph_inclusion:
         packet["graph_merkle_inclusion"] = graph_inclusion
+
+    from services.network.proof_overlay import build_protocol_event_overlay_block
+
+    overlay_block = build_protocol_event_overlay_block(invocations)
+    if overlay_block:
+        packet["protocol_event_overlay"] = overlay_block
 
     packet["integrity"] = {
         "evidence_hash": content_hash,

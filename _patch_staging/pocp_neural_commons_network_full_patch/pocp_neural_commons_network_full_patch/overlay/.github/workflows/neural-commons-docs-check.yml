@@ -1,0 +1,22 @@
+name: Neural Commons Docs Check
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  docs-exist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Neural Commons docs
+        run: |
+          test -f POCP-NEURAL-COMMONS-NETWORK.md
+          test -f NEURAL-COMMONS-MASTER-PLAN.md
+          test -f NEURAL-COMMONS-ROADMAP.md
+          test -f docs/architecture/01-ENTITY-REGISTRY.md
+          test -f docs/protocol/ENTITY-SCHEMA-v0.3.md
+          echo "Neural Commons docs exist."

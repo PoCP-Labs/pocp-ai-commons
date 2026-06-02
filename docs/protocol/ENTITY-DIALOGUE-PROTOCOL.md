@@ -5,7 +5,7 @@
 
 This document defines **how Entities talk** — the missing **L2 Dialogue layer** between semantic primitives (Entity, Contribution, Proof) and transport bindings (HTTPS, MCP, vendor LLM APIs).
 
-Related: [ENTITY-CONNECTION.md](./ENTITY-CONNECTION.md) · [CHAIN-AND-NODE-PLAN-v0.1.md](./CHAIN-AND-NODE-PLAN-v0.1.md) · [TRUST-POLICY-BUNDLE.md](./TRUST-POLICY-BUNDLE.md) · [EXCHANGE-SPINE-v0.1.md](./EXCHANGE-SPINE-v0.1.md)
+Related: [ENTITY-CONNECTION.md](./ENTITY-CONNECTION.md) · [PROTOCOL-EVENT-NETWORK.md](./PROTOCOL-EVENT-NETWORK.md) · [BINDING-TO-DIALOGUE.md](./BINDING-TO-DIALOGUE.md) · [CHAIN-AND-NODE-PLAN-v0.1.md](./CHAIN-AND-NODE-PLAN-v0.1.md) · [TRUST-POLICY-BUNDLE.md](./TRUST-POLICY-BUNDLE.md)
 
 ---
 
@@ -24,21 +24,25 @@ PoCP already defines **what** is said (schemas, connection matrix, proof packets
 
 ---
 
-## 2. Protocol stack (four layers)
+## 2. Protocol stack (five layers)
 
 ```text
-┌────────────────────────────────────────────────────────────┐
-│  L4  Policy     Trust Policy Bundle · Finalization · Rights │
-├────────────────────────────────────────────────────────────┤
-│  L3  Semantic   Entity · Connection · Contribution · Proof  │
-├────────────────────────────────────────────────────────────┤
-│  L2  Dialogue   pocp.entity_dialogue.v0.1  ← this document │
-├────────────────────────────────────────────────────────────┤
-│  L1  Binding    HTTPS · JSON · (A2A/MCP only at boundary)   │
-├────────────────────────────────────────────────────────────┤
-│  L0  Internet   No PoCP-owned physical network — node overlay │
-└────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  L4  Policy      Trust Policy Bundle · Finalization · Rights │
+├─────────────────────────────────────────────────────────────┤
+│  L3  Semantic    Entity · Connection · Contribution · Proof  │
+├─────────────────────────────────────────────────────────────┤
+│  L2  Dialogue    pocp.entity_dialogue.v0.1  ← this document  │
+├─────────────────────────────────────────────────────────────┤
+│  L1.5 Overlay    ProtocolEvent · Mempool · EventBatch         │
+├─────────────────────────────────────────────────────────────┤
+│  L1  Binding     HTTPS · JSON · (A2A/MCP only at boundary)  │
+├─────────────────────────────────────────────────────────────┤
+│  L0  Internet    No PoCP-owned physical network — node overlay │
+└─────────────────────────────────────────────────────────────┘
 ```
+
+Overlay detail: [PROTOCOL-EVENT-NETWORK.md](./PROTOCOL-EVENT-NETWORK.md)
 
 ---
 
@@ -145,9 +149,11 @@ Node A  ── federation_offer(proof) ──►  Node B
 Node B  ── federation_accept(result) ──►  Node A (optional)
 ```
 
-- `federation_offer`: carries or references `GET …/contributions/{id}/proof` packet.
+- `federation_offer`: inline `payload.proof`, or `payload.contribution_id` with `fetch_peer: true` (default) to pull from trusted peer; `auto_import` optional.
+- `federation_accept`: validate + optional `auto_import` (default true); enqueues `FederatedProofOffered` on overlay.
 - Import side runs **Trust Policy Bundle** validation before mirror.
-- Live cross-node `invoke` (future): route envelope to peer's `/api/v1/intelligence/dialogue` with peer auth headers.
+- HTTP relay without full envelope: `POST /api/v1/federation/overlay/relay`.
+- Live cross-node `invoke`: set `to.node_id` to peer + `POCP_TRUSTED_NODES`; A forwards to `POST {peer}/api/v1/federation/dialogue`. See [CROSS-NODE-INTERNET.md](./CROSS-NODE-INTERNET.md).
 
 This is **overlay routing** on existing URLs — not a PoCP-owned IP network.
 
@@ -257,7 +263,22 @@ Response `result` includes entity profile, connection spec, and **binding hints*
 
 ### Example: invoke (operational step)
 
-Creates or extends `InvocationTrace`; returns `refs.invocation_trace_id` and suggested `bindings.execute` URL.
+**Trace only** (default): records one `InvocationStep` on `InvocationTrace`.
+
+**Metered execute** (`payload.execute: true`): runs `execute_skill` / `execute_agent`, writes full chain + billing + overlay event.
+
+```json
+{
+  "kind": "invoke",
+  "payload": {
+    "execute": true,
+    "input": "Explain the five-layer protocol stack",
+    "llm_provider": "mock"
+  }
+}
+```
+
+Returns `refs.invocation_trace_id`, `result.executed`, and optional `overlay.protocol_event`.
 
 ---
 
@@ -265,7 +286,7 @@ Creates or extends `InvocationTrace`; returns `refs.invocation_trace_id` and sug
 
 | Phase | Scope |
 |-------|-------|
-| **v0.1 (pilot)** | Envelope + manifest + `ping`, `discover`, `invoke` (trace step), `federation_offer` (validate/deref proof) |
+| **v0.1 (pilot)** | Full kind set: `ping`, `discover`, `quote`, `invoke`, `attest`, `submit`, `finalize_notice`, `federation_*`, `broadcast` |
 | v0.2 | `quote` + exchange spine integration; signed cross-node envelopes |
 | v0.3 | REST/A2A convergence — all entity calls through dialogue router |
 | v0.4 | Peer dialogue proxy with Ed25519; live cross-node invoke |

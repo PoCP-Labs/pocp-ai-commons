@@ -33,12 +33,17 @@ Source docs:
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/agent-studio/missions/from-plan/protocol_layer_edp"
+curl -X POST "http://127.0.0.1:8000/api/v1/agent-studio/missions/from-plan/protocol_native_stack"
 ```
+
+**Native stack (L2 + L1.5):** `docs/protocol/PROTOCOL-EVENT-NETWORK.md` · `GET /api/v1/intelligence/protocol/network`
 
 **Script (mission + optional GitHub Issues + Cursor):**
 
 ```bash
 python backend/scripts/dispatch_protocol_layer_studio.py --create-issues --cursor-tick
+python backend/scripts/protocol_layer_acceptance.py
+python backend/scripts/complete_protocol_missions.py --include-blocked
 ```
 
 ## Automation chain

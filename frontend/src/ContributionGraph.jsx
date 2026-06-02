@@ -164,6 +164,7 @@ function buildEntityNodes(entities, graph) {
       reputation: g.reputation ?? e.reputation ?? 0,
       cp_balance: g.cp_balance ?? e.cp_balance ?? 0,
       ai_credits: g.ai_credits ?? e.ai_credits ?? 0,
+      metadata: e.metadata || g.metadata || {},
       meta_agent: isMetaAgentNode(g) || isMetaAgentNode(e),
       layout_column: g.layout_column || (isMetaAgentNode(g) ? "meta_agent" : undefined),
     };
@@ -431,6 +432,8 @@ export default function ContributionGraphView({ graph, entities = [] }) {
         {entityNodes.map((node) => {
           const pos = positions[node.id];
           if (!pos) return null;
+          const roles = node.metadata?.roles || [];
+          const remoteMirror = roles.includes("federated_mirror") || roles.includes("remote_entity");
           const color = node.meta_agent ? "#e879f9" : ENTITY_COLORS[node.entity_type] || "#5c6573";
           const isolated = !connectedIds.has(node.id);
 
@@ -443,7 +446,7 @@ export default function ContributionGraphView({ graph, entities = [] }) {
                 fill={node.meta_agent ? "#1a1028" : "#111820"}
                 stroke={color}
                 strokeWidth={node.meta_agent ? 2 : 1.5}
-                strokeDasharray={isolated ? "4 3" : undefined}
+                strokeDasharray={remoteMirror ? "5 3" : isolated ? "4 3" : undefined}
                 opacity={isolated ? 0.75 : 1}
               />
               <rect width={108} height={3} rx={8} fill={color} opacity={isolated ? 0.5 : 0.9} />
@@ -480,7 +483,7 @@ export default function ContributionGraphView({ graph, entities = [] }) {
                 fontFamily="JetBrains Mono, monospace"
                 letterSpacing="0.08em"
               >
-                {node.entity_type.toUpperCase()}
+                {remoteMirror ? `REMOTE ${node.entity_type.toUpperCase()}` : node.entity_type.toUpperCase()}
               </text>
             </g>
           );

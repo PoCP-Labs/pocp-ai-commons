@@ -1,0 +1,32 @@
+from __future__ import annotations
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from typing import Any
+import hashlib, json, uuid
+
+@dataclass
+class ProtocolEvent:
+    event_id: str
+    event_type: str
+    entity_id: str | None = None
+    node_id: str | None = None
+    payload_hash: str | None = None
+    payload: dict[str, Any] = field(default_factory=dict)
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    nonce: str | None = None
+    signature: str | None = None
+    previous_event_hash: str | None = None
+
+class ProtocolEventLog:
+    def __init__(self) -> None:
+        self.events: list[ProtocolEvent] = []
+
+    def append(self, event_type: str, payload: dict[str, Any],
+               entity_id: str | None = None, node_id: str | None = None) -> ProtocolEvent:
+        body = json.dumps(payload, sort_keys=True)
+        payload_hash = "sha256:" + hashlib.sha256(body.encode("utf-8")).hexdigest()
+        previous = self.events[-1].payload_hash if self.events else None
+        event = ProtocolEvent(f"evt_{uuid.uuid4().hex[:16]}", event_type, entity_id,
+                              node_id, payload_hash, payload, previous_event_hash=previous)
+        self.events.append(event)
+        return event

@@ -30,12 +30,15 @@ from routers.intelligence import router as intelligence_router
 from routers.compute import router as compute_router
 from routers.capabilities import router as capabilities_router
 from routers.capability_registry import router as capability_registry_router
+from routers.capability_invocations import router as capability_invocations_router
 from routers.community_partners import router as community_partners_router
 from routers.crypto import router as crypto_router
 from routers.wallet import router as wallet_router
 from routers.meta_agents import router as meta_agents_router
 from routers.agent_studio import router as agent_studio_router
 from routers.locale import router as locale_router
+from routers.nodes import entity_router as nodes_entity_router
+from routers.nodes import router as nodes_router
 from genesis import ensure_genesis_entities
 from seed import seed_demo
 from middleware.read_only_mirror import ReadOnlyMirrorMiddleware
@@ -82,6 +85,46 @@ async def _compute_auto_balance_loop() -> None:
         except Exception as exc:
             db.rollback()
             logger.warning("Compute auto-balance cycle failed: %s", exc)
+        finally:
+            db.close()
+
+
+async def _federation_auto_discover_loop() -> None:
+    """Periodic peer discovery (Bitcoin-style addr discovery analogue)."""
+    from routers.federation import AutoDiscoverPeersIn, auto_discover_peers
+    from services.node_mode import is_read_only_mirror
+
+    try:
+        interval = int(os.getenv("POCP_PEER_DISCOVERY_INTERVAL_SEC", "60"))
+    except ValueError:
+        interval = 60
+    interval = max(15, interval)
+    while True:
+        await asyncio.sleep(interval)
+        if os.getenv("POCP_PEER_AUTO_DISCOVER", "false").lower() not in ("1", "true", "yes", "on"):
+            continue
+        if is_read_only_mirror():
+            continue
+        db = SessionLocal()
+        try:
+            summary = auto_discover_peers(
+                AutoDiscoverPeersIn(
+                    candidate_urls=[],
+                    include_localhost_scan=os.getenv("POCP_PEER_DISCOVERY_LOCALHOST", "true").lower()
+                    in ("1", "true", "yes", "on"),
+                    max_candidates=int(os.getenv("POCP_PEER_DISCOVERY_MAX_CANDIDATES", "24")),
+                ),
+                db=db,
+            )
+            if summary.get("discovered_count", 0) > 0:
+                logger.info(
+                    "Peer auto-discovery: discovered=%s scanned=%s",
+                    summary.get("discovered_count"),
+                    summary.get("scanned"),
+                )
+        except Exception as exc:
+            logger.warning("Peer auto-discovery cycle failed: %s", exc)
+            db.rollback()
         finally:
             db.close()
 
@@ -243,9 +286,14 @@ async def lifespan(app: FastAPI):
         balance_task = asyncio.create_task(_compute_auto_balance_loop())
         logger.info("Compute auto-balance background loop started")
 
+    discovery_task: asyncio.Task | None = None
+    if os.getenv("POCP_PEER_AUTO_DISCOVER", "false").lower() in ("1", "true", "yes", "on"):
+        discovery_task = asyncio.create_task(_federation_auto_discover_loop())
+        logger.info("Federation peer auto-discovery loop started")
+
     yield
 
-    for task in (balance_task, cursor_task, super_loop_task):
+    for task in (discovery_task, balance_task, cursor_task, super_loop_task):
         if task is not None:
             task.cancel()
             try:
@@ -287,12 +335,15 @@ app.include_router(integrations_router)
 app.include_router(intelligence_router)
 app.include_router(capabilities_router)
 app.include_router(capability_registry_router)
+app.include_router(capability_invocations_router)
 app.include_router(compute_router)
 app.include_router(crypto_router)
 app.include_router(wallet_router)
 app.include_router(meta_agents_router)
 app.include_router(agent_studio_router)
 app.include_router(locale_router)
+app.include_router(nodes_router)
+app.include_router(nodes_entity_router)
 
 
 @app.get("/.well-known/pocp-node.json")

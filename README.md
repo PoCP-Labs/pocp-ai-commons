@@ -1,5 +1,9 @@
 # PoCP Neural Commons Network
 
+**PoCP AI Commons** is the **first reference application** of the **PoCP Capability Internet Protocol**.
+
+PoCP aims to become a decentralized **contribution, invocation, settlement, and reputation** protocol for AI capability and compute networks.
+
 **Earn AI access through verified contribution.**  
 **通过真实贡献，获得 AI 使用权。**
 
@@ -7,13 +11,45 @@
 
 It connects humans, agents, LLMs, skills, tools, datasets, workflows, compute nodes, and organizations into a verifiable contribution network.
 
-Through CP, AI Credits, Compute Credits, and future protocol tokens, PoCP measures contribution, coordinates capability invocation, settles value, and builds entity reputation.
+Through CP, AIC, CC, and PT (internal accounting units), PoCP measures contribution, coordinates capability invocation, settles value, and builds entity reputation.
 
-**PoCP AI Commons** is the first open-source application scenario of this network — the first practical loop of the **Proof of Contribution Protocol (PoCP)**.
+The larger network expands the Genesis Loop into:
 
-## PoCP AI Commons
+```text
+Entity → Node → Capability → Invocation → Proof → Verification → Settlement → Reputation → Governance
+```
 
-PoCP AI Commons is the first application scenario of PoCP Neural Commons Network.
+See [docs/CAPABILITY-INTERNET-PROTOCOL.md](./docs/CAPABILITY-INTERNET-PROTOCOL.md) · [docs/UPGRADE-ROADMAP-PR-PLAN.md](./docs/UPGRADE-ROADMAP-PR-PLAN.md)
+
+## Capability Internet Protocol Docs
+
+Protocol entry points:
+
+- [Protocol index](./docs/protocol/README.md)
+- [Capability Internet protocol overview](./docs/CAPABILITY-INTERNET-PROTOCOL.md)
+- [Network architecture](./docs/POCP-NETWORK-ARCHITECTURE.md)
+- [Minimum living network](./docs/MINIMUM-LIVING-NETWORK.md)
+- [Public node docs](./docs/public-node/PUBLIC-NODE-PROTOCOL.md)
+
+## Bitcoin-Inspired PoCP Network
+
+PoCP borrows Bitcoin's **protocol design principles**, not its mining model or public token issuance.
+
+| Bitcoin | PoCP mapping |
+|---------|----------------|
+| Node | Entity Node |
+| Transaction | Invocation / Proof / Settlement event |
+| Mempool | Pending invocation / proof pools |
+| Block | `ProtocolEvent` batch |
+| Merkle root | Event batch root |
+| SPV light node | PoCP light node |
+| Miner | Verifier / indexer / settlement node |
+
+Specs: [BITCOIN-INSPIRED-POCP-NETWORK.md](./BITCOIN-INSPIRED-POCP-NETWORK.md) · smoke: `python backend/scripts/bitcoin_inspired_network_smoke.py`
+
+## PoCP AI Commons (first application)
+
+PoCP AI Commons is the first open-source application scenario of this protocol — the first practical loop of the **Proof of Contribution Protocol (PoCP)**.
 
 It starts with the first living loop:
 

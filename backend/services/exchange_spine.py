@@ -66,6 +66,7 @@ def emit_exchange_settled(
     usage: dict[str, Any] | None = None,
     contribution_id: str | None = None,
     invocation_trace_id: str | None = None,
+    capability_invocation_id: str | None = None,
     invocation_ref: dict[str, Any] | None = None,
     legacy_event_type: str | None = None,
     settlement_policy: str = "compute_settlement.v1",
@@ -95,18 +96,34 @@ def emit_exchange_settled(
     tx_ids = [tx.id for tx in credit_transactions if tx.id]
 
     primary_provider = providers[0] if providers else consumer_entity_id
-    normalized_ref = invocation_ref or build_invocation_ref(
-        source_entity_id=consumer_entity_id,
-        target_entity_id=primary_provider,
-        trace_id=invocation_trace_id,
-        capability_id=capability_id,
-        capability=capability,
-        usage=usage_block,
-        receipt_hash=receipt_hash,
-        verification_ref=receipt_hash,
-        settlement_ref=exchange_id,
-        status="settled",
-    )
+    if capability_invocation_id and invocation_ref is None:
+        from services.capability_invocation.store import (
+            get_capability_invocation,
+            invocation_ref_from_record,
+        )
+
+        cap_inv = get_capability_invocation(db, capability_invocation_id)
+        if cap_inv is not None:
+            normalized_ref = invocation_ref_from_record(cap_inv)
+            normalized_ref["settlement_ref"] = exchange_id
+            normalized_ref["status"] = "settled"
+            if receipt_hash:
+                normalized_ref["receipt_hash"] = receipt_hash
+    else:
+        normalized_ref = invocation_ref
+    if normalized_ref is None:
+        normalized_ref = build_invocation_ref(
+            source_entity_id=consumer_entity_id,
+            target_entity_id=primary_provider,
+            trace_id=invocation_trace_id,
+            capability_id=capability_id,
+            capability=capability,
+            usage=usage_block,
+            receipt_hash=receipt_hash,
+            verification_ref=receipt_hash,
+            settlement_ref=exchange_id,
+            status="settled",
+        )
     if not normalized_ref.get("settlement_ref"):
         normalized_ref["settlement_ref"] = exchange_id
     if receipt_hash and not normalized_ref.get("receipt_hash"):
@@ -149,6 +166,16 @@ def emit_exchange_settled(
     for tx in credit_transactions:
         tx.ledger_record_id = record.id
         db.add(tx)
+    if capability_invocation_id:
+        from services.capability_invocation.store import (
+            get_capability_invocation,
+            link_capability_invocation_settlement,
+        )
+
+        if get_capability_invocation(db, capability_invocation_id) is not None:
+            link_capability_invocation_settlement(
+                db, capability_invocation_id, exchange_id=exchange_id
+            )
     db.flush()
     return record
 

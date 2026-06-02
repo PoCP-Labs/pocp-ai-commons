@@ -11,6 +11,8 @@ Entities publish supply; consumers invoke by the unit; the exchange chain + ledg
 | [CAPABILITY-SCHEMA-v0.3.md](./CAPABILITY-SCHEMA-v0.3.md) | Capability types & units |
 | [ENTITY-CONNECTION.md](./ENTITY-CONNECTION.md) | **Entity linking** — structural / protocol / operational |
 | [ENTITY-DIALOGUE-PROTOCOL.md](./ENTITY-DIALOGUE-PROTOCOL.md) | **Entity dialogue** — L2 native envelope (Entity ↔ Entity / boundary) |
+| [PROTOCOL-EVENT-NETWORK.md](./PROTOCOL-EVENT-NETWORK.md) | **Event overlay** — L1.5 mempool · batch · Merkle (Bitcoin-inspired) |
+| [BINDING-TO-DIALOGUE.md](./BINDING-TO-DIALOGUE.md) | **Binding map** — REST/A2A → dialogue kinds |
 | [TRUST-POLICY-BUNDLE.md](./TRUST-POLICY-BUNDLE.md) | **Federation import** — trust + finalization + validation |
 | [INVOCATION-SCHEMA-v0.3.md](./INVOCATION-SCHEMA-v0.3.md) | InvocationTrace + step matrix |
 | [CONSTITUTION-v0.1.md](./CONSTITUTION-v0.1.md) | Invariants |

@@ -1,0 +1,32 @@
+from __future__ import annotations
+from dataclasses import dataclass, field
+from typing import Any
+import uuid
+from backend.services.verification.service import Verification
+
+@dataclass
+class SettlementParticipant:
+    entity_id: str
+    role: str
+    unit: str
+    amount: float
+    reason: str
+
+@dataclass
+class Settlement:
+    settlement_id: str
+    task_id: str
+    status: str = "pending"
+    invocation_id: str | None = None
+    verification_id: str | None = None
+    participants: list[SettlementParticipant] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+class SettlementService:
+    def create(self, task_id: str, verification: Verification,
+               participants: list[SettlementParticipant],
+               invocation_id: str | None = None) -> Settlement:
+        if verification.decision not in {"approved", "human_approved"}:
+            raise ValueError("Settlement requires approved verification")
+        return Settlement(f"settle_{uuid.uuid4().hex[:16]}", task_id, "settled",
+                          invocation_id, verification.verification_id, participants)

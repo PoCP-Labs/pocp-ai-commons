@@ -64,6 +64,7 @@ GET  /api/v1/agent-studio/agents/{id}/learning-profile
 | `phase_a_kernel` | 10 | Entity catalog + protocol integrity + federation gate |
 | `phase_a_full` | 11 | P0 + federation import + compute + canvas + atlas + lex |
 | `protocol_layer_edp` | 10 | **Protocol L2** — Entity Dialogue (Issues PL-1..PL-10) |
+| `protocol_native_stack` | 6 | **L2 + L1.5** — Dialogue + ProtocolEvent overlay (PN-1..PN-6) |
 
 ## Cursor integration
 
