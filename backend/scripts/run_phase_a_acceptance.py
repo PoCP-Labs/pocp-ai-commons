@@ -21,7 +21,7 @@ from collections import Counter
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent
-DEFAULT_BASE = "http://127.0.0.1:8000"
+DEFAULT_BASE = "http://127.0.0.1:8008"
 
 
 def get_json(url: str, timeout: float = 15) -> dict:

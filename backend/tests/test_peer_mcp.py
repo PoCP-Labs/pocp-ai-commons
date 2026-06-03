@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from database import Base
 from models.entity import Entity, EntityStatus, EntityType
+from models.wallet import Wallet
 from services.mcp_import import import_mcp_server
 from services.mcp_invoke import invoke_mcp_tool
 from services.peer_mcp import _normalize_remote_invoke_mode, invoke_mcp_on_peer, peer_mcp_enabled
@@ -24,6 +25,8 @@ class PeerMcpTests(unittest.TestCase):
         self.db = self.Session()
         self.human = Entity(entity_type=EntityType.human, name="Alice", status=EntityStatus.active)
         self.db.add(self.human)
+        self.db.flush()
+        self.db.add(Wallet(entity_id=self.human.id, ai_credits=100, cp_balance=0))
         self.db.commit()
 
         imported = import_mcp_server(
