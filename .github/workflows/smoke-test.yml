@@ -29,6 +29,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Run repository health check
+        working-directory: ..
+        run: python backend/scripts/health_check.py
+
       - name: Start API
         env:
           DATABASE_URL: sqlite:///./data/pocp_ci.db

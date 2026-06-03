@@ -83,6 +83,23 @@ class PlatformHealthTests(unittest.TestCase):
         self.assertEqual(result["base"], "http://127.0.0.1:8008")
         mock_get.assert_called_once_with("http://127.0.0.1:8008/health", timeout=10.0)
 
+    @patch.dict(os.environ, {"BACKEND_URL": "http://127.0.0.1:8000"}, clear=False)
+    @patch("httpx.get")
+    def test_probe_api_health_wrong_port_surfaces_timeout(self, mock_get):
+        """Misaligned BACKEND_URL (:8000 bare uvicorn) yields api: timed out in super-loop."""
+        import httpx
+
+        mock_get.side_effect = httpx.ReadTimeout("timed out")
+
+        result = probe_api_health()
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["base"], "http://127.0.0.1:8000")
+        self.assertIn("timed out", result["detail"])
+
+        platform = probe_platform(self.db)
+        self.assertFalse(platform["ok"])
+        self.assertIn("api: timed out", platform["issues"])
+
 
 if __name__ == "__main__":
     unittest.main()

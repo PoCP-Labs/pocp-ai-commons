@@ -52,6 +52,23 @@ class NexusSuperLoopTests(unittest.TestCase):
         self.assertGreater(len(heal.get("handoffs") or []), 0)
         self.assertTrue(result["human_required"])
 
+    @patch("services.agent_studio.nexus_super_loop.run_cursor_automation_tick")
+    @patch("services.agent_studio.nexus_super_loop.automation_enabled", return_value=False)
+    @patch("services.agent_studio.nexus_super_loop.probe_platform")
+    def test_super_tick_dispatches_gauge_repair_on_api_timeout(self, mock_probe, _auto, _cursor):
+        mock_probe.return_value = {
+            "ok": False,
+            "issues": ["api: timed out"],
+            "api": {"ok": False, "detail": "timed out", "base": "http://127.0.0.1:8008"},
+            "database": {"ok": True, "detail": "postgres ping ok"},
+        }
+        result = run_nexus_super_tick(self.db, max_cursor_handoffs=0)
+        heal = next((s for s in result["steps"] if s.get("phase") == "heal_platform"), None)
+        self.assertIsNotNone(heal)
+        assignees = {h.get("assignee") for h in heal.get("handoffs") or []}
+        self.assertIn("pocp-agent-gauge-0", assignees)
+        self.assertTrue(result["human_required"])
+
     def test_super_loop_status_shape(self):
         status = super_loop_status()
         self.assertIn("enabled", status)
