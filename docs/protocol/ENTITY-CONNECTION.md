@@ -5,7 +5,7 @@
 
 This document defines **how Entity types connect** in PoCP — not arbitrary IoT links, but three protocol layers that every integration must use.
 
-Related: [ENTITY-ONTOLOGY.md](../ENTITY-ONTOLOGY.md) · [ENTITY-SCHEMA-v0.3.md](./ENTITY-SCHEMA-v0.3.md) · [ENTITY-DIALOGUE-PROTOCOL.md](./ENTITY-DIALOGUE-PROTOCOL.md) · [CAPABILITY-SCHEMA-v0.3.md](./CAPABILITY-SCHEMA-v0.3.md) · [TRUST-POLICY-BUNDLE.md](./TRUST-POLICY-BUNDLE.md)
+Related: [ENTITY-ONTOLOGY.md](../ENTITY-ONTOLOGY.md) · [ENTITY-SCHEMA-v0.3.md](./ENTITY-SCHEMA-v0.3.md) · [ENTITY-DIALOGUE-PROTOCOL.md](./ENTITY-DIALOGUE-PROTOCOL.md) · [EXCHANGE-SPINE-v0.1.md](./EXCHANGE-SPINE-v0.1.md) · [CAPABILITY-SCHEMA-v0.3.md](./CAPABILITY-SCHEMA-v0.3.md) · [TRUST-POLICY-BUNDLE.md](./TRUST-POLICY-BUNDLE.md)
 
 ---
 
@@ -156,3 +156,20 @@ When connecting a new Entity (or external system):
 - Connection specs & matrix: `backend/intelligence/entity_ontology.py`
 - Instance builder: `backend/services/entity_connections.py`
 - Graph edges: `backend/services/graph.py`
+
+---
+
+## 8. Dialogue kinds ↔ connection layers
+
+Native envelope: [ENTITY-DIALOGUE-PROTOCOL.md](./ENTITY-DIALOGUE-PROTOCOL.md). Each kind must map to at least one connection layer.
+
+| Dialogue `kind` | Layer | Connection evidence |
+|-----------------|-------|---------------------|
+| `discover` | structural + operational (read) | `connection_spec`, allowed invoke targets |
+| `quote` | operational | `validate_invocation_edge` before spend; `exchange_id` for invoke chain |
+| `invoke` | operational | `InvocationTrace` / `InvocationStep`; optional `CapabilityReceipt` |
+| `attest` / `submit` | protocol | `ContributionParticipant` roles per type matrix |
+| `finalize_notice` | protocol | finalization policy + contribution status |
+| `federation_offer` / `federation_accept` | protocol | proof import; invocation steps in proof checked by trust bundle |
+
+Operational `quote` and `invoke` share the same edge matrix (§3). Protocol federation kinds delegate invocation-edge checks to [TRUST-POLICY-BUNDLE](./TRUST-POLICY-BUNDLE.md) `validate_invocation_edges` on import.

@@ -14,6 +14,7 @@ See [ENTITY-DIALOGUE-PROTOCOL.md](./ENTITY-DIALOGUE-PROTOCOL.md) · [PROTOCOL-EV
 | `POST .../dialogue` + `payload.execute: true` | `invoke` | `InvocationCreated` + metered execute |
 | `POST /api/v1/contributions` | `submit` | `ProofSubmitted` |
 | `POST /api/v1/contributions/{id}/auto-verify` | `attest` | `VerificationCompleted` |
+| `POST /api/v1/wallets/me/quote` | `quote` | `ExchangeQuoted` (overlay) |
 | `POST /api/v1/capabilities/skills/{id}/execute` | `invoke` | `InvocationCreated` |
 | `POST /api/v1/capabilities/agents/{id}/execute` | `invoke` | `InvocationCreated` |
 | `POST /api/v1/invocations` | `invoke` | `InvocationCreated` |

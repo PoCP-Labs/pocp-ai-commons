@@ -12,7 +12,7 @@ A **Trust Policy Bundle** is the instance-specific policy pack a PoCP node publi
 | **Rights rules** | `pocp_rewards.yaml` | Reputation import weighting |
 | **Import rules** | `trust_policy_bundle.yaml` | Proof shape + validation strictness |
 
-Related: [ENTITY-CONNECTION.md](./ENTITY-CONNECTION.md) · [CONSTITUTION-v0.1.md](./CONSTITUTION-v0.1.md)
+Related: [ENTITY-CONNECTION.md](./ENTITY-CONNECTION.md) · [ENTITY-DIALOGUE-PROTOCOL.md](./ENTITY-DIALOGUE-PROTOCOL.md) · [CONSTITUTION-v0.1.md](./CONSTITUTION-v0.1.md)
 
 ---
 
@@ -65,24 +65,32 @@ python backend/scripts/federation_strict_mode_test.py
 
 ## 3. Validation flow
 
+Applies to REST `POST /federation/import-proof`, `POST /federation/validate-proof`, and dialogue kinds `federation_offer` / `federation_accept` ([ENTITY-DIALOGUE-PROTOCOL.md](./ENTITY-DIALOGUE-PROTOCOL.md) §4.3).
+
 ```mermaid
 sequenceDiagram
   participant Peer as Trusted peer
   participant Importer as Importing node
   participant Bundle as Trust Policy Bundle
 
-  Peer->>Importer: POST /federation/import-proof
+  Peer->>Importer: import-proof OR federation_accept envelope
   Importer->>Importer: Verify signature + proof hash
   Importer->>Bundle: validate_proof_against_trust_policy
   Bundle-->>Importer: checks[] + valid / blocking_valid
   alt blocking failures
-    Importer-->>Peer: 400 trust policy rejection
+    Importer-->>Peer: 400 or dialogue status rejected
   else pass
-    Importer->>Importer: Apply reputation + ledger import
+    Importer->>Importer: overlay FederatedProofOffered + optional mirror import
   end
 ```
 
-Validation results are stored on the import record as `protocol_excerpt.trust_policy_validation`.
+| Entry path | Dialogue kind | Default import |
+|------------|---------------|----------------|
+| `POST /api/v1/federation/import-proof` | `federation_accept` (binding) | yes |
+| `POST /api/v1/federation/validate-proof` | `federation_offer` (validation only) | no |
+| `POST /api/v1/intelligence/dialogue` | `federation_offer` / `federation_accept` | offer: no; accept: yes |
+
+Validation results are stored on the import record as `protocol_excerpt.trust_policy_validation`. Dialogue responses echo the same `validation` object in `result`.
 
 ---
 

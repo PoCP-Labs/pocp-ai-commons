@@ -104,7 +104,7 @@ Schema: **`pocp.entity_dialogue.v0.1`**
 |------|------------------|---------|-----------------|
 | `ping` | — | Node / entity liveness | none |
 | `discover` | structural | Resolve entity profile + bindings | none |
-| `quote` | operational | Exchange intent before invoke | exchange intent (future) |
+| `quote` | operational | Pre-invoke exchange intent (wallet + `exchange_id`) | `exchange_id` in refs; `ExchangeQuoted` overlay (v0.2 ledger) |
 | `invoke` | operational | Runtime call along edge matrix | InvocationTrace + CapabilityReceipt |
 | `attest` | protocol | Witness / verify advisory | AiVerification |
 | `submit` | protocol | Open contribution event | ContributionEvent |
@@ -140,20 +140,35 @@ Rules:
 
 Participant roles must fit entity types per ontology.
 
-### 4.3 `federation_offer` / `federation_accept` — cross-node
+### 4.3 `federation_offer` / `federation_accept` — cross-node (protocol layer)
 
-**No new wire.** Same HTTPS Internet; different `node_id` on `from` / `to`.
+**No new wire.** Same HTTPS Internet; different `node_id` on `from` / `to`. Both kinds sit on the [ENTITY-CONNECTION](./ENTITY-CONNECTION.md) **protocol** layer (proof import, not operational invoke).
 
 ```text
 Node A  ── federation_offer(proof) ──►  Node B
-Node B  ── federation_accept(result) ──►  Node A (optional)
+Node B  ── federation_accept(result) ──►  Node A (optional ack)
 ```
 
-- `federation_offer`: inline `payload.proof`, or `payload.contribution_id` with `fetch_peer: true` (default) to pull from trusted peer; `auto_import` optional.
-- `federation_accept`: validate + optional `auto_import` (default true); enqueues `FederatedProofOffered` on overlay.
-- Import side runs **Trust Policy Bundle** validation before mirror.
-- HTTP relay without full envelope: `POST /api/v1/federation/overlay/relay`.
-- Live cross-node `invoke`: set `to.node_id` to peer + `POCP_TRUSTED_NODES`; A forwards to `POST {peer}/api/v1/federation/dialogue`. See [CROSS-NODE-INTERNET.md](./CROSS-NODE-INTERNET.md).
+| Kind | Default `auto_import` | Trust bundle | Overlay event |
+|------|----------------------|--------------|---------------|
+| `federation_offer` | `false` | `validate_proof_against_trust_policy` (dry-run or relay) | `FederatedProofOffered` |
+| `federation_accept` | `true` | same validator; blocks when `blocking_valid` is false | `FederatedProofOffered` |
+
+Shared payload fields:
+
+| Field | Required | Meaning |
+|-------|----------|---------|
+| `payload.proof` | one of proof or contribution_id | Inline `pocp_contribution_proof` packet |
+| `payload.contribution_id` | one of proof or contribution_id | Deref from `payload.source_node_id` when `fetch_peer: true` |
+| `payload.source_node_id` | cross-node | Trusted peer id (falls back to `from.node_id`) |
+| `payload.fetch_peer` | no | Default `true` for offer; accept fetches when proof omitted |
+| `payload.auto_import` | no | Run `import_from_proof_packet` after validation |
+
+**Trust Policy Bundle** ([TRUST-POLICY-BUNDLE.md](./TRUST-POLICY-BUNDLE.md)): both kinds call `validate_proof_against_trust_policy` before overlay enqueue. Failed checks surface in `result.validation.checks[]`; `status` is `rejected` when `blocking_valid` is false. Import rules (`validate_invocation_edges`, `min_witness_count`, …) apply identically to `POST /api/v1/federation/import-proof`.
+
+Bindings (no envelope): `POST /api/v1/federation/overlay/relay`, `POST /api/v1/federation/validate-proof`, `POST /api/v1/federation/import-proof` — see [BINDING-TO-DIALOGUE.md](./BINDING-TO-DIALOGUE.md).
+
+Live cross-node dialogue: `POST {peer}/api/v1/federation/dialogue` with trust list (`POCP_TRUSTED_NODES`). Operational `invoke` peer route: [CROSS-NODE-INTERNET.md](./CROSS-NODE-INTERNET.md).
 
 This is **overlay routing** on existing URLs — not a PoCP-owned IP network.
 
@@ -176,6 +191,74 @@ Rules:
 1. External call crosses boundary only through a registered Entity (`tool`, `llm`, `human`).
 2. Return path **must** write CapabilityReceipt + exchange spine when metered.
 3. MCP/OpenAI wire format stays in `metadata.service_endpoints` — not in dialogue payload schema.
+
+### 4.5 `quote` — operational pre-flight (v0.2 draft)
+
+Maps to [ENTITY-CONNECTION](./ENTITY-CONNECTION.md) **operational** layer: validates `(from_type, to_type, action)` via `validate_invocation_edge` before any metered `invoke`. Aligns with [EXCHANGE-SPINE-v0.1.md](./EXCHANGE-SPINE-v0.1.md) stage **exchange_intent**.
+
+**Rules (v0.1 pilot handler):**
+
+1. `from` entity **must** be `human` (billing anchor) — same constraint as metered `invoke`.
+2. `payload.action` optional; inferred from invocation edge matrix when omitted.
+3. `payload.quote_action`: `capability_invoke` (default for skill/agent targets) or `ai_chat` (LLM targets).
+4. Response assigns `refs.exchange_id`; consumer should pass it on subsequent `invoke` (`refs.exchange_id` or `payload.exchange_id`) so step metadata links the chain.
+5. Overlay emits `ExchangeQuoted` when bridge is enabled; ledger `exchange_intent` row is **v0.2** (not yet required for pilot acceptance).
+
+Request payload (capability invoke):
+
+```json
+{
+  "action": "uses",
+  "quote_action": "capability_invoke",
+  "estimated_cost": 5.0,
+  "exchange_id": null
+}
+```
+
+Response `result` (summary):
+
+```json
+{
+  "mode": "exchange_quote",
+  "exchange_id": "ex_a1b2c3…",
+  "exchange_kind": "hybrid",
+  "quote": {
+    "action": "capability_invoke",
+    "credit_type": "ai_credits",
+    "cost": 5.0,
+    "current_balance": 50.0,
+    "balance_after": 45.0,
+    "allowed": true,
+    "target_entity_id": "ent_skill_…",
+    "target_entity_type": "skill"
+  }
+}
+```
+
+Binding equivalent: `POST /api/v1/wallets/me/quote` — dialogue `quote` is the native kind; wallet route remains a thin binding.
+
+### 4.6 `federation_accept` — accept offered proof (v0.2 draft)
+
+Semantically **import-side** confirmation of a proof already offered or relayed. Differs from `federation_offer` only in default `auto_import: true` and typical consumer role (importer node).
+
+Request:
+
+```json
+{
+  "schema": "pocp.entity_dialogue.v0.1",
+  "dialogue_id": "dlg_fed_acc_1",
+  "kind": "federation_accept",
+  "from": { "entity_id": "ent_human_importer", "node_id": "pocp-node-b" },
+  "to": { "node_id": "pocp-node-a" },
+  "payload": {
+    "source_node_id": "pocp-node-a",
+    "proof": { "proof_type": "pocp_contribution_proof", "…": "…" },
+    "auto_import": true
+  }
+}
+```
+
+Response `result` includes `validation` (trust bundle), `overlay_event`, and optional `import` (`federated_import_id` when `auto_import` succeeds). `status` is `accepted` only when `blocking_valid` and import (if requested) succeed.
 
 ---
 
@@ -211,13 +294,19 @@ Peer cross-node invoke uses existing peer trust headers (`POCP_PEER_COMPUTE_SECR
 
 ## 6. Mapping dialogue kinds → connection layers
 
+Aligned with [ENTITY-CONNECTION.md](./ENTITY-CONNECTION.md) three layers and [TRUST-POLICY-BUNDLE.md](./TRUST-POLICY-BUNDLE.md) import rules.
+
 | Kind | structural | protocol | operational |
 |------|------------|----------|---------------|
 | discover | read owner/created | — | read allowed targets |
-| invoke | — | — | write InvocationStep |
+| quote | — | — | edge matrix check + exchange intent |
+| invoke | — | — | write InvocationStep / metered execute |
 | attest | — | write witness role | may ref trace |
 | submit | — | write ContributionParticipant | may ref trace |
-| federation_offer | — | proof import | receipt in proof |
+| finalize_notice | — | finalization policy | — |
+| federation_offer | — | proof validate + overlay | receipt in proof |
+| federation_accept | — | proof validate + import | receipt in proof |
+| broadcast | — | ProtocolEvent enqueue | — |
 | ping | — | — | — |
 
 ---
@@ -280,16 +369,60 @@ Response `result` includes entity profile, connection spec, and **binding hints*
 
 Returns `refs.invocation_trace_id`, `result.executed`, and optional `overlay.protocol_event`.
 
+### Example: quote (operational pre-flight)
+
+```json
+{
+  "schema": "pocp.entity_dialogue.v0.1",
+  "dialogue_id": "dlg_quote_1",
+  "kind": "quote",
+  "from": { "entity_id": "human-1", "node_id": "pocp-node-a" },
+  "to": { "entity_id": "skill-1", "node_id": "pocp-node-a" },
+  "payload": { "quote_action": "capability_invoke" }
+}
+```
+
+Response binds `refs.exchange_id`; follow with `invoke` and the same `exchange_id` in `refs` before `payload.execute: true`.
+
+### Example: federation_accept (cross-node import)
+
+```json
+{
+  "schema": "pocp.entity_dialogue.v0.1",
+  "dialogue_id": "dlg_fed_1",
+  "kind": "federation_accept",
+  "from": { "entity_id": "human-1", "node_id": "pocp-node-b" },
+  "to": { "node_id": "pocp-node-a" },
+  "payload": {
+    "source_node_id": "pocp-node-a",
+    "contribution_id": "contrib_peer_1",
+    "auto_import": true
+  }
+}
+```
+
+Importer must list `pocp-node-a` in `POCP_TRUSTED_NODES`. Validation uses this node's published trust policy bundle.
+
 ---
 
 ## 9. Evolution path
 
 | Phase | Scope |
 |-------|-------|
-| **v0.1 (pilot)** | Full kind set: `ping`, `discover`, `quote`, `invoke`, `attest`, `submit`, `finalize_notice`, `federation_*`, `broadcast` |
-| v0.2 | `quote` + exchange spine integration; signed cross-node envelopes |
+| **v0.1 (pilot)** | Envelope + handlers: `ping`, `discover`, `invoke`, `attest`, `submit`, `finalize_notice`, `federation_*`, `broadcast`; **quote** + **federation_accept** handlers ship in pilot (see §4.5–4.6) |
+| **v0.2** | Formalize §4.5–4.6: ledger `exchange_intent` on `quote`; trust-bundle check ids in federation responses; signed cross-node `crypto` |
 | v0.3 | REST/A2A convergence — all entity calls through dialogue router |
 | v0.4 | Peer dialogue proxy with Ed25519; live cross-node invoke |
+
+### v0.1 audit notes (PL-1)
+
+| Gap (pre-audit) | Resolution |
+|-----------------|------------|
+| `quote` marked "future" in kind table | §4.5 documents pilot handler + exchange spine intent stage |
+| No trust-bundle linkage on `federation_accept` | §4.3 + §4.6 reference `validate_proof_against_trust_policy` |
+| §6 missing `quote`, `finalize_notice`, `federation_accept` | Table expanded; cross-links ENTITY-CONNECTION + TRUST-POLICY-BUNDLE |
+| No payload examples for quote / federation_accept | §8 examples added |
+| ENTITY-CONNECTION silent on dialogue kinds | See ENTITY-CONNECTION §8 |
 
 ---
 
