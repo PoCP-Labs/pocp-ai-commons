@@ -14,6 +14,13 @@ import httpx
 from services.evidence import standardize_evidence_items
 
 _URL_PATTERN = re.compile(r"^https?://", re.I)
+_DEFAULT_CONNECT_CAP_SEC = 2.0
+
+
+def _httpx_timeout(total: float) -> httpx.Timeout:
+    """Cap connect wait so hung evidence URLs cannot block workers (SSRF guardrail)."""
+    connect = min(_DEFAULT_CONNECT_CAP_SEC, max(0.5, total * 0.4))
+    return httpx.Timeout(total, connect=connect)
 
 
 def _collect_urls(evidence: dict | None) -> list[tuple[str, str]]:
@@ -38,7 +45,7 @@ def validate_evidence_urls(evidence: dict | None, *, timeout: float = 5.0) -> di
             checks.append({"key": key, "url": url, "ok": False, "reason": "unsupported_scheme"})
             continue
         try:
-            with httpx.Client(timeout=timeout, follow_redirects=True) as client:
+            with httpx.Client(timeout=_httpx_timeout(timeout), follow_redirects=True) as client:
                 response = client.head(url)
                 if response.status_code >= 400:
                     response = client.get(url)

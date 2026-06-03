@@ -10,6 +10,7 @@ PQC uses liboqs-python when installed; otherwise dev stub for wire-format testin
 from __future__ import annotations
 
 import os
+from functools import lru_cache
 from typing import Any
 
 from fastapi import HTTPException
@@ -60,14 +61,52 @@ _SUITE_SPECS: dict[str, dict[str, Any]] = {
     },
 }
 
+# liboqs ML-DSA secret keys are much larger than the 32-byte dev stub (see pqc_dsa).
+_LIBOQS_SECRET_KEY_MIN_BYTES = 256
 
-def active_crypto_suite() -> str:
-    env = os.getenv("POCP_CRYPTO_SUITE", "").strip()
-    if env:
-        return env
-    if get_pqc_public_key_hex():
+
+def _crypto_suite_env_fingerprint() -> tuple[str, str, str]:
+    return (
+        os.getenv("POCP_CRYPTO_SUITE", "").strip(),
+        os.getenv("POCP_NODE_PQC_PUBLIC_KEY", "").strip(),
+        os.getenv("POCP_NODE_PQC_PRIVATE_KEY", "").strip(),
+    )
+
+
+def clear_active_crypto_suite_cache() -> None:
+    """Reset cached suite resolution (tests and env hot-reload)."""
+    _pqc_configured_for_suite.cache_clear()
+    _resolve_active_crypto_suite.cache_clear()
+
+
+@lru_cache(maxsize=8)
+def _pqc_configured_for_suite(public_key: str, private_key: str) -> bool:
+    """Fast env-first probe — avoids liboqs init on /health liveness."""
+    if public_key:
+        return True
+    if not private_key:
+        return False
+    try:
+        key_len = len(bytes.fromhex(private_key))
+    except ValueError:
+        return False
+    if key_len < _LIBOQS_SECRET_KEY_MIN_BYTES:
+        return True
+    return get_pqc_public_key_hex() is not None
+
+
+@lru_cache(maxsize=8)
+def _resolve_active_crypto_suite(suite_env: str, public_key: str, private_key: str) -> str:
+    if suite_env:
+        return suite_env
+    if _pqc_configured_for_suite(public_key, private_key):
         return SUITE_V02_HYBRID
     return SUITE_V01_CLASSIC
+
+
+def active_crypto_suite() -> str:
+    suite_env, public_key, private_key = _crypto_suite_env_fingerprint()
+    return _resolve_active_crypto_suite(suite_env, public_key, private_key)
 
 
 def active_hash_algorithm() -> str:
