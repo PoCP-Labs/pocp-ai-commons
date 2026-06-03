@@ -392,13 +392,25 @@ export default function EntityDetail({
         />
       )}
 
-      {fetchJson && authenticated && me?.entity?.id && (
-        <ProtocolDialoguePanel
-          entityId={entity.id}
-          entity={entity}
-          fetchJson={fetchJson}
-          meEntityId={me.entity.id}
-        />
+      {fetchJson && (
+        <>
+          <h3 style={{ fontSize: "0.9rem", margin: "16px 0 8px" }}>Entity Dialogue</h3>
+          {authenticated && me?.entity?.id ? (
+            <ProtocolDialoguePanel
+              entityId={entity.id}
+              entity={entity}
+              fetchJson={fetchJson}
+              meEntityId={me.entity.id}
+            />
+          ) : (
+            <div className="mini-card protocol-dialogue-panel" style={{ marginBottom: 12 }}>
+              <p style={{ fontSize: "0.75rem", color: "var(--text-dim)", margin: 0 }}>
+                Dev Login to send ping, discover, and invoke envelopes to{" "}
+                <code>POST /api/v1/intelligence/entities/{entity.id}/dialogue</code>.
+              </p>
+            </div>
+          )}
+        </>
       )}
 
       {(isFederationPeer || federationImports?.received_count > 0 || federationImports?.exported_count > 0) &&

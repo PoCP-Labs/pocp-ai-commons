@@ -246,6 +246,27 @@ export default function ProtocolDialoguePanel({
       {message && (
         <p style={{ fontSize: "0.75rem", marginTop: 8, color: "var(--btc)" }}>{message}</p>
       )}
+      {lastResponse?.result?.bindings?.length > 0 && (
+        <div style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginTop: 8 }}>
+          <strong>Bindings</strong>
+          {lastResponse.result.bindings.slice(0, 6).map((b) => (
+            <div key={b.binding || b.capability_id} style={{ marginTop: 4 }}>
+              {b.binding || b.capability_id}
+              {b.dialogue_kind ? ` · ${b.dialogue_kind}` : ""}
+            </div>
+          ))}
+        </div>
+      )}
+      {lastResponse?.result?.capabilities?.length > 0 && (
+        <div style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginTop: 8 }}>
+          <strong>Capabilities</strong>
+          {lastResponse.result.capabilities.slice(0, 6).map((c) => (
+            <div key={c.capability_id || c.name} style={{ marginTop: 4 }}>
+              {c.name || c.capability_id} · {c.capability_type || c.unit || "—"}
+            </div>
+          ))}
+        </div>
+      )}
       {lastResponse?.overlay?.protocol_event && (
         <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginTop: 6 }}>
           Overlay event: {shortId(lastResponse.refs?.protocol_event_id)}
