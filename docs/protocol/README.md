@@ -5,11 +5,13 @@ Entities publish supply; consumers invoke by the unit; the exchange chain + ledg
 
 ## Default loop (locked narrative)
 
+**首屏路径（锁定）：**
+
 ```text
 quote → invoke → receipt → wallet
 ```
 
-Product narrative: [../CAPABILITY-FIRST-POSITIONING.md](../CAPABILITY-FIRST-POSITIONING.md). **Contribution** (witness, CP, public graph) is an **opt-in upgrade** — not required for metered invoke.
+Product narrative: [../CAPABILITY-FIRST-POSITIONING.md](../CAPABILITY-FIRST-POSITIONING.md) · canonical overview: [../CAPABILITY-INTERNET-PROTOCOL.md](../CAPABILITY-INTERNET-PROTOCOL.md). **Contribution** (witness, CP, public graph) is an **opt-in upgrade** — not required for metered invoke.
 
 | Document | Role |
 |----------|------|
@@ -95,4 +97,4 @@ Normative layer specs for the [12-layer capability internet](../POCP-NETWORK-ARC
 | 12 | Economy | [PROTOCOL-ECONOMY-SPEC.md](./PROTOCOL-ECONOMY-SPEC.md) · [TOKEN-ACCOUNT-SPEC.md](./TOKEN-ACCOUNT-SPEC.md) |
 | — | Event log | [PROTOCOL-EVENT-SPEC.md](./PROTOCOL-EVENT-SPEC.md) · [PROTOCOL-EVENT-NETWORK.md](./PROTOCOL-EVENT-NETWORK.md) |
 
-Agent Studio mission: [capability_internet](../agents/missions/capability-internet/MANIFEST.md) · backlog: [CAPABILITY-INTERNET-BACKLOG.md](../agent-studio/CAPABILITY-INTERNET-BACKLOG.md).
+Agent Studio mission: [capability_internet](../../agents/missions/capability-internet/MANIFEST.md) · backlog: [CAPABILITY-INTERNET-BACKLOG.md](../agent-studio/CAPABILITY-INTERNET-BACKLOG.md).

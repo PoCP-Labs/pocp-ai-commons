@@ -12,17 +12,17 @@ See also: [CAPABILITY-FIRST-POSITIONING.md](./CAPABILITY-FIRST-POSITIONING.md) �
 
 ---
 
-## Default loop (capability-first)
+## Default loop (capability-first — locked)
 
-**首屏路径** — metered exchange, not contribution-first UX:
+**首屏路径（锁定）** — metered exchange, not contribution-first UX:
 
 ```text
 quote → invoke → receipt → wallet (BC / AI Credits; ledger-auditable)
 ```
 
-Publish compute or AI capabilities → consumer quotes → invokes → receives receipt → wallet reflects settlement.
+Publish compute or AI capabilities → consumer quotes → invokes → receives receipt → wallet reflects settlement. Protocol index: [protocol/README.md](./protocol/README.md) · repo entry: [../README.md](../README.md#default-loop-capability-exchange).
 
-**Contribution upgrade (optional):** witness review, CP, public graph, and governance participation — see [Minimum living network](#minimum-living-network) and [CAPABILITY-FIRST-POSITIONING.md](./CAPABILITY-FIRST-POSITIONING.md).
+**Contribution upgrade (optional):** witness review, CP, public graph, and governance participation — **not required** for marketplace invoke. See [Minimum living network](#minimum-living-network) and [CAPABILITY-FIRST-POSITIONING.md](./CAPABILITY-FIRST-POSITIONING.md).
 
 ---
 

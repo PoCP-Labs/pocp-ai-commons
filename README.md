@@ -143,7 +143,9 @@ PoCP does not ask only *who owns what?* It asks:
 
 ## First MVP
 
-The first MVP focuses on one demonstrable loop:
+**Contribution upgrade (Genesis MVP — optional):** the shipped demo still proves witness → CP, but **metered invoke does not require this path**. Default marketplace loop: [Default loop](#default-loop-capability-exchange).
+
+The Genesis MVP demonstrates one contribution loop:
 
 ```text
 User registers
@@ -192,10 +194,10 @@ AI verifiers assist in contribution review — task match, quality, originality,
 * an AI-controlled governance system;
 * a promise of unlimited free AI usage.
 
-The first version does not issue a token. It focuses on:
+The first version does not issue a token. **Default:** `quote → invoke → receipt → wallet`. **Optional upgrade:**
 
 ```text
-Contribution → Verification → AI Credits → Reputation → Ledger
+Contribution → Verification → AI Credits → Reputation → Ledger  (opt-in)
 ```
 
 See [NO-TOKEN-FIRST.md](./NO-TOKEN-FIRST.md).
@@ -328,8 +330,10 @@ Details: [docs/ROADMAP-THREE-PHASES.md](./docs/ROADMAP-THREE-PHASES.md) · legac
 
 ## Guiding Principles
 
-1. Contribution before speculation.
-2. AI access through verified contribution.
+**Default path:** capability exchange (`quote → invoke → receipt → wallet`). Principles 1–2 apply to the **optional contribution upgrade**, not to every metered invoke.
+
+1. Contribution before speculation. *(opt-in upgrade)*
+2. AI access through verified contribution. *(opt-in upgrade)*
 3. AI is advisory; humans make final decisions.
 4. Reputation must be earned, not bought.
 5. Verification must not become surveillance.
@@ -376,7 +380,13 @@ See [docs/LOCAL-SETUP.md](./docs/LOCAL-SETUP.md) for dev login, verifiers, and S
 
 PoCP AI Commons is in **Genesis MVP** stage — `v0.3.0-alpha` (Phase A engineering) **done**; **local optimization** in progress; **public staging deferred**.
 
-The current goal is to prove one loop end-to-end:
+**Engineering goal (default loop):** prove the exchange spine end-to-end:
+
+```text
+quote → invoke → receipt → wallet (BC / AI Credits audit; federation + ledger)
+```
+
+**Parallel Genesis demo (optional contribution upgrade):**
 
 ```text
 A person completes a contribution task
