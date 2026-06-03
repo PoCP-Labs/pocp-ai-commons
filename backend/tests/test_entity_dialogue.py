@@ -190,9 +190,18 @@ Answer briefly.
         self.assertEqual(response["status"], "accepted")
         self.assertTrue(response["result"].get("executed"))
         trace_id = response["refs"]["invocation_trace_id"]
+        self.assertIn("capability_receipt_hashes", response["refs"])
+        self.assertTrue(response["refs"]["capability_receipt_hashes"])
+        self.assertIn("capability_receipts", response["result"])
+        self.assertTrue(response["result"]["capability_receipts"])
+        self.assertEqual(
+            response["result"]["capability_receipts"][0]["schema"],
+            "pocp.capability_receipt.v0.1",
+        )
         steps = self.db.query(InvocationStep).filter(InvocationStep.trace_id == trace_id).all()
         self.assertGreater(len(steps), 1)
         self.assertEqual(steps[0].metadata_.get("dialogue_id"), "dlg_exec_1")
+        self.assertIn("capability_receipt", steps[0].metadata_)
 
     def test_quote_capability_invoke(self):
         skill = register_entity(

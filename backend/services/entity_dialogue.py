@@ -255,62 +255,26 @@ async def _handle_invoke_execute(
     payload: dict[str, Any],
     refs_in: dict[str, Any],
 ) -> dict[str, Any]:
-    from models.entity import EntityType
-    from services.capability_execute import execute_agent, execute_skill
+    from services.capability.dialogue_invoke import execute_metered_dialogue_invoke
 
-    if source.entity_type != EntityType.human:
-        return _response_envelope(
-            envelope,
-            status="rejected",
-            errors=["payload.execute requires from entity to be human (billing anchor)"],
-        )
-
-    user_input = _dialogue_user_input(payload)
     try:
-        if target.entity_type == EntityType.skill:
-            execution = await execute_skill(
-                db,
-                human_entity_id=source.id,
-                skill_entity_id=target.id,
-                user_input=user_input,
-                context=payload.get("context"),
-                agent_entity_id=payload.get("agent_entity_id"),
-                llm_entity_id=payload.get("llm_entity_id"),
-                llm_provider=payload.get("llm_provider"),
-                llm_model=payload.get("llm_model"),
-                task_id=refs_in.get("task_id"),
-                contribution_id=refs_in.get("contribution_id"),
-            )
-        elif target.entity_type == EntityType.agent:
-            execution = await execute_agent(
-                db,
-                human_entity_id=source.id,
-                agent_entity_id=target.id,
-                user_input=user_input,
-                context=payload.get("context"),
-                skill_entity_id=payload.get("skill_entity_id"),
-                llm_entity_id=payload.get("llm_entity_id"),
-                llm_provider=payload.get("llm_provider"),
-                task_id=refs_in.get("task_id"),
-                contribution_id=refs_in.get("contribution_id"),
-                submit_contribution=bool(payload.get("submit_contribution")),
-            )
-        else:
-            return _response_envelope(
-                envelope,
-                status="rejected",
-                errors=[
-                    f"payload.execute not supported for target type {target.entity_type.value}; "
-                    "use skill or agent, or omit execute for trace-only"
-                ],
-            )
+        execution = await execute_metered_dialogue_invoke(
+            db,
+            source=source,
+            target=target,
+            payload=payload,
+            refs_in=refs_in,
+            dialogue_id=envelope.get("dialogue_id"),
+        )
     except HTTPException as exc:
         detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
         return _response_envelope(envelope, status="rejected", errors=[detail])
 
     trace_id = execution.get("trace_id")
-    if trace_id:
-        _tag_trace_dialogue(db, trace_id, envelope)
+    receipt = execution.get("receipt") if isinstance(execution.get("receipt"), dict) else None
+    capability_receipts = execution.get("capability_receipts") or (
+        receipt.get("capability_receipts") if receipt else []
+    )
 
     return _response_envelope(
         envelope,
@@ -321,10 +285,15 @@ async def _handle_invoke_execute(
             "output": execution.get("output"),
             "billing": execution.get("billing"),
             "mode": execution.get("mode"),
+            "capability_receipts": capability_receipts,
+            "receipt": receipt,
             "message": "Metered capability execution completed via dialogue invoke",
         },
         refs={
             "invocation_trace_id": trace_id,
+            "capability_receipt_hashes": [
+                r.get("receipt_hash") for r in capability_receipts if r.get("receipt_hash")
+            ],
         },
         bindings={
             "invocation": f"/api/v1/invocations/{trace_id}" if trace_id else None,
