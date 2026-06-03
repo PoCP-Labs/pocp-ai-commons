@@ -389,6 +389,7 @@ A person completes a contribution task
 | **P1** | Federation L1 exchange import | B node imports A exchange proof without BC mint |
 | **P1** | Live compute adapter wire | `test_akash_live_wire.py` + stub→live config path documented |
 | **P2** | Protocol Layer — Entity Dialogue (EDP) | `pytest test_entity_dialogue` green; see [docs/protocol/ENTITY-DIALOGUE-PROTOCOL.md](./docs/protocol/ENTITY-DIALOGUE-PROTOCOL.md) · [agents/missions/protocol-layer-edp/MANIFEST.md](./agents/missions/protocol-layer-edp/MANIFEST.md) |
+| **P2** | Capability Internet — CIP skeleton | Wave-1 gate green: `audit_entities.py --repair` + federation acceptance + `minimum_living_network.py` — [agents/missions/capability-internet/WAVE-1-GATE.md](./agents/missions/capability-internet/WAVE-1-GATE.md) · parallel to EDP |
 
 ---
 

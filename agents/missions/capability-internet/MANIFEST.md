@@ -4,6 +4,13 @@
 **Nexus track:** `capability_internet`  
 **Issues:** CI-1 .. CI-12 (see [CAPABILITY-INTERNET-BACKLOG.md](../../docs/agent-studio/CAPABILITY-INTERNET-BACKLOG.md))
 
+## Wave status
+
+| Wave | Scope | Status |
+|------|-------|--------|
+| **Wave 1** | CI gate: `audit_entities --repair`, federation acceptance, minimum living checklist | **Closed** 2026-06-03 — [WAVE-1-GATE.md](./WAVE-1-GATE.md) · handoff `bc91cffd` |
+| Wave 2+ | CI-1..CI-12 domain handoffs, CIP in CI, production API wire | Open |
+
 ## North star
 
 Implement the **12-layer capability internet** in `pocp-ai-commons` without building a centralized platform. Minimum living network first.

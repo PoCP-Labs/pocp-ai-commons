@@ -379,7 +379,7 @@ def execute_handoff_prompt(prompt: str, *, verbose: bool = False) -> dict[str, A
     from cursor_sdk import CursorAgentError
     from cursor_sdk.errors import AuthenticationError
 
-    from services.agent_studio.studio_console import log_step
+    from services.agent_studio.studio_console import log_block, log_step
 
     create_kwargs, runtime, target = _agent_create_kwargs()
 

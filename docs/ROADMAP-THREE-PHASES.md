@@ -35,7 +35,7 @@ Public staging is **not blocked on engineering** — it is **deferred by choice*
 | **P2** | Split unpushed wave for review | Wallet → Settlement → Live adapters as separate PRs |
 | **P2** | Frontend provider/ecosystem UX | ProviderPanel + WalletPanel usable in local federation demo |
 | **P2** | Protocol Layer — Entity Dialogue (EDP) | `pytest tests/test_entity_dialogue.py` green; dialogue in LOCAL-SETUP; mission `protocol_layer_edp` — [agents/missions/protocol-layer-edp/MANIFEST.md](../agents/missions/protocol-layer-edp/MANIFEST.md) |
-| **P2** | Capability Internet — CIP skeleton | `python backend/scripts/minimum_living_network.py` green; in-memory 12-layer loop — [docs/MINIMUM-LIVING-NETWORK.md](./MINIMUM-LIVING-NETWORK.md) · mission `capability_internet` — [agents/missions/capability-internet/MANIFEST.md](../agents/missions/capability-internet/MANIFEST.md) |
+| **P2** | Capability Internet — CIP skeleton | Wave-1 CI gate **green** (2026-06-03): `audit_entities.py --repair`, `run_phase_a_acceptance.py --federation`, `minimum_living_network.py` — [agents/missions/capability-internet/WAVE-1-GATE.md](../agents/missions/capability-internet/WAVE-1-GATE.md) · [MINIMUM-LIVING-NETWORK.md](./MINIMUM-LIVING-NETWORK.md) · mission `capability_internet` |
 
 **Local acceptance (full federation):**
 
@@ -195,7 +195,7 @@ python backend/scripts/run_phase_a_acceptance.py https://api.your-domain.com --s
 
 | Artifact | Location |
 |----------|----------|
-| Agent Studio handoff vs ROADMAP | `agents/scripts/roadmap_handoff_crosscheck.py` · reconcile: `agents/patches/compass-0-reconcile-a7f1b08d.md` (latest) · prior: `compass-0-reconcile-a86cc259.md` · Herald gaps: `nexus-research-gaps-e2131c5b.md` |
+| Agent Studio handoff vs ROADMAP | `agents/scripts/roadmap_handoff_crosscheck.py` · reconcile: `agents/patches/compass-0-reconcile-a7f1b08d.md` (latest) · prior: `compass-0-reconcile-a86cc259.md` · Herald gaps: `nexus-research-gaps-1d0e761b.md` (latest) · prior: `nexus-research-gaps-e2131c5b.md` · **CIP wave-1 gate:** `agents/patches/nexus-0-bc91cffd.md` |
 | Phase A acceptance | `backend/scripts/run_phase_a_acceptance.py` |
 | Federation CI | `.github/workflows/phase-a-federation.yml` |
 | Staging env template | `backend/.env.staging.example` |

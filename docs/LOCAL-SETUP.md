@@ -122,6 +122,16 @@ curl -s -X POST http://127.0.0.1:8000/api/v1/intelligence/dialogue \
 cd backend && python -m pytest -q tests/test_entity_dialogue.py
 ```
 
+### Capability Internet skeleton (CIP — in-memory, stack not required)
+
+Parallel **P2** track — does **not** replace Phase A federation acceptance. See [CAPABILITY-INTERNET-PROTOCOL.md](./CAPABILITY-INTERNET-PROTOCOL.md) · [protocol/README.md](./protocol/README.md) § CIP 12-layer.
+
+```bash
+python backend/scripts/minimum_living_network.py
+```
+
+Expected: `[OK] minimum_living_network passed.` — exercises `backend/services/cip/` (12-layer logical chain). Mission: [agents/missions/capability-internet/MANIFEST.md](../agents/missions/capability-internet/MANIFEST.md) · demo checklist: [implementation/MINIMUM-LIVING-NETWORK-DEMO.md](./implementation/MINIMUM-LIVING-NETWORK-DEMO.md).
+
 **Proof deep-link (UI):** open `http://localhost:3000/?proof=<contribution_id>` to verify a contribution proof without running the full submit flow.
 
 ## Meta Agents & Agent Studio (engineering orchestration)

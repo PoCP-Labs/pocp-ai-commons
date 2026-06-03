@@ -44,21 +44,33 @@ def _is_ci_scope(scope: str | None) -> bool:
     return any(token in text for token in _CI_SCOPE_TOKENS)
 
 
+def _ci_only_pick() -> bool:
+    return os.getenv("POCP_CURSOR_CI_ONLY", "true").lower() in ("1", "true", "yes")
+
+
+def _cursor_assignable(handoff: AgentStudioHandoff) -> bool:
+    """Nexus-0 is excluded except CI gate closure (Gauge → Nexus)."""
+    if handoff.to_agent_entity_id != NEXUS_ID:
+        return True
+    return "[ci gate]" in (handoff.scope or "").lower()
+
+
 def pick_pending_handoffs(db: Session, *, limit: int = 5) -> list[AgentStudioHandoff]:
-    """Handoffs assignable to Cursor — CI protocol work first, then oldest."""
+    """Handoffs assignable to Cursor — CI protocol work first; optional CI-only mode."""
     rows = (
         db.query(AgentStudioHandoff)
-        .filter(
-            AgentStudioHandoff.status == StudioHandoffStatus.pending,
-            AgentStudioHandoff.to_agent_entity_id != NEXUS_ID,
-        )
+        .filter(AgentStudioHandoff.status == StudioHandoffStatus.pending)
         .order_by(AgentStudioHandoff.created_at.asc())
         .all()
     )
+    rows = [h for h in rows if _cursor_assignable(h)]
     ci_rows = [h for h in rows if _is_ci_scope(h.scope)]
+    if ci_rows:
+        return ci_rows[:limit]
+    if _ci_only_pick():
+        return []
     other_rows = [h for h in rows if h not in ci_rows]
-    ordered = ci_rows + other_rows
-    return ordered[:limit]
+    return other_rows[:limit]
 
 
 def _mark_in_progress(db: Session, handoff: AgentStudioHandoff) -> None:

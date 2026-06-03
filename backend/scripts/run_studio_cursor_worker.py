@@ -29,15 +29,17 @@ def _load_env() -> None:
     try:
         from dotenv import load_dotenv
 
-        load_dotenv(_BACKEND / ".env", override=False)
+        # override=True so inherited shell POCP_CURSOR_AUTOMATION=false does not block the worker
+        load_dotenv(_BACKEND / ".env", override=True)
     except ImportError:
         pass
     os.environ.setdefault("POCP_REPO_ROOT", str(_REPO))
     os.environ.setdefault(
         "DATABASE_URL", "postgresql+psycopg://pocp:pocp@127.0.0.1:5435/pocp"
     )
-    os.environ.setdefault("POCP_CURSOR_AUTOMATION", "true")
+    os.environ["POCP_CURSOR_AUTOMATION"] = "true"
     os.environ.setdefault("POCP_CURSOR_SKIP_NEXUS_FOLLOWUP", "true")
+    os.environ.setdefault("POCP_CURSOR_CI_ONLY", "true")
 
 
 _load_env()
