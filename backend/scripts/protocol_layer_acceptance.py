@@ -21,6 +21,7 @@ def main() -> int:
             "tests/test_entity_dialogue.py",
             "tests/test_entity_connections.py",
             "tests/test_trust_policy_bundle.py",
+            "tests/test_protocol_layer.py",
             "tests/test_federation_overlay.py",
             "tests/test_protocol_network.py",
             "tests/test_merkle_canonical.py",
