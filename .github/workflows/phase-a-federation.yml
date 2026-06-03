@@ -21,6 +21,9 @@ jobs:
   federation-acceptance:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # Node A host port; keeps platform_health aligned during federation acceptance.
+      BACKEND_URL: http://127.0.0.1:8100
 
     steps:
       - uses: actions/checkout@v4

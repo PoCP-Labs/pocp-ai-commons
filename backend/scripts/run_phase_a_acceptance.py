@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import urllib.error
@@ -55,6 +56,11 @@ def run_script(
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
     out = (proc.stdout or "") + (proc.stderr or "")
     return proc.returncode == 0, out.strip()
+
+
+def sync_backend_url_env(base: str) -> None:
+    """Align Nexus platform_health probe with the acceptance target (avoids api: timed out)."""
+    os.environ["BACKEND_URL"] = base.rstrip("/")
 
 
 def _health_connect_hint(base: str) -> str:
@@ -343,6 +349,7 @@ def main() -> int:
     args = parser.parse_args()
 
     base = args.base.rstrip("/")
+    sync_backend_url_env(base)
     federation = args.federation is not None
     node_b = (args.federation or "http://127.0.0.1:8101").rstrip("/")
 

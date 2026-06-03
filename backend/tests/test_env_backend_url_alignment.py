@@ -8,6 +8,8 @@ from unittest import mock
 _REPO = Path(__file__).resolve().parents[2]
 _COMPOSE = _REPO / "docker-compose.yml"
 _ENV_EXAMPLE = _REPO / "backend" / ".env.example"
+_SMOKE_WORKFLOW = _REPO / ".github" / "workflows" / "smoke-test.yml"
+_FED_WORKFLOW = _REPO / ".github" / "workflows" / "phase-a-federation.yml"
 
 
 class EnvBackendUrlAlignmentTests(unittest.TestCase):
@@ -48,6 +50,23 @@ class EnvBackendUrlAlignmentTests(unittest.TestCase):
         for name in ("run-phase-a.ps1", "run-phase-a.sh"):
             text = (_REPO / "scripts" / name).read_text(encoding="utf-8")
             self.assertIn("BACKEND_URL", text, f"{name} must set BACKEND_URL for super-loop probes")
+
+    def test_smoke_test_workflow_exports_backend_url_for_ci_api(self):
+        text = _SMOKE_WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("BACKEND_URL", text)
+        self.assertRegex(text, r"BACKEND_URL:\s*http://127\.0\.0\.1:8765")
+
+    def test_federation_workflow_exports_backend_url_for_node_a(self):
+        text = _FED_WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("BACKEND_URL", text)
+        self.assertRegex(text, r"BACKEND_URL:\s*http://127\.0\.0\.1:8100")
+
+    def test_run_phase_a_syncs_backend_url_env_helper(self):
+        script = _REPO / "backend" / "scripts" / "run_phase_a_acceptance.py"
+        text = script.read_text(encoding="utf-8")
+        self.assertIn("def sync_backend_url_env", text)
+        self.assertIn('os.environ["BACKEND_URL"]', text)
+        self.assertIn("sync_backend_url_env(base)", text)
 
 
 if __name__ == "__main__":

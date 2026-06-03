@@ -1,6 +1,7 @@
 """Unit tests for Phase A acceptance HTTP steps (PA-5 entity catalog gate)."""
 
 import importlib.util
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -16,6 +17,7 @@ _spec.loader.exec_module(_mod)
 
 step_entity_catalog_complete = _mod.step_entity_catalog_complete
 step_health = _mod.step_health
+sync_backend_url_env = _mod.sync_backend_url_env
 DEFAULT_BASE = _mod.DEFAULT_BASE
 ONTOLOGY_TYPE_COUNT = _mod.ONTOLOGY_TYPE_COUNT
 
@@ -47,6 +49,11 @@ class PhaseAAcceptanceDefaultsTests(unittest.TestCase):
         ok, detail = step_health("http://127.0.0.1:8000")
         self.assertFalse(ok)
         self.assertIn("8008", detail)
+
+    def test_sync_backend_url_env_sets_probe_target(self):
+        with patch.dict(os.environ, {}, clear=True):
+            sync_backend_url_env("http://127.0.0.1:8008")
+            self.assertEqual(os.environ["BACKEND_URL"], "http://127.0.0.1:8008")
 
 
 class EntityCatalogAcceptanceStepTests(unittest.TestCase):
