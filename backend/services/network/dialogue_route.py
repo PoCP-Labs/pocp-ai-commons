@@ -53,15 +53,21 @@ def resolve_runtime_peer(db, node_id: str) -> dict[str, Any] | None:
         if not entity:
             return None
         meta = entity.metadata_ or {}
+        from services.federation_peer_addrbook import is_peer_routable
+
+        if not is_peer_routable(meta):
+            return None
         roles = meta.get("roles") or []
         if "federation_peer" not in roles and "discovered_peer" not in roles:
             return None
-        base_url = (meta.get("base_url") or "").rstrip("/")
+        base_url = (meta.get("probe_base_url") or meta.get("base_url") or "").rstrip("/")
+        public_url = (meta.get("public_base_url") or meta.get("base_url") or base_url).rstrip("/")
         if not base_url:
             return None
         return {
             "node_id": node_id,
             "base_url": base_url,
+            "public_base_url": public_url,
             "trust_weight": float(meta.get("trust_weight") or 0.5),
             "discovered": True,
         }
@@ -131,7 +137,7 @@ def wrap_peer_route_response(
     result["peer_route"] = True
     result["routed_via"] = {
         "peer_node_id": peer["node_id"],
-        "peer_base_url": peer["base_url"],
+        "peer_base_url": peer.get("public_base_url") or peer["base_url"],
         "local_node_id": local_node_id(),
     }
     remote = {**remote, "result": result}

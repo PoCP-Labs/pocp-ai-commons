@@ -5,6 +5,8 @@ from __future__ import annotations
 import os
 from typing import Any
 
+from sqlalchemy.orm import Session
+
 from services.federation_peers import _get_json, probe_peer
 from services.peer_trust import peer_trust_manifest
 from services.trust_policy_bundle import bundle_fingerprint, trust_policy_bundle_manifest
@@ -50,7 +52,7 @@ def public_skill_node_template() -> dict[str, Any]:
     }
 
 
-def build_local_peer_manifest(*, base_url: str | None = None) -> dict[str, Any]:
+def build_local_peer_manifest(*, base_url: str | None = None, db: Session | None = None) -> dict[str, Any]:
     """Aggregate local federation discovery surface for peers (CI-5 manifest)."""
     from services.federation_crypto import get_node_public_key_hex
     from services.crypto_suite import active_crypto_suite
@@ -60,7 +62,12 @@ def build_local_peer_manifest(*, base_url: str | None = None) -> dict[str, Any]:
     node_id = os.getenv("POCP_NODE_ID", "pocp-node-local")
     bundle = trust_policy_bundle_manifest()
     handshake = peer_trust_manifest()
-    return {
+    known_peers: list[dict[str, Any]] = []
+    if db is not None:
+        from services.federation_peer_addrbook import collect_known_peers_for_manifest
+
+        known_peers = collect_known_peers_for_manifest(db)
+    manifest = {
         "schema": FEDERATION_PEER_MANIFEST_SCHEMA,
         "spec_version": "0.1",
         "node_id": node_id,
@@ -71,6 +78,7 @@ def build_local_peer_manifest(*, base_url: str | None = None) -> dict[str, Any]:
         "trust_policy_bundle_fingerprint": bundle.get("bundle_fingerprint"),
         "trust_policy_bundle_schema": bundle.get("schema"),
         "handshake": handshake,
+        "known_peers": known_peers,
         "well_known": {
             "pocp_node": f"{root}/.well-known/pocp-node.json",
             "agent_card": f"{root}/.well-known/agent.json",
@@ -79,9 +87,11 @@ def build_local_peer_manifest(*, base_url: str | None = None) -> dict[str, Any]:
             "capability_search": f"{root}/api/v1/registry/capabilities",
             "skill_node_template_schema": PUBLIC_SKILL_NODE_TEMPLATE_SCHEMA,
             "skill_node_template_path": "/api/v1/federation/skill-node-template",
+            "known_peers": [p.get("base_url") for p in known_peers if p.get("base_url")],
         },
         "skill_node_template": public_skill_node_template(),
     }
+    return manifest
 
 
 def fetch_remote_peer_manifest(base_url: str) -> dict[str, Any]:

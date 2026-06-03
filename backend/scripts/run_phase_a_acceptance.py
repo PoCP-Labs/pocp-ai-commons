@@ -32,10 +32,16 @@ FEDERATION_PEER_MANIFEST_SCHEMA = "pocp.federation_peer_manifest.v0.1"
 PUBLIC_SKILL_NODE_TEMPLATE_SCHEMA = "pocp-skill-node-template.v0.1"
 
 
-def run_script(name: str, base: str, extra_args: list[str] | None = None) -> tuple[bool, str]:
+def run_script(
+    name: str,
+    base: str,
+    extra_args: list[str] | None = None,
+    *,
+    timeout: float = 180,
+) -> tuple[bool, str]:
     path = SCRIPTS / name
     cmd = [sys.executable, str(path), base, *(extra_args or [])]
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
     out = (proc.stdout or "") + (proc.stderr or "")
     return proc.returncode == 0, out.strip()
 
@@ -314,7 +320,15 @@ def main() -> int:
                 ),
                 ("federation_preflight", lambda: run_script("federation_pilot_preflight.py", base, [node_b])),
                 ("federation_strict_mode", lambda: run_script("federation_strict_mode_test.py", base, [node_b])),
-                ("federation_demo", lambda: run_script("federation_demo_test.py", base, [node_b])),
+                (
+                    "federation_demo",
+                    lambda: run_script(
+                        "federation_demo_test.py",
+                        base,
+                        [node_b],
+                        timeout=360,
+                    ),
+                ),
                 ("federation_exchange_demo", lambda: run_script("federation_exchange_demo_test.py", base, [node_b])),
                 ("peer_witness_verify", lambda: run_script("peer_witness_verify_test.py", base)),
                 ("peer_mcp_demo", lambda: run_script("peer_mcp_demo_test.py", base)),

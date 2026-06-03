@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from models.entity import Entity, EntityStatus, EntityType
 from services.federation_community import ensure_federation_peer_entities, peer_entity_id
 from services.federation_peers import _get_json, probe_peer
-from services.trust_config import load_trusted_nodes, trusted_nodes_map
+from services.trust_config import trusted_nodes_map
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +53,27 @@ def fetch_peer_entity_catalog(
     return items[:limit] if limit else items
 
 
+def _resolve_peer_probe_url(db: Session, node_id: str) -> str:
+    """Resolve routable base URL for a peer (trusted config or discovered entity)."""
+    peer = trusted_nodes_map().get(node_id)
+    if peer is not None:
+        return peer.base_url.rstrip("/")
+
+    row = db.get(Entity, peer_entity_id(node_id))
+    if row is None:
+        raise ValueError(f"node_id {node_id} not in POCP_TRUSTED_NODES or discovered peers")
+
+    meta = row.metadata_ or {}
+    roles = meta.get("roles") or []
+    if "federation_peer" not in roles and "discovered_peer" not in roles:
+        raise ValueError(f"node_id {node_id} is not a federation peer")
+
+    base_url = (meta.get("probe_base_url") or meta.get("base_url") or "").rstrip("/")
+    if not base_url:
+        raise ValueError(f"node_id {node_id} has no base_url in metadata")
+    return base_url
+
+
 def mirror_peer_entities(
     db: Session,
     node_id: str,
@@ -61,13 +82,14 @@ def mirror_peer_entities(
     limit: int = 200,
 ) -> dict[str, Any]:
     """
-    Register trusted peer node entities locally as mirrored shadows.
+    Register trusted or discovered peer node entities locally as mirrored shadows.
     - Federation peer → community Entity (node shell)
     - Remote skills/agents/... → local Entity rows with home_node_id metadata
     """
-    peer = trusted_nodes_map().get(node_id)
-    if peer is None:
-        raise ValueError(f"node_id {node_id} not in POCP_TRUSTED_NODES")
+    peer_base_url = _resolve_peer_probe_url(db, node_id)
+    probe = probe_peer(peer_base_url)
+    if not probe.get("reachable"):
+        raise ValueError(probe.get("error") or f"Peer {node_id} not reachable at {peer_base_url}")
 
     ensure_federation_peer_entities(db)
 
@@ -79,7 +101,7 @@ def mirror_peer_entities(
 
     for et in types:
         try:
-            catalog = fetch_peer_entity_catalog(peer.base_url, entity_type=et, limit=limit)
+            catalog = fetch_peer_entity_catalog(peer_base_url, entity_type=et, limit=limit)
         except Exception as exc:
             logger.warning("mirror fetch %s type=%s failed: %s", node_id, et, exc)
             continue
@@ -100,7 +122,7 @@ def mirror_peer_entities(
                 "home_node_id": node_id,
                 "remote_entity_id": remote_id,
                 "portable_id": portable,
-                "peer_base_url": peer.base_url.rstrip("/"),
+                "peer_base_url": peer_base_url,
                 "peer_entity_id": peer_entity_id(node_id),
                 "mirror_synced_at": datetime.now(timezone.utc).isoformat(),
             }
@@ -144,7 +166,7 @@ def mirror_peer_entities(
     return {
         "schema": "pocp.federation_entity_mirror.v0.1",
         "node_id": node_id,
-        "peer_base_url": peer.base_url,
+        "peer_base_url": peer_base_url,
         "created": created,
         "updated": updated,
         "skipped": skipped,

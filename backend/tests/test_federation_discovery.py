@@ -86,6 +86,17 @@ class FederationDiscoveryRouterTests(unittest.TestCase):
         self.assertEqual(data["schema"], FEDERATION_PEER_MANIFEST_SCHEMA)
         self.assertTrue(data.get("handshake"))
 
+    def test_bootstrap_example_route(self):
+        from fastapi.testclient import TestClient
+        from main import app
+
+        client = TestClient(app)
+        resp = client.get("/api/v1/federation/bootstrap/example")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["schema"], "pocp.federation_bootstrap.v0.1")
+        self.assertTrue(data.get("known_peers"))
+
     def test_skill_node_template_route(self):
         from fastapi.testclient import TestClient
         from main import app

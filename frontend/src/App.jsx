@@ -619,80 +619,56 @@ export default function App() {
       )}
 
       {tab === "chat" && (
-        <section className="panel">
-          <AdvisoryBanner />
-          <h2 className="panel__title section-heading--ai">AI Node</h2>
-          <p className="panel__subtitle">
-            {chatQuote
-              ? `Each message burns ${chatQuote.cost} AI Credits · ${chatQuote.allowed ? `${chatQuote.current_balance} BC available` : "insufficient balance"}`
-              : "Each message burns AI Credits · Mock provider when no API key configured"}{" "}
-            · AI is witness, not ruler
-          </p>
+        <>
           <NetworkNodesPanel
             fetchJson={fetchJson}
             onSelectEntity={openEntity}
             onRefreshGraph={() => goToTab("graph")}
           />
-          {!profile ? (
-            <p className="empty-state">Dev Login first to access the AI node.</p>
-          ) : (
-            <>
-              <textarea
-                className="field-textarea"
-                value={chatMessage}
-                onChange={(e) => setChatMessage(e.target.value)}
-                rows={4}
-                placeholder="Query the contribution network…"
-              />
-              <div style={{ marginTop: 12 }}>
-                <button
-                  type="button"
-                  className="btn btn--ai"
-                  onClick={sendChat}
-                  disabled={chatLoading || !chatMessage.trim() || chatQuote?.allowed === false}
-                >
-                  {chatLoading
-                    ? "Transmitting…"
-                    : `Send · ${chatQuote?.cost ?? "?"} Credits`}
-                </button>
-                {chatQuote?.allowed === false && (
-                  <p className="wallet-audit-hint wallet-audit-hint--bad" style={{ marginTop: 8 }}>
-                    Insufficient AI Credits — contribute or check Wallet tab
-                  </p>
-                )}
-              </div>
-              {chatReply && (
-                <div className="chat-reply">
-                  <div className="chat-reply__meta">
-                    {chatReply.provider}/{chatReply.model} · spent {chatReply.credits_spent} · remaining{" "}
-                    {chatReply.remaining_credits}
-                  </div>
-                  <div className="chat-reply__body">{chatReply.reply}</div>
+          <details className="panel" style={{ marginTop: 0 }}>
+            <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--ai)" }}>
+              Advisory query (optional)
+            </summary>
+            <AdvisoryBanner />
+            <p className="panel__subtitle" style={{ marginTop: 8 }}>
+              {chatQuote
+                ? `Each message burns ${chatQuote.cost} AI Credits · ${chatQuote.allowed ? `${chatQuote.current_balance} BC available` : "insufficient balance"}`
+                : "Each message burns AI Credits · Mock provider when no API key configured"}{" "}
+              · AI is witness, not ruler
+            </p>
+            {!profile ? (
+              <p className="empty-state">Dev Login to use advisory query.</p>
+            ) : (
+              <>
+                <textarea
+                  className="field-textarea"
+                  value={chatMessage}
+                  onChange={(e) => setChatMessage(e.target.value)}
+                  rows={3}
+                  placeholder="Query the contribution network…"
+                />
+                <div style={{ marginTop: 12 }}>
+                  <button
+                    type="button"
+                    className="btn btn--ai"
+                    onClick={sendChat}
+                    disabled={chatLoading || !chatMessage.trim() || chatQuote?.allowed === false}
+                  >
+                    {chatLoading ? "Transmitting…" : `Send · ${chatQuote?.cost ?? "?"} Credits`}
+                  </button>
                 </div>
-              )}
-              {aiUsage.length > 0 && (
-                <div style={{ marginTop: 20 }}>
-                  <h3 style={{ fontSize: "0.85rem", marginBottom: 8, color: "var(--ai)" }}>Usage History</h3>
-                  {aiUsage.slice(0, 10).map((u) => (
-                    <div key={u.id} className="mini-card mini-card--credits">
-                      <span style={{ color: "var(--text-dim)", fontFamily: "var(--mono)", fontSize: "0.72rem" }}>
-                        {u.provider}/{u.model}
-                      </span>
-                      {" · "}
-                      <span style={{ color: "var(--ai)" }}>-{u.credits_spent} Credits</span>
-                      {(u.prompt || u.prompt_preview) && (
-                        <div style={{ fontSize: "0.8rem", marginTop: 4, color: "var(--text-muted)" }}>
-                          {(u.prompt || u.prompt_preview).slice(0, 80)}
-                          {(u.prompt || u.prompt_preview).length > 80 ? "…" : ""}
-                        </div>
-                      )}
+                {chatReply && (
+                  <div className="chat-reply" style={{ marginTop: 12 }}>
+                    <div className="chat-reply__meta">
+                      {chatReply.provider}/{chatReply.model} · spent {chatReply.credits_spent}
                     </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </section>
+                    <div className="chat-reply__body">{chatReply.reply}</div>
+                  </div>
+                )}
+              </>
+            )}
+          </details>
+        </>
       )}
 
       {tab === "studio" && (

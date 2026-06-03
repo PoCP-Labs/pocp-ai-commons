@@ -1,0 +1,36 @@
+{
+  "schema": "pocp.federation_bootstrap.v0.1",
+  "spec_version": "0.1",
+  "updated_at": "2026-06-03T00:00:00Z",
+  "description": "PoCP DNS-seed analogue — publish this JSON at a stable HTTPS URL and set POCP_PEER_BOOTSTRAP_URL.",
+  "known_peers": [
+    {
+      "node_id": "node-a",
+      "base_url": "http://localhost:8100",
+      "source": "demo",
+      "note": "Local federation demo (docker-compose.federation.yml backend-a)"
+    },
+    {
+      "node_id": "node-b",
+      "base_url": "http://localhost:8101",
+      "source": "demo",
+      "note": "Local federation demo (docker-compose.federation.yml backend-b)"
+    }
+  ],
+  "seeds": [
+    "http://192.168.1.50:8008",
+    "https://pocp-peer.example.com"
+  ],
+  "bootstrap_peers": [
+    {
+      "node_id": "community-hub",
+      "base_url": "https://hub.pocp.example.com",
+      "trust_weight": 0.7
+    }
+  ],
+  "policy": {
+    "min_crypto_suite": "pocp-crypto-v0.2-hybrid",
+    "require_https_for_public": true,
+    "comment": "Informational only — consuming nodes still probe + score before trust"
+  }
+}

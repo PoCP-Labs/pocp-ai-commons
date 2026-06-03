@@ -31,6 +31,48 @@ def load_trusted_nodes_from_yaml(path: Path | None = None) -> list[TrustedNode]:
     return _parse_nodes(data.get("trusted_nodes") or [])
 
 
+def clear_trusted_nodes_cache() -> None:
+    load_trusted_nodes_from_yaml.cache_clear()
+
+
+def is_node_trusted(node_id: str) -> bool:
+    return node_id in trusted_nodes_map()
+
+
+def append_trusted_node_to_yaml(node: TrustedNode, path: Path | None = None) -> bool:
+    """Append a peer to trusted_nodes.yaml (idempotent). Returns True if newly added."""
+    config_path = path or _CONFIG_PATH
+    if config_path.exists():
+        with config_path.open(encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+    else:
+        data = {"spec_version": "0.1", "trusted_nodes": []}
+
+    nodes_raw = list(data.get("trusted_nodes") or [])
+    if any(isinstance(n, dict) and n.get("node_id") == node.node_id for n in nodes_raw):
+        return False
+
+    entry: dict = {
+        "node_id": node.node_id,
+        "base_url": node.base_url.rstrip("/"),
+        "trust_weight": float(node.trust_weight),
+    }
+    if node.public_key:
+        entry["public_key"] = node.public_key
+    if node.pqc_public_key:
+        entry["pqc_public_key"] = node.pqc_public_key
+    nodes_raw.append(entry)
+    data["trusted_nodes"] = nodes_raw
+    data.setdefault("spec_version", "0.1")
+
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    with config_path.open("w", encoding="utf-8") as f:
+        yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
+
+    clear_trusted_nodes_cache()
+    return True
+
+
 def load_trusted_nodes_from_env() -> list[TrustedNode]:
     raw = os.getenv("POCP_TRUSTED_NODES", "").strip()
     if not raw:

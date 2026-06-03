@@ -52,10 +52,62 @@ Set `require_trust_bundle_match: true` to fail when bundle fingerprints differ (
 | Variable | Role |
 |----------|------|
 | `POCP_PEER_DISCOVERY_SEEDS` | JSON list or comma-separated URLs for `POST /federation/peers/auto-discover` |
+| `POCP_PEER_BOOTSTRAP_URL` | HTTPS URL of bootstrap JSON (`known_peers` / `seeds`) — DNS-seed analogue |
+| `POCP_PEER_ADDR_RELAY` | Pull `known_peers` from connected peer manifests during auto-discover |
+| `POCP_PEER_AUTO_PROMOTE` | Promote high-score peers to `trusted_nodes.yaml` after repeated healthy probes |
 | `POCP_PEER_COMPUTE_SECRET` | Shared secret for BI-2 HMAC handshake (witness / inference / MCP) |
 | `POCP_PEER_HANDSHAKE_MODE` | `shared_secret` (default) or `challenge` |
 | `POCP_PEER_HANDSHAKE_TTL_SECONDS` | Nonce TTL (default 300) |
 | `POCP_TRUSTED_NODES` | Trusted peer list for mirror / manifest fetch by `node_id` |
+
+---
+
+## Bootstrap JSON (DNS seed)
+
+Template: [`backend/config/pocp-bootstrap.example.json`](../backend/config/pocp-bootstrap.example.json)
+
+Publish at a stable URL (GitHub raw, S3, nginx static) and set:
+
+```env
+POCP_PEER_BOOTSTRAP_URL=https://your-domain.com/pocp-bootstrap.json
+```
+
+**Local dev** (no external hosting):
+
+```env
+POCP_PEER_BOOTSTRAP_URL=http://host.docker.internal:8008/api/v1/federation/bootstrap/example
+```
+
+Supported fields (any subset):
+
+| Field | Purpose |
+|-------|---------|
+| `known_peers` | `[{node_id, base_url}, …]` or URL strings |
+| `seeds` | Plain URL list |
+| `bootstrap_peers` | Same as `known_peers` (alias) |
+
+Consuming nodes still **probe + score** before trust — bootstrap only supplies candidate URLs.
+
+Example minimal public file:
+
+```json
+{
+  "schema": "pocp.federation_bootstrap.v0.1",
+  "known_peers": [
+    {"node_id": "hub", "base_url": "https://pocp-hub.example.com"}
+  ],
+  "seeds": ["https://peer-a.example.com", "https://peer-b.example.com"]
+}
+```
+
+Verify bootstrap is loaded during auto-discover:
+
+```powershell
+Invoke-RestMethod -Method POST -Uri "http://localhost:8008/api/v1/federation/peers/auto-discover" `
+  -ContentType "application/json" `
+  -Body '{"candidate_urls":[],"include_localhost_scan":false,"max_candidates":24}'
+# Response includes bootstrap_candidates count when POCP_PEER_BOOTSTRAP_URL is set
+```
 
 ---
 
@@ -66,6 +118,6 @@ python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8100 --federat
 cd backend && python -m pytest tests/test_federation_discovery.py -q
 ```
 
-Federation acceptance runs `federation_peer_manifest` and `federation_peer_handshake` before preflight/demo scripts.
+Federation acceptance runs `federation_peer_manifest` and `federation_peer_handshake` before preflight/demo scripts. The dual-node `federation_demo` step can exceed three minutes on a warm ledger; the acceptance runner allows up to 360s for that subprocess.
 
 **Docker federation compose:** `POST /peers/handshake` on node A must use a `peer_base_url` reachable from the API container (e.g. `http://backend-b:8000` in `POCP_TRUSTED_NODES`). Host acceptance (`run_phase_a_acceptance.py`) validates manifests and discovery from the runner using published ports (`8100` / `8101`).

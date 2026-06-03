@@ -56,7 +56,7 @@ def build_federation_network_overview(db: Session, *, satellite_limit: int = 36)
             "name": row.get("name") or node_id,
             "is_local": bool(row.get("is_local")),
             "kind": "local" if row.get("is_local") else "peer",
-            "base_url": meta.get("base_url"),
+            "base_url": meta.get("public_base_url") or meta.get("base_url"),
             "trust_weight": meta.get("trust_weight"),
             "mirror_count": mirror_counts.get(node_id, 0) if node_id else 0,
             "metadata": meta,
@@ -70,12 +70,20 @@ def build_federation_network_overview(db: Session, *, satellite_limit: int = 36)
             continue
         eid = row.id
         node_id = meta.get("node_id") or ""
+        book = meta.get("peer_addrbook") or {}
+        from services.federation_peer_addrbook import promotion_eligible
+
+        promo_eligible = promotion_eligible(book, ledger_valid=book.get("ledger_valid"))
         if eid in nodes_by_id:
             nodes_by_id[eid]["configured"] = bool(nodes_by_id[eid].get("configured"))
             nodes_by_id[eid]["mirror_count"] = max(
                 int(nodes_by_id[eid].get("mirror_count") or 0),
                 int(mirror_counts.get(node_id, 0)),
             )
+            nodes_by_id[eid]["peer_score"] = book.get("score")
+            nodes_by_id[eid]["peer_banned"] = bool(book.get("banned"))
+            nodes_by_id[eid]["promotion_eligible"] = promo_eligible
+            nodes_by_id[eid]["promoted_trusted"] = bool(book.get("promoted_trusted"))
             nodes_by_id[eid]["metadata"] = {**(nodes_by_id[eid].get("metadata") or {}), **meta}
             continue
         nodes_by_id[eid] = {
@@ -85,11 +93,15 @@ def build_federation_network_overview(db: Session, *, satellite_limit: int = 36)
             "name": row.name or f"Federation Peer · {node_id or 'unknown'}",
             "is_local": False,
             "kind": "peer",
-            "base_url": meta.get("base_url"),
+            "base_url": meta.get("public_base_url") or meta.get("base_url"),
             "trust_weight": meta.get("trust_weight"),
             "mirror_count": mirror_counts.get(node_id, 0) if node_id else 0,
             "configured": False,
             "discovered": True,
+            "peer_score": (meta.get("peer_addrbook") or {}).get("score"),
+            "peer_banned": bool(book.get("banned")),
+            "promotion_eligible": promo_eligible,
+            "promoted_trusted": bool(book.get("promoted_trusted")),
             "metadata": meta,
         }
 
@@ -195,12 +207,19 @@ def build_federation_network_overview(db: Session, *, satellite_limit: int = 36)
             )
 
     trusted = load_trusted_nodes()
+    discovered_count = sum(
+        1
+        for row in db.query(Entity).filter(Entity.status == EntityStatus.active).all()
+        if "discovered_peer" in ((row.metadata_ or {}).get("roles") or [])
+    )
     return {
         "schema": "pocp.federation_network_overview.v0.1",
         "local_node_id": os.getenv("POCP_NODE_ID", _LOCAL_NODE_ID),
         "local_entity_id": local_id,
         "trust_source": trusted_nodes_source(),
         "trusted_peer_count": len(trusted),
+        "discovered_peer_count": discovered_count,
+        "peer_count": max(discovered_count, len([n for n in nodes if not n.get("is_local")])),
         "node_count": len(nodes),
         "mirror_count": len(satellites),
         "satellite_limit": satellite_limit,

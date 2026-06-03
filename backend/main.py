@@ -89,6 +89,41 @@ async def _compute_auto_balance_loop() -> None:
             db.close()
 
 
+async def _federation_peer_maintenance_loop() -> None:
+    """Re-probe discovered peers and refresh addrbook (Bitcoin AddrMan maintenance)."""
+    from services.federation_peer_addrbook import maintain_discovered_peers, peer_maintenance_enabled
+    from services.node_mode import is_read_only_mirror
+
+    try:
+        interval = int(os.getenv("POCP_PEER_MAINTENANCE_INTERVAL_SEC", "120"))
+    except ValueError:
+        interval = 120
+    interval = max(30, interval)
+    while True:
+        await asyncio.sleep(interval)
+        if not peer_maintenance_enabled():
+            continue
+        if is_read_only_mirror():
+            continue
+        db = SessionLocal()
+        try:
+            summary = maintain_discovered_peers(db)
+            db.commit()
+            if summary.get("probed", 0) > 0:
+                logger.info(
+                    "Peer maintenance: probed=%s ok=%s failed=%s banned=%s",
+                    summary.get("probed"),
+                    summary.get("ok"),
+                    summary.get("failed"),
+                    summary.get("banned"),
+                )
+        except Exception as exc:
+            logger.warning("Peer maintenance cycle failed: %s", exc)
+            db.rollback()
+        finally:
+            db.close()
+
+
 async def _federation_auto_discover_loop() -> None:
     """Periodic peer discovery (Bitcoin-style addr discovery analogue)."""
     from routers.federation import AutoDiscoverPeersIn, auto_discover_peers
@@ -287,13 +322,17 @@ async def lifespan(app: FastAPI):
         logger.info("Compute auto-balance background loop started")
 
     discovery_task: asyncio.Task | None = None
+    maintenance_task: asyncio.Task | None = None
     if os.getenv("POCP_PEER_AUTO_DISCOVER", "false").lower() in ("1", "true", "yes", "on"):
         discovery_task = asyncio.create_task(_federation_auto_discover_loop())
         logger.info("Federation peer auto-discovery loop started")
+    if os.getenv("POCP_PEER_MAINTENANCE", "true").lower() in ("1", "true", "yes", "on"):
+        maintenance_task = asyncio.create_task(_federation_peer_maintenance_loop())
+        logger.info("Federation peer maintenance loop started")
 
     yield
 
-    for task in (discovery_task, balance_task, cursor_task, super_loop_task):
+    for task in (discovery_task, maintenance_task, balance_task, cursor_task, super_loop_task):
         if task is not None:
             task.cancel()
             try:

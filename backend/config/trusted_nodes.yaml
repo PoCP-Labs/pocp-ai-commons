@@ -1,4 +1,10 @@
-spec_version: "0.1"
-# Trusted peer nodes for federation import/sync.
-# Changes require PR review — env POCP_TRUSTED_NODES overrides this file at runtime.
-trusted_nodes: []
+spec_version: '0.1'
+trusted_nodes:
+- node_id: node-a
+  base_url: http://localhost:8100
+  trust_weight: 0.8
+  public_key: 10bf1077744a098c56503c15dd5caef931b764fcaf9a08febc4ed1031e40e67e
+- node_id: node-b
+  base_url: http://localhost:8101
+  trust_weight: 0.8
+  public_key: 736f142b13c5e4f6a9d77595559ff1531afeb41c21386bf93d7d0bc6006e93ba
