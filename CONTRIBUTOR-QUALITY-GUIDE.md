@@ -49,6 +49,14 @@ cd backend && python -m pytest -q tests/test_entity_dialogue.py
 
 Spec: [docs/protocol/ENTITY-DIALOGUE-PROTOCOL.md](./docs/protocol/ENTITY-DIALOGUE-PROTOCOL.md) · Mission: [agents/missions/protocol-layer-edp/MANIFEST.md](./agents/missions/protocol-layer-edp/MANIFEST.md).
 
+**Capability Internet skeleton (CIP — parallel track, in-memory):**
+
+```bash
+python backend/scripts/minimum_living_network.py
+```
+
+Does not replace Phase A acceptance. Spec index: [docs/protocol/README.md](./docs/protocol/README.md) · Mission: [agents/missions/capability-internet/MANIFEST.md](./agents/missions/capability-internet/MANIFEST.md).
+
 ## Code Rules
 
 - Keep code readable.

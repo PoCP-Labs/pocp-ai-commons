@@ -4,6 +4,7 @@ from statistics import median
 from sqlalchemy.orm import Session
 
 from models.contribution import AiVerifierResult, ContributionEvent, ContributionStatus
+from services.contribution_verification_network import attach_verifier_node, resolve_verifier_node
 from services.llm_language import infer_context_language
 from services.provenance import provenance_from_evidence
 from services.verifier_registry import load_verifier_providers
@@ -105,4 +106,5 @@ class MultiVerifierService:
 
         contribution.status = ContributionStatus.ai_verified if passed else ContributionStatus.submitted
         db.flush()
-        return consensus
+        verifier_snapshot = resolve_verifier_node(db)
+        return attach_verifier_node(consensus, verifier_snapshot)

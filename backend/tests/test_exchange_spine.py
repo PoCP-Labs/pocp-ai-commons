@@ -95,6 +95,7 @@ class ExchangeSpineTests(unittest.TestCase):
         ref = payload.get("invocation_ref") or {}
         self.assertTrue(ref.get("invocation_id"))
         self.assertEqual(ref.get("settlement_ref"), payload.get("exchange_id"))
+        self.assertTrue(payload.get("invocation_chain_digest"))
 
         rows = self.db.query(LedgerRecord).filter(LedgerRecord.event_type == "exchange_settled").all()
         self.assertEqual(len(rows), 1)

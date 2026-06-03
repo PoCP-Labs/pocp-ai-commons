@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import Any
+
 
 @dataclass
 class NodeProfileData:
@@ -9,11 +11,10 @@ class NodeProfileData:
     node_type: str
     public_key: str | None = None
     base_url: str | None = None
-    p2p_address: str | None = None
     health_url: str | None = None
-    protocol_version: str = "pocp-node-v0.1"
     status: str = "registered"
     metadata: dict[str, Any] = field(default_factory=dict)
+
 
 @dataclass
 class CapabilityData:
@@ -28,6 +29,7 @@ class CapabilityData:
     availability: str = "available"
     risk_level: str = "low"
 
+
 @dataclass
 class InvocationData:
     invocation_id: str
@@ -41,18 +43,20 @@ class InvocationData:
     cost_amount: float = 0.0
     status: str = "created"
 
+
 @dataclass
 class ProofData:
     proof_id: str
     entity_id: str
     proof_type: str
+    invocation_id: str | None = None
     node_id: str | None = None
     task_id: str | None = None
-    invocation_id: str | None = None
     input_hash: str | None = None
     output_hash: str | None = None
     evidence_ref: str | None = None
     signature: str | None = None
+
 
 @dataclass
 class VerificationData:
@@ -65,6 +69,7 @@ class VerificationData:
     reason: str = ""
     status: str = "pending"
 
+
 @dataclass
 class SettlementParticipantData:
     entity_id: str
@@ -72,6 +77,7 @@ class SettlementParticipantData:
     unit: str
     amount: float
     reason: str
+
 
 @dataclass
 class SettlementData:
@@ -82,6 +88,7 @@ class SettlementData:
     verification_id: str | None = None
     status: str = "pending"
 
+
 @dataclass
 class TokenAccountData:
     entity_id: str
@@ -89,6 +96,7 @@ class TokenAccountData:
     ai_credit_balance: float = 0.0
     compute_credit_balance: float = 0.0
     pocp_token_balance_internal: float = 0.0
+
 
 @dataclass
 class ReputationData:
@@ -99,19 +107,12 @@ class ReputationData:
     failure_count: int = 0
     dispute_count: int = 0
 
-@dataclass
-class GraphEdgeData:
-    source_id: str
-    target_id: str
-    edge_type: str
 
 @dataclass
 class ProtocolEventData:
     event_id: str
     event_type: str
     entity_id: str
-    node_id: str | None
-    payload_hash: str
-    timestamp: str
-    nonce: str
+    payload_ref: str
+    node_id: str | None = None
     signature: str | None = None

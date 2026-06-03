@@ -12,6 +12,8 @@ from sqlalchemy.orm import Session
 
 from models.contribution import ContributionEvent, ContributionStatus
 from models.contribution_dispute import ContributionDispute, DisputeKind, DisputeStatus
+from services.contribution_verification_network import resolve_verifier_node
+from services.entity.schemas import LOCAL_VERIFIER_NODE_ID
 from services.evidence import hash_evidence
 from services.ledger_chain import append_ledger_record
 
@@ -94,6 +96,7 @@ def challenge_contribution(
     )
     db.add(dispute)
     contribution.status = ContributionStatus.challenged
+    verifier = resolve_verifier_node(db)
     append_ledger_record(
         db,
         contribution_id=contribution.id,
@@ -103,6 +106,7 @@ def challenge_contribution(
             "challenger_entity_id": challenger_entity_id,
             "reason": reason,
             "evidence_hash": evidence_hash,
+            "verifier_node_id": (verifier or {}).get("entity_id", LOCAL_VERIFIER_NODE_ID),
         },
     )
     db.flush()

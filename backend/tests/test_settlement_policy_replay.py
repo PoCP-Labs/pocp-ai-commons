@@ -1,4 +1,4 @@
-"""PR-B — settlement policy versioning and offline replay."""
+"""CI-12 — settlement policy replay + protocol economy metering audit."""
 
 import unittest
 
@@ -17,6 +17,12 @@ from services.settlement_policy import (
     replay_bilateral_quote,
     replay_flat_debit_quote,
 )
+from services.token_measurement.audit import (
+    audit_metering_units,
+    audit_protocol_economy,
+    audit_settlement_policy_config,
+)
+from services.token_measurement.no_token_guard import lex_compliance_report
 
 
 class SettlementPolicyReplayTests(unittest.TestCase):
@@ -114,6 +120,29 @@ class SettlementPolicyReplayTests(unittest.TestCase):
         quote = replay_flat_debit_quote(policy_id="ai_chat.v1")
         self.assertTrue(quote["valid"])
         self.assertEqual(quote["consumer_amount"], quote["provider_amount"])
+
+
+class SettlementPolicyMeteringAuditTests(unittest.TestCase):
+    def test_metering_units_audit(self):
+        result = audit_metering_units()
+        self.assertTrue(result["valid"], result.get("issues"))
+        self.assertEqual(set(result["supported_units"]), {"AIC", "CC", "CP", "PT"})
+        self.assertEqual(result["wallet_field_for_metering"], "ai_credits")
+
+    def test_settlement_policy_config_audit(self):
+        result = audit_settlement_policy_config()
+        self.assertTrue(result["valid"], result.get("issues"))
+        self.assertGreaterEqual(result["policy_count"], 3)
+        self.assertIn("CP", result["accounting_units"])
+
+    def test_lex_no_token_first_passes(self):
+        report = lex_compliance_report()
+        self.assertEqual(report["verdict"], "PASS", report.get("findings"))
+        self.assertTrue(report["valid"])
+
+    def test_protocol_economy_audit_combined(self):
+        audit = audit_protocol_economy()
+        self.assertTrue(audit["valid"], audit)
 
 
 if __name__ == "__main__":

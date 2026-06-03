@@ -75,11 +75,19 @@ def main() -> int:
     init_db()
     db = SessionLocal()
     try:
-        health = probe_platform(db)
-        if health.get("ok"):
+        health = None
+        for attempt in range(1, 4):
+            health = probe_platform(db)
+            if health.get("ok"):
+                break
+            if attempt < 3:
+                import time
+
+                time.sleep(5)
+        if health and health.get("ok"):
             _ok(f"platform healthy ({health.get('api', {}).get('base')})")
         else:
-            for issue in health.get("issues") or []:
+            for issue in (health or {}).get("issues") or []:
                 _fail(issue)
             errors += 1
     finally:

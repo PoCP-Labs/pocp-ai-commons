@@ -6,15 +6,20 @@ Set-Location $Root
 
 $LogDir = Join-Path $Root "logs"
 $LogFile = Join-Path $LogDir "agent-studio-automation.log"
+$ErrFile = Join-Path $LogDir "agent-studio-automation.err.log"
 $PidFile = Join-Path $LogDir "agent-studio-automation.pid"
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
 if (Test-Path $PidFile) {
   $oldPid = Get-Content $PidFile -ErrorAction SilentlyContinue
   if ($oldPid -and (Get-Process -Id $oldPid -ErrorAction SilentlyContinue)) {
-    Write-Host "Agent Studio automation already running (PID $oldPid). Log: $LogFile"
-    exit 0
+    $cmd = (Get-CimInstance Win32_Process -Filter "ProcessId=$oldPid" -ErrorAction SilentlyContinue).CommandLine
+    if ($cmd -like "*run_studio_super_loop_worker*") {
+      Write-Host "Agent Studio automation already running (PID $oldPid)."
+      exit 0
+    }
   }
+  Remove-Item $PidFile -Force -ErrorAction SilentlyContinue
 }
 
 Write-Host "=== 1/4 Docker stack (postgres + backend + frontend) ==="
@@ -35,6 +40,7 @@ if (-not $healthy) {
 
 Write-Host "=== 3/4 Restart backend (apply host-mode env) ==="
 docker compose restart backend | Out-Null
+Start-Sleep -Seconds 12
 
 $env:DATABASE_URL = "postgresql+psycopg://pocp:pocp@127.0.0.1:5435/pocp"
 $env:POCP_REPO_ROOT = $Root
@@ -46,23 +52,30 @@ $env:POCP_NEXUS_AUTOPILOT = "true"
 $env:POCP_STUDIO_AUTO_EVOLVE = "true"
 
 Write-Host "=== 4/4 Pre-flight + start host worker ==="
-py -3.12 backend/scripts/check_studio_super_loop.py
-if ($LASTEXITCODE -ne 0) { exit 1 }
+$preflightOk = $false
+for ($try = 1; $try -le 5; $try++) {
+  py -3.12 backend/scripts/check_studio_super_loop.py
+  if ($LASTEXITCODE -eq 0) {
+    $preflightOk = $true
+    break
+  }
+  Write-Host "Pre-flight attempt $try failed — retry in 8s (backend may still be starting)..."
+  Start-Sleep -Seconds 8
+}
+if (-not $preflightOk) { exit 1 }
 
-$workerScript = Join-Path $Root "scripts\run-studio-super-loop.ps1"
-$proc = Start-Process -FilePath "powershell.exe" `
-  -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $workerScript `
+$workerPy = Join-Path $Root "backend\scripts\run_studio_super_loop_worker.py"
+$proc = Start-Process -FilePath "py" `
+  -ArgumentList "-3.12", $workerPy `
   -WorkingDirectory $Root `
-  -WindowStyle Minimized `
-  -RedirectStandardOutput $LogFile `
-  -RedirectStandardError $LogFile `
+  -WindowStyle Hidden `
   -PassThru
 
 $proc.Id | Set-Content $PidFile
 Write-Host ""
 Write-Host "Agent Studio automation STARTED"
 Write-Host "  PID:      $($proc.Id)"
-Write-Host "  Log:      $LogFile"
+Write-Host "  Log hint: redirect with  py -3.12 backend/scripts/run_studio_super_loop_worker.py 2>&1 | Tee-Object $LogFile"
 Write-Host "  UI:       http://localhost:3000/?tab=studio"
 Write-Host "  API:      http://localhost:8008/api/v1/agent-studio/automation/status"
 Write-Host ""

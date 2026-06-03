@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The minimum living network proves that PoCP is a protocol network, not just a platform.
+The minimum living network proves that PoCP can evolve from an AI Commons app into a capability network.
 
 ## Nodes
 
@@ -12,44 +12,36 @@ Node B: Public Skill Node
 Node C: Verifier / Reviewer Node
 ```
 
-## Capability
+## First Capability
 
 ```text
 code_review
 ```
 
-## Flow
+## Required Flow
 
 ```text
-1. Human / Agent Node creates task.
-2. Public Skill Node publishes code_review capability.
-3. Agent Node discovers Skill Node.
-4. Agent Node performs handshake with Skill Node.
-5. Agent Node sends signed invocation.
-6. Skill Node returns output_hash.
-7. Skill Node submits proof.
-8. Verifier Node performs AI advisory verification.
-9. Reviewer Node performs accountable review.
-10. Settlement event distributes CP / AIC.
-11. TokenAccount updates.
-12. ReputationGraph updates.
-13. Protocol events are emitted.
+1. Skill Entity registers a NodeProfile.
+2. Skill Node publishes code_review Capability.
+3. Agent discovers the Capability.
+4. Agent creates Invocation.
+5. Skill Node produces output_hash.
+6. Skill Node submits Proof.
+7. Verifier performs AI advisory verification.
+8. Settlement distributes CP / AIC.
+9. TokenAccount updates.
+10. Reputation updates.
+11. ProtocolEvent log records each step.
 ```
 
 ## Success Criteria
 
 ```text
-Entity exists.
-Node exists.
-Capability exists.
-Discovery works.
-Handshake works.
-Invocation exists.
-Proof exists.
-Verification exists.
-Settlement exists.
+Capability can be discovered.
+Invocation can be created.
+Proof requires invocation_id.
+Settlement requires approved verification.
 TokenAccount updates.
 Reputation updates.
-Graph shows chain.
-ProtocolEvent log exists.
+Protocol events are emitted.
 ```

@@ -14,6 +14,8 @@ import yaml
 from services.protocol_config import get_rewards_config
 
 _POLICIES_PATH = Path(__file__).resolve().parent.parent / "config" / "settlement_policies.yaml"
+# Alias referenced in CI-12 handoffs and Agent Studio missions (`settlement_policy.yaml`).
+_POLICY_ALIAS_PATH = Path(__file__).resolve().parent.parent / "config" / "settlement_policy.yaml"
 POLICY_SPEC = "pocp.settlement_policy.v0.1"
 
 
@@ -28,9 +30,10 @@ def policy_hash(policy_body: dict[str, Any]) -> str:
 
 @lru_cache(maxsize=1)
 def _load_policies_file() -> dict[str, Any]:
-    if not _POLICIES_PATH.is_file():
+    path = _POLICIES_PATH if _POLICIES_PATH.is_file() else _POLICY_ALIAS_PATH
+    if not path.is_file():
         return {"policies": {}}
-    with _POLICIES_PATH.open(encoding="utf-8") as handle:
+    with path.open(encoding="utf-8") as handle:
         return yaml.safe_load(handle) or {"policies": {}}
 
 

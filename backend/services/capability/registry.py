@@ -103,6 +103,7 @@ def search_capabilities(
     capability_type: str | None = None,
     entity_id: str | None = None,
     availability: str | None = None,
+    name: str | None = None,
     limit: int = 100,
 ) -> list[EntityCapability]:
     query = db.query(EntityCapability)
@@ -116,4 +117,6 @@ def search_capabilities(
         query = query.filter(
             EntityCapability.availability == _parse_enum(CapabilityAvailability, availability)
         )
+    if name:
+        query = query.filter(EntityCapability.name.ilike(f"%{name.strip()}%"))
     return query.order_by(EntityCapability.created_at.desc()).limit(limit).all()

@@ -97,6 +97,7 @@ class InvocationLedgerNormalizationTests(unittest.TestCase):
         self.assertTrue(validate_invocation_ref(ref)["valid"], ref)
         self.assertEqual(ref.get("settlement_ref"), payload.get("exchange_id"))
         self.assertEqual(ref.get("receipt_hash"), "sha256:abc")
+        self.assertTrue(payload.get("invocation_chain_digest"))
 
     def test_compute_settlement_links_trace_id(self):
         trace = InvocationTrace(
@@ -144,6 +145,7 @@ class InvocationLedgerNormalizationTests(unittest.TestCase):
         ref = payload.get("invocation_ref") or {}
         self.assertEqual(ref.get("trace_id"), trace.id)
         self.assertEqual(payload.get("invocation_trace_id"), trace.id)
+        self.assertTrue(payload.get("invocation_chain_digest"))
 
         integrity = verify_exchange_invocation_chain(self.db, result["exchange_id"])
         self.assertTrue(integrity["valid"], integrity)

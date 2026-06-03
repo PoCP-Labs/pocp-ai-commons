@@ -37,6 +37,7 @@ def _load_env() -> None:
         "DATABASE_URL", "postgresql+psycopg://pocp:pocp@127.0.0.1:5435/pocp"
     )
     os.environ.setdefault("POCP_CURSOR_AUTOMATION", "true")
+    os.environ.setdefault("POCP_CURSOR_SKIP_NEXUS_FOLLOWUP", "true")
 
 
 _load_env()
@@ -103,6 +104,11 @@ def main() -> int:
         action="store_true",
         help="Process one tick then exit (same as POCP_CURSOR_WORKER_ONCE=true)",
     )
+    parser.add_argument(
+        "--with-nexus",
+        action="store_true",
+        help="Run Nexus autopilot in step 1 and after tick (default: skip to avoid deadlocks)",
+    )
     args = parser.parse_args()
 
     verbose = args.verbose or os.getenv("POCP_STUDIO_VERBOSE", "false").lower() in (
@@ -111,6 +117,13 @@ def main() -> int:
         "yes",
     )
     once = args.once or os.getenv("POCP_CURSOR_WORKER_ONCE", "false").lower() == "true"
+    skip_nexus = not args.with_nexus and os.getenv(
+        "POCP_CURSOR_SKIP_NEXUS_FOLLOWUP", "true"
+    ).lower() in ("1", "true", "yes")
+    if skip_nexus:
+        os.environ["POCP_CURSOR_SKIP_NEXUS_FOLLOWUP"] = "true"
+    else:
+        os.environ["POCP_CURSOR_SKIP_NEXUS_FOLLOWUP"] = "false"
 
     if verbose:
         log_banner("Agent Studio - Cursor automation (verbose trial)")
@@ -135,14 +148,24 @@ def main() -> int:
     db = SessionLocal()
     try:
         if verbose:
-            log_step("Step 1/3", "Register Meta Agents + Nexus autopilot")
+            step1 = "Register Meta Agents" if skip_nexus else "Register Meta Agents + Nexus autopilot"
+            log_step("Step 1/3", step1)
         ensure_meta_agents(db)
-        nexus_tick = run_nexus_autopilot(db)
-        db.commit()
+        if not skip_nexus:
+            nexus_tick = run_nexus_autopilot(db)
+            db.commit()
+            if verbose:
+                _print_nexus_summary(nexus_tick)
+        else:
+            db.commit()
+            if verbose:
+                log_step("Nexus autopilot", "skipped (POCP_CURSOR_SKIP_NEXUS_FOLLOWUP)")
         if verbose:
-            _print_nexus_summary(nexus_tick)
             pending = count_pending_for_cursor(db)
             log_step("Step 2/3", f"{pending} handoff(s) ready for Cursor")
+    except Exception as exc:
+        db.rollback()
+        print(f"Step 1 warning (continuing): {exc}", flush=True)
     finally:
         db.close()
 

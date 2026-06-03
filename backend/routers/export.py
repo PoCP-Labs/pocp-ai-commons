@@ -18,7 +18,7 @@ from services.graph_merkle import (
 )
 from services.ledger_merkle import merkle_root
 from services.pow_export import build_pow_export
-from services.proof import build_contribution_proof_packet
+from services.proof import build_contribution_proof_packet, build_exchange_chain_export
 from services.protocol_config import get_rewards_config
 from services.issuance_budget import issuance_budget_status
 from services.verify_standalone import audit_remote_node, verify_ledger_export, verify_proof_integrity
@@ -325,6 +325,15 @@ def get_portable_entity(entity_id: str, db: Session = Depends(get_db)):
             for r in reputation
         ],
     )
+
+
+@router.get("/exchanges/{exchange_id}/chain-export")
+def get_exchange_chain_export(exchange_id: str, db: Session = Depends(get_db)):
+    """Invocation → proof → settlement in one portable export (CI-6/CI-7/CI-9)."""
+    packet = build_exchange_chain_export(db, exchange_id)
+    if packet is None:
+        raise HTTPException(status_code=404, detail="Exchange not found")
+    return packet
 
 
 @router.get("/contributions/{contribution_id}/proof", response_model=ContributionProofOut)

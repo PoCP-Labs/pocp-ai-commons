@@ -69,7 +69,10 @@ Schema: [CAPABILITY-SCHEMA-v0.3.md](./protocol/CAPABILITY-SCHEMA-v0.3.md).
 ```powershell
 python backend/scripts/audit_entities.py --repair
 python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8100 --federation http://127.0.0.1:8101
+python backend/scripts/minimum_living_network.py
 ```
+
+The CIP in-memory demo (`backend/services/cip/`) exercises the logical 12-layer chain without a running stack. It does **not** replace federation acceptance.
 
 Federation stack required for steps involving peer witness and exchange import — not single-node `:8008` alone.
 

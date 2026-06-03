@@ -30,18 +30,35 @@ def _max_per_tick() -> int:
         return 1
 
 
+_CI_SCOPE_TOKENS = (
+    "[ci-",
+    "[ci gate]",
+    "capability internet",
+    "protocol economy",
+    "minimum living network",
+)
+
+
+def _is_ci_scope(scope: str | None) -> bool:
+    text = (scope or "").lower()
+    return any(token in text for token in _CI_SCOPE_TOKENS)
+
+
 def pick_pending_handoffs(db: Session, *, limit: int = 5) -> list[AgentStudioHandoff]:
-    """Handoffs assignable to Cursor (domain agents, oldest first)."""
-    return (
+    """Handoffs assignable to Cursor — CI protocol work first, then oldest."""
+    rows = (
         db.query(AgentStudioHandoff)
         .filter(
             AgentStudioHandoff.status == StudioHandoffStatus.pending,
             AgentStudioHandoff.to_agent_entity_id != NEXUS_ID,
         )
         .order_by(AgentStudioHandoff.created_at.asc())
-        .limit(limit)
         .all()
     )
+    ci_rows = [h for h in rows if _is_ci_scope(h.scope)]
+    other_rows = [h for h in rows if h not in ci_rows]
+    ordered = ci_rows + other_rows
+    return ordered[:limit]
 
 
 def _mark_in_progress(db: Session, handoff: AgentStudioHandoff) -> None:
@@ -178,19 +195,27 @@ def run_cursor_automation_tick(
         try:
             processed.append(run_handoff_with_cursor(db, handoff, verbose=verbose))
         except Exception as exc:
+            db.rollback()
             errors.append(f"{handoff.id}: {exc}")
             try:
                 complete_handoff(db, handoff.id, status="blocked", blockers=str(exc)[:500])
+                db.flush()
             except Exception:
-                pass
-
-    from services.agent_studio.nexus_autopilot import run_nexus_autopilot
+                db.rollback()
 
     nexus_followup = None
-    if processed:
+    skip_nexus = os.getenv("POCP_CURSOR_SKIP_NEXUS_FOLLOWUP", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    if processed and not skip_nexus:
+        from services.agent_studio.nexus_autopilot import run_nexus_autopilot
+
         try:
             nexus_followup = run_nexus_autopilot(db)
         except Exception as exc:
+            db.rollback()
             errors.append(f"nexus follow-up: {exc}")
 
     payload = {

@@ -20,8 +20,7 @@ def main() -> int:
         "verification",
         "settlement",
         "accounts",
-        "reputation",
-        "graph_edges",
+        "skill_reputation",
         "events",
     ]
     missing = [key for key in required if key not in result]

@@ -2,17 +2,35 @@
 
 ## Definition
 
-PoCP Capability Internet Protocol is a decentralized contribution, invocation, settlement, and reputation protocol for AI capability and compute networks.
+PoCP Capability Internet Protocol is the decentralized contribution, invocation, settlement, and reputation protocol for AI capability and compute networks.
 
-It connects Humans, Agents, LLMs, Skills, Tools, Datasets, Workflows, Compute Nodes, Verifier Nodes, Reviewer Nodes, Organizations, Sponsors, and Treasuries into one protocol network.
+## Relationship to PoCP AI Commons
 
-## Core Thesis
+PoCP AI Commons is the first application scenario.
 
-AI-era value is no longer produced by one user or one model.
+It proves:
 
-A result may be created by many intelligent and computational entities.
+```text
+Contribution
+→ Verification
+→ CP / AI Credits
+→ AI Use
+```
 
-PoCP answers:
+The larger protocol expands the system into:
+
+```text
+Entity
+→ Node
+→ Capability
+→ Invocation
+→ Proof
+→ Verification
+→ Settlement
+→ Reputation Graph
+```
+
+## What PoCP Should Answer
 
 ```text
 Who can do what?
@@ -22,35 +40,26 @@ Who proved it?
 Who verified it?
 Who should receive what?
 Who becomes more trusted?
-Who may govern the protocol?
 ```
 
-## Protocol Chain
+## First Target
+
+Do not start with a global compute network.
+
+Start with a minimum living network:
 
 ```text
-Entity
-→ NodeProfile / PublicNode
-→ DID / PublicKey
+Public Skill Node
 → Capability
-→ Discovery
-→ Handshake
 → Invocation
 → Proof
 → Verification
 → Settlement
-→ TokenAccount
-→ ReputationGraph
-→ ProtocolEventLog
+→ Reputation
 ```
 
-## First Application
+## Rule
 
-PoCP AI Commons remains the first application scenario.
+Do not introduce public token issuance in this stage.
 
-The Capability Internet Protocol defines the larger network architecture.
-
-## Principle
-
-Do not build only an AI platform.
-
-Build the protocol that lets AI capabilities become a network.
+CP, AI Credits, Compute Credits, and PT internal units are protocol accounting units only.

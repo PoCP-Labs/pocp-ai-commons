@@ -23,11 +23,24 @@ PoCP AI Commons documentation is organized around the **Genesis Package** and th
 | [architecture/10-AGENT-STUDIO.md](./architecture/10-AGENT-STUDIO.md) | Missions, handoffs, outcomes, Nexus autopilot |
 | [../agents/CURSOR-AUTOMATION.md](../agents/CURSOR-AUTOMATION.md) | Cursor bridge for live handoff execution |
 
+## Capability Internet Protocol
+
+| Document | Purpose |
+|----------|---------|
+| [CAPABILITY-INTERNET-PROTOCOL.md](./CAPABILITY-INTERNET-PROTOCOL.md) | **Canonical positioning** — 12-layer capability internet |
+| [POCP-NETWORK-ARCHITECTURE.md](./POCP-NETWORK-ARCHITECTURE.md) | Layer map + implementation status |
+| [MINIMUM-LIVING-NETWORK.md](./MINIMUM-LIVING-NETWORK.md) | Smallest closed loop (3 nodes, 13 steps) |
+| [implementation/MINIMUM-LIVING-NETWORK-DEMO.md](./implementation/MINIMUM-LIVING-NETWORK-DEMO.md) | In-memory CIP demo (`backend/services/cip/`) |
+| [implementation/CURSOR-CAPABILITY-INTERNET-EXECUTION.md](./implementation/CURSOR-CAPABILITY-INTERNET-EXECUTION.md) | Cursor execution checklist |
+| [implementation/STAGED-PR-PLAN.md](./implementation/STAGED-PR-PLAN.md) | Staged PR sequence (docs → skeleton → APIs) |
+| [agent-studio/CAPABILITY-INTERNET-BACKLOG.md](./agent-studio/CAPABILITY-INTERNET-BACKLOG.md) | Agent Studio CI-1..CI-12 backlog |
+| [../agents/missions/capability-internet/MANIFEST.md](../agents/missions/capability-internet/MANIFEST.md) | Mission plan `capability_internet` |
+
 ## Protocol & implementation
 
 | Document | Purpose |
 |----------|---------|
-| [protocol/README.md](./protocol/README.md) | **Protocol v0.4 index** — capability-first exchange spine |
+| [protocol/README.md](./protocol/README.md) | **Protocol v0.4 index** — exchange spine + CIP 12-layer specs |
 | [protocol/ENTITY-DIALOGUE-PROTOCOL.md](./protocol/ENTITY-DIALOGUE-PROTOCOL.md) | **Entity Dialogue** — L2 native envelope (`pocp.entity_dialogue.v0.1`) |
 | [../agents/missions/protocol-layer-edp/MANIFEST.md](../agents/missions/protocol-layer-edp/MANIFEST.md) | Protocol layer mission — Issues PL-1..PL-10 |
 | [PROTOCOL.md](./PROTOCOL.md) | Protocol concepts and objects |

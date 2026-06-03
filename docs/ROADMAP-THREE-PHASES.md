@@ -35,6 +35,7 @@ Public staging is **not blocked on engineering** — it is **deferred by choice*
 | **P2** | Split unpushed wave for review | Wallet → Settlement → Live adapters as separate PRs |
 | **P2** | Frontend provider/ecosystem UX | ProviderPanel + WalletPanel usable in local federation demo |
 | **P2** | Protocol Layer — Entity Dialogue (EDP) | `pytest tests/test_entity_dialogue.py` green; dialogue in LOCAL-SETUP; mission `protocol_layer_edp` — [agents/missions/protocol-layer-edp/MANIFEST.md](../agents/missions/protocol-layer-edp/MANIFEST.md) |
+| **P2** | Capability Internet — CIP skeleton | `python backend/scripts/minimum_living_network.py` green; in-memory 12-layer loop — [docs/MINIMUM-LIVING-NETWORK.md](./MINIMUM-LIVING-NETWORK.md) · mission `capability_internet` — [agents/missions/capability-internet/MANIFEST.md](../agents/missions/capability-internet/MANIFEST.md) |
 
 **Local acceptance (full federation):**
 
@@ -194,7 +195,7 @@ python backend/scripts/run_phase_a_acceptance.py https://api.your-domain.com --s
 
 | Artifact | Location |
 |----------|----------|
-| Agent Studio handoff vs ROADMAP | `agents/scripts/roadmap_handoff_crosscheck.py` · reconcile: `agents/patches/compass-0-reconcile-a86cc259.md` · training: `agents/patches/compass-0-training-112f783c.md` |
+| Agent Studio handoff vs ROADMAP | `agents/scripts/roadmap_handoff_crosscheck.py` · reconcile: `agents/patches/compass-0-reconcile-a7f1b08d.md` (latest) · prior: `compass-0-reconcile-a86cc259.md` · Herald gaps: `nexus-research-gaps-e2131c5b.md` |
 | Phase A acceptance | `backend/scripts/run_phase_a_acceptance.py` |
 | Federation CI | `.github/workflows/phase-a-federation.yml` |
 | Staging env template | `backend/.env.staging.example` |
@@ -203,6 +204,9 @@ python backend/scripts/run_phase_a_acceptance.py https://api.your-domain.com --s
 | Public deploy guide | [PUBLIC-DEPLOY.md](./PUBLIC-DEPLOY.md) |
 | Federation compose | `docker-compose.federation.yml` |
 | Pilot checklist | [PILOT-LAUNCH-CHECKLIST.md](./PILOT-LAUNCH-CHECKLIST.md) |
+| CIP minimum living demo | `backend/scripts/minimum_living_network.py` · [MINIMUM-LIVING-NETWORK.md](./MINIMUM-LIVING-NETWORK.md) |
+| CIP layer specs | [protocol/README.md](./protocol/README.md) § CIP 12-layer |
+| Capability Internet mission | [agents/missions/capability-internet/MANIFEST.md](../agents/missions/capability-internet/MANIFEST.md) |
 
 **Principle unchanged:** automation-first, traceable finalization — intelligence can live in AI; rights memory cannot live in a black box.
 

@@ -38,9 +38,11 @@ from services.capability_receipt import build_step_capability_receipts
 from services.compute_attribution import build_compute_attribution_block
 from services.mcp_invocation_context import build_mcp_invocation_context
 from services.finalization import build_proof_finalization_block
-from services.invocation_ledger import compute_invocation_chain_digest
+from services.invocation_ledger import compute_invocation_chain_digest, resolve_invocation_chain_digest
 
 POCP_PROOF_SPEC_VERSION = "0.1"
+POCP_EXCHANGE_CHAIN_EXPORT_SPEC = "pocp.exchange_chain_export.v0.1"
+POCP_EXCHANGE_CHAIN_EXPORT_TYPE = "pocp_exchange_chain_export"
 POCP_PROOF_TYPE = "pocp_contribution_proof"
 POCP_PROOF_SCHEMA = "pocp.contribution_proof.v0.1"
 from services.crypto_suite import active_hash_algorithm
@@ -487,3 +489,88 @@ def build_contribution_proof_packet(db: Session, contribution_id: str) -> dict |
             }
 
     return _jsonable(packet)
+
+
+def build_exchange_chain_export(db: Session, exchange_id: str) -> dict[str, Any] | None:
+    """Portable bundle: invocation ref/trace → exchange proof → settlement ledger row."""
+    from services.entity_local_chain import find_exchange_ledger_record
+    from services.exchange_proof import build_exchange_proof_packet
+    from services.invocation import get_invocation_trace, trace_to_v03_dict
+    from services.invocation_ledger import verify_exchange_invocation_chain
+
+    record = find_exchange_ledger_record(db, exchange_id)
+    if record is None:
+        return None
+
+    payload = record.payload or {}
+    invocation_ref = payload.get("invocation_ref") or {}
+    chain_digest = payload.get("invocation_chain_digest") or resolve_invocation_chain_digest(
+        db, invocation_ref
+    )
+
+    trace_envelope = None
+    trace_id = invocation_ref.get("trace_id") or payload.get("invocation_trace_id")
+    if trace_id:
+        trace = get_invocation_trace(db, trace_id)
+        if trace is not None:
+            trace_envelope = trace_to_v03_dict(trace)
+            if trace_envelope is not None:
+                trace_envelope["invocation_chain_digest"] = compute_invocation_chain_digest(
+                    trace_envelope.get("steps") or []
+                )
+
+    proof_packet = build_exchange_proof_packet(db, exchange_id)
+    integrity = verify_exchange_invocation_chain(db, exchange_id)
+
+    tx_ids = payload.get("credit_transaction_ids") or []
+    transactions = []
+    if tx_ids:
+        rows = (
+            db.query(CreditTransaction, Wallet)
+            .join(Wallet, CreditTransaction.wallet_id == Wallet.id)
+            .filter(CreditTransaction.id.in_(tx_ids))
+            .all()
+        )
+        for tx, wallet in rows:
+            transactions.append(
+                {
+                    "id": tx.id,
+                    "entity_id": wallet.entity_id,
+                    "amount": tx.amount,
+                    "credit_type": tx.credit_type.value,
+                    "reason": tx.reason,
+                    "ledger_record_id": tx.ledger_record_id,
+                    "created_at": tx.created_at,
+                }
+            )
+
+    export: dict[str, Any] = {
+        "spec_version": POCP_EXCHANGE_CHAIN_EXPORT_SPEC,
+        "export_type": POCP_EXCHANGE_CHAIN_EXPORT_TYPE,
+        "generated_at": datetime.utcnow(),
+        "exchange_id": exchange_id,
+        "protocol_layers": ["invocation", "proof", "settlement"],
+        "invocation": {
+            "invocation_ref": invocation_ref,
+            "invocation_chain_digest": chain_digest,
+            "trace": trace_envelope,
+        },
+        "settlement": {
+            "exchange": payload,
+            "ledger_record": {
+                "id": record.id,
+                "event_type": record.event_type,
+                "record_hash": record.record_hash,
+                "prev_hash": record.prev_hash,
+                "created_at": record.created_at,
+            },
+            "credit_transactions": transactions,
+            "settlement_policy": payload.get("settlement_policy"),
+            "settlement_policy_id": payload.get("settlement_policy_id"),
+            "settlement_policy_version": payload.get("settlement_policy_version"),
+            "policy_hash": payload.get("policy_hash"),
+        },
+        "proof": proof_packet,
+        "integrity": integrity,
+    }
+    return _jsonable(export)

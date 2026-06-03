@@ -1,12 +1,26 @@
 from __future__ import annotations
+
 import uuid
+
 from services.cip.types import InvocationData
 
+
 class CIPInvocationLedger:
+    """In-memory invocation ledger."""
+
     def __init__(self) -> None:
         self.invocations: dict[str, InvocationData] = {}
 
-    def create(self, task_id: str, caller_entity_id: str, callee_entity_id: str, capability_id: str, input_hash: str, cost_unit: str | None = None, cost_amount: float = 0.0) -> InvocationData:
+    def create(
+        self,
+        task_id: str,
+        caller_entity_id: str,
+        callee_entity_id: str,
+        capability_id: str,
+        input_hash: str,
+        cost_unit: str | None = None,
+        cost_amount: float = 0.0,
+    ) -> InvocationData:
         invocation = InvocationData(
             invocation_id=f"invoke_{uuid.uuid4().hex[:16]}",
             task_id=task_id,

@@ -1,18 +1,29 @@
 from __future__ import annotations
+
 from services.cip.types import SettlementData, TokenAccountData
 
+
 class CIPAccountingService:
-    def apply_settlement(self, accounts: dict[str, TokenAccountData], settlement: SettlementData) -> dict[str, TokenAccountData]:
-        for p in settlement.participants:
-            acct = accounts.setdefault(p.entity_id, TokenAccountData(entity_id=p.entity_id))
-            if p.unit == "CP":
-                acct.cp_balance += p.amount
-            elif p.unit == "AIC":
-                acct.ai_credit_balance += p.amount
-            elif p.unit == "CC":
-                acct.compute_credit_balance += p.amount
-            elif p.unit == "PT":
-                acct.pocp_token_balance_internal += p.amount
+    """Internal accounting units only: CP, AIC, CC, PT."""
+
+    def apply_settlement(
+        self,
+        accounts: dict[str, TokenAccountData],
+        settlement: SettlementData,
+    ) -> dict[str, TokenAccountData]:
+        for participant in settlement.participants:
+            account = accounts.setdefault(
+                participant.entity_id,
+                TokenAccountData(entity_id=participant.entity_id),
+            )
+            if participant.unit == "CP":
+                account.cp_balance += participant.amount
+            elif participant.unit == "AIC":
+                account.ai_credit_balance += participant.amount
+            elif participant.unit == "CC":
+                account.compute_credit_balance += participant.amount
+            elif participant.unit == "PT":
+                account.pocp_token_balance_internal += participant.amount
             else:
-                raise ValueError(f"Unsupported settlement unit: {p.unit}")
+                raise ValueError(f"Unsupported settlement unit: {participant.unit}")
         return accounts

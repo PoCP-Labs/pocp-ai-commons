@@ -3,43 +3,44 @@ from __future__ import annotations
 from services.cip.capability.registry import CIPCapabilityRegistry
 from services.cip.discovery.discovery import CIPDiscoveryService
 from services.cip.economy.accounting import CIPAccountingService
-from services.cip.identity.signature import CIPSignatureService
+from services.cip.events.event_log import CIPEventLog
 from services.cip.invocation.ledger import CIPInvocationLedger
-from services.cip.node.heartbeat import CIPHeartbeatService
 from services.cip.node.registry import CIPNodeRegistry
-from services.cip.p2p.events import CIPEventLog
 from services.cip.proof.proof import CIPProofService
-from services.cip.reputation.graph import CIPReputationGraph
+from services.cip.reputation.reputation import CIPReputationService
 from services.cip.settlement.settlement import CIPSettlementService
 from services.cip.types import SettlementParticipantData, TokenAccountData
 from services.cip.verification.verifier import CIPVerifierService
 
 
 def run_minimum_living_network_demo() -> dict:
-    signature = CIPSignatureService()
-    event_log = CIPEventLog()
-    node_registry = CIPNodeRegistry()
-    heartbeat = CIPHeartbeatService()
-    capabilities = CIPCapabilityRegistry()
-    discovery = CIPDiscoveryService(capabilities)
-    invocations = CIPInvocationLedger()
-    proofs = CIPProofService()
-    verifier = CIPVerifierService()
-    settlement_service = CIPSettlementService()
-    accounting = CIPAccountingService()
-    reputation_graph = CIPReputationGraph()
+    """Run the CIP minimum living network in memory.
+
+    This demo does not replace the existing AI Commons V0.2 loop.
+    """
 
     agent_entity_id = "agent_001"
     skill_entity_id = "skill_code_review_001"
     verifier_entity_id = "verifier_ai_001"
 
-    skill_node = node_registry.register_node(
+    nodes = CIPNodeRegistry()
+    capabilities = CIPCapabilityRegistry()
+    discovery = CIPDiscoveryService(capabilities)
+    invocations = CIPInvocationLedger()
+    proofs = CIPProofService()
+    verifier = CIPVerifierService()
+    settlements = CIPSettlementService()
+    accounting = CIPAccountingService()
+    reputation = CIPReputationService()
+    event_log = CIPEventLog()
+
+    skill_node = nodes.register_node(
         entity_id=skill_entity_id,
         node_type="service",
-        public_key="ed25519:example-skill-public-key",
+        public_key="ed25519:example-public-key",
         base_url="https://skill.example.com",
     )
-    heartbeat.mark_active(skill_node)
+    event_log.append("NodeRegistered", skill_entity_id, skill_node.node_id, skill_node.node_id)
 
     capability = capabilities.publish(
         entity_id=skill_entity_id,
@@ -49,8 +50,9 @@ def run_minimum_living_network_demo() -> dict:
         unit="skill_invocation",
         price={"AIC": 5},
     )
+    event_log.append("CapabilityPublished", skill_entity_id, capability.capability_id, skill_node.node_id)
 
-    discovered = discovery.discover_capabilities("code_review")
+    discovered = discovery.discover("code_review")
 
     invocation = invocations.create(
         task_id="task_001",
@@ -61,7 +63,8 @@ def run_minimum_living_network_demo() -> dict:
         cost_unit="AIC",
         cost_amount=5,
     )
-    invocation = invocations.complete(invocation.invocation_id, output_hash="sha256:output")
+    invocation = invocations.complete(invocation.invocation_id, "sha256:output")
+    event_log.append("InvocationCompleted", agent_entity_id, invocation.invocation_id)
 
     proof = proofs.submit(
         entity_id=skill_entity_id,
@@ -74,37 +77,44 @@ def run_minimum_living_network_demo() -> dict:
         evidence_ref="ipfs://example-proof-cid",
         signature="sig_example",
     )
+    event_log.append("ProofSubmitted", skill_entity_id, proof.proof_id, skill_node.node_id)
 
-    verification = verifier.ai_advisory_verify(proof=proof, verifier_entity_id=verifier_entity_id)
+    verification = verifier.ai_advisory_verify(proof, verifier_entity_id)
+    event_log.append("VerificationCompleted", verifier_entity_id, verification.verification_id)
 
-    settlement = settlement_service.create_settlement(
+    settlement = settlements.create_settlement(
         task_id=invocation.task_id,
         invocation_id=invocation.invocation_id,
         verification=verification,
         participants=[
-            SettlementParticipantData(skill_entity_id, "skill_provider", "AIC", 5, "Provided verified code review capability."),
-            SettlementParticipantData(agent_entity_id, "executor", "CP", 3, "Executed task routing and invocation."),
-            SettlementParticipantData(verifier_entity_id, "verifier", "CP", 1, "Verified proof."),
+            SettlementParticipantData(
+                entity_id=skill_entity_id,
+                role="skill_provider",
+                unit="AIC",
+                amount=5,
+                reason="Provided verified code review capability.",
+            ),
+            SettlementParticipantData(
+                entity_id=agent_entity_id,
+                role="executor",
+                unit="CP",
+                amount=3,
+                reason="Executed invocation.",
+            ),
+            SettlementParticipantData(
+                entity_id=verifier_entity_id,
+                role="verifier",
+                unit="CP",
+                amount=1,
+                reason="Verified proof.",
+            ),
         ],
     )
+    event_log.append("SettlementExecuted", skill_entity_id, settlement.settlement_id, skill_node.node_id)
 
     accounts: dict[str, TokenAccountData] = accounting.apply_settlement({}, settlement)
-    reputation = reputation_graph.update_success(skill_entity_id, "code_review")
-    graph_edges = reputation_graph.chain_edges(
-        skill_entity_id, skill_node.node_id, capability.capability_id, invocation.invocation_id,
-        proof.proof_id, verification.verification_id, settlement.settlement_id
-    )
-
-    for event_type, entity_id, payload in [
-        ("NodeRegistered", skill_entity_id, skill_node.node_id),
-        ("CapabilityPublished", skill_entity_id, capability.capability_id),
-        ("InvocationCreated", agent_entity_id, invocation.invocation_id),
-        ("ProofSubmitted", skill_entity_id, proof.proof_id),
-        ("VerificationCompleted", verifier_entity_id, verification.verification_id),
-        ("SettlementExecuted", skill_entity_id, settlement.settlement_id),
-        ("ReputationUpdated", skill_entity_id, reputation.scope),
-    ]:
-        event_log.append(signature.create_event(event_type, entity_id, payload, skill_node.node_id if entity_id == skill_entity_id else None))
+    skill_reputation = reputation.update_success(skill_entity_id, "code_review")
+    event_log.append("ReputationUpdated", skill_entity_id, "code_review", skill_node.node_id)
 
     return {
         "skill_node": skill_node,
@@ -115,8 +125,7 @@ def run_minimum_living_network_demo() -> dict:
         "verification": verification,
         "settlement": settlement,
         "accounts": accounts,
-        "reputation": reputation,
-        "graph_edges": graph_edges,
+        "skill_reputation": skill_reputation,
         "events": event_log.events,
     }
 

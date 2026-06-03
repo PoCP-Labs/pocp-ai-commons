@@ -31,20 +31,45 @@ PoCP Capability Internet
 
 | # | Layer | Spec / doc | Code (backend) | Phase A status |
 |---|--------|------------|----------------|----------------|
-| 1 | **Entity** | [01-ENTITY-REGISTRY.md](./architecture/01-ENTITY-REGISTRY.md), [ENTITY-SCHEMA-v0.3.md](./protocol/ENTITY-SCHEMA-v0.3.md) | `models/entity.py`, `services/entity_register.py`, `services/entity_catalog.py` | **14 types seeded**; ownership bootstrap |
-| 2 | **Node** | [ENTITY-NODE-MANIFEST-v0.1.md](./protocol/ENTITY-NODE-MANIFEST-v0.1.md), [COMPUTE-FEDERATION-SPEC.md](./COMPUTE-FEDERATION-SPEC.md) | `services/compute_profile.py`, `services/compute_registry.py`, `config/compute_nodes.yaml` | Compute + federation nodes; **no generic NodeProfile table yet** |
-| 3 | **Identity** | [TRUST-POLICY-BUNDLE.md](./protocol/TRUST-POLICY-BUNDLE.md), federation crypto | `services/federation_*.py`, ledger signatures | Federation import signatures; **DID/VC not yet** |
-| 4 | **Capability** | [02-CAPABILITY-REGISTRY.md](./architecture/02-CAPABILITY-REGISTRY.md), [CAPABILITY-SCHEMA-v0.3.md](./protocol/CAPABILITY-SCHEMA-v0.3.md) | `services/capability/`, `routers/capability_registry.py` | Registry + execute path; **public node manifest partial** |
-| 5 | **Discovery** | [03-NEURAL-ROUTING.md](./architecture/03-NEURAL-ROUTING.md), [ENTITY-DIALOGUE-PROTOCOL.md](./protocol/ENTITY-DIALOGUE-PROTOCOL.md) | `services/neural/rule_based_router.py`, federation peers | Rule-based routing; **no DHT/libp2p** |
-| 6 | **Invocation** | [04-INVOCATION-LEDGER.md](./architecture/04-INVOCATION-LEDGER.md), [INVOCATION-SCHEMA-v0.3.md](./protocol/INVOCATION-SCHEMA-v0.3.md) | `services/invocation.py`, `services/invocation_ledger.py` | Traces + **invocation_ref** on exchanges (PR-A) |
-| 7 | **Proof** | [05-VERIFICATION-PROOF.md](./architecture/05-VERIFICATION-PROOF.md) | `services/proof.py`, export routers | Portable proof packets + Merkle |
-| 8 | **Verification** | Same + challenge flow | `services/verifiers/`, `services/contribution_dispute.py` (PR-B) | Multi-verifier advisory; challenge/appeal WIP |
-| 9 | **Settlement** | [07-SETTLEMENT-LAYER.md](./architecture/07-SETTLEMENT-LAYER.md) | `services/exchange_spine.py`, `services/settlement_policy.py` | Exchange spine + policy tags |
-| 10 | **Reputation** | [08-REPUTATION-GOVERNANCE.md](./architecture/08-REPUTATION-GOVERNANCE.md), [09-NEURAL-GRAPH.md](./architecture/09-NEURAL-GRAPH.md) | `services/graph.py`, entity reputation fields | Graph UI + scores; **event-sourced reputation backlog** |
-| 11 | **Governance** | [08-REPUTATION-GOVERNANCE.md](./architecture/08-REPUTATION-GOVERNANCE.md) | org foundation, reviewer queue, policy bot | Demo governance proxy; **PIP process draft** |
-| 12 | **Economy** | [06-TOKEN-MEASUREMENT.md](./architecture/06-TOKEN-MEASUREMENT.md) | wallets, CP/AIC/CC, `services/token_measurement/` | Internal metering only — **no public token** |
+| 1 | **Entity** | [ENTITY-LAYER-SPEC.md](./protocol/ENTITY-LAYER-SPEC.md), [01-ENTITY-REGISTRY.md](./architecture/01-ENTITY-REGISTRY.md) | `models/entity.py`, `services/entity_catalog.py`, `intelligence/entity_ontology.py` | **14 types seeded**; catalog audit + stable infrastructure IDs |
+| 2 | **Node** | [NODE-RUNTIME-SPEC.md](./protocol/NODE-RUNTIME-SPEC.md), [PUBLIC-NODE-PROTOCOL.md](./protocol/PUBLIC-NODE-PROTOCOL.md) | `models/node_profile.py`, `services/node/`, `services/node_manifest.py`, `services/cip/node/` | **`node_profiles` table**; well-known manifest; catalog → NodeProfile bootstrap |
+| 3 | **Identity** | [DID-SIGNATURE-SPEC.md](./protocol/DID-SIGNATURE-SPEC.md), [TRUST-POLICY-BUNDLE.md](./protocol/TRUST-POLICY-BUNDLE.md) | `services/federation_*.py`, ledger signatures | Federation import signatures; **DID/VC not yet** |
+| 4 | **Capability** | [CAPABILITY-SCHEMA.md](./protocol/CAPABILITY-SCHEMA.md), [02-CAPABILITY-REGISTRY.md](./architecture/02-CAPABILITY-REGISTRY.md) | `services/cip/capability/`, `services/capability/` | CIP + production registry; **public node manifest partial** |
+| 5 | **Discovery** | [CROSS-NODE-INTERNET.md](./protocol/CROSS-NODE-INTERNET.md), [03-NEURAL-ROUTING.md](./architecture/03-NEURAL-ROUTING.md) | `services/cip/discovery/`, `services/neural/rule_based_router.py` | CIP discovery service; **no DHT/libp2p** |
+| 6 | **Invocation** | [INVOCATION-LEDGER-SPEC.md](./protocol/INVOCATION-LEDGER-SPEC.md), [04-INVOCATION-LEDGER.md](./architecture/04-INVOCATION-LEDGER.md) | `services/cip/invocation/`, `services/invocation_ledger.py` | CIP ledger + production traces |
+| 7 | **Proof** | [PROOF-SPEC.md](./protocol/PROOF-SPEC.md), [05-VERIFICATION-PROOF.md](./architecture/05-VERIFICATION-PROOF.md) | `services/cip/proof/`, `services/proof.py` | CIP proof service + portable export |
+| 8 | **Verification** | [VERIFICATION-NETWORK-SPEC.md](./protocol/VERIFICATION-NETWORK-SPEC.md) | `services/cip/verification/`, `services/verifiers/` | CIP verifier + multi-witness advisory |
+| 9 | **Settlement** | [SETTLEMENT-SPEC.md](./protocol/SETTLEMENT-SPEC.md), [07-SETTLEMENT-LAYER.md](./architecture/07-SETTLEMENT-LAYER.md) | `services/cip/settlement/`, `services/exchange_spine.py` | CIP settlement + exchange spine |
+| 10 | **Reputation** | [REPUTATION-GRAPH-SPEC.md](./protocol/REPUTATION-GRAPH-SPEC.md), [08-REPUTATION-GOVERNANCE.md](./architecture/08-REPUTATION-GOVERNANCE.md) | `services/cip/reputation/`, `services/graph.py` | CIP reputation graph; **event-sourced indexer backlog** |
+| 11 | **Governance** | [GOVERNANCE-SPEC.md](./protocol/GOVERNANCE-SPEC.md), [08-REPUTATION-GOVERNANCE.md](./architecture/08-REPUTATION-GOVERNANCE.md) | org foundation, reviewer queue, policy bot | Demo governance proxy; **PIP process draft** |
+| 12 | **Economy** | [PROTOCOL-ECONOMY-SPEC.md](./protocol/PROTOCOL-ECONOMY-SPEC.md), [06-TOKEN-MEASUREMENT.md](./architecture/06-TOKEN-MEASUREMENT.md) | `services/cip/economy/`, wallets, `services/token_measurement/` | CIP accounting + internal metering — **no public token** |
 
 Legend: **bold** = materially present in tree; plain = partial; “not yet” = spec-only.
+
+---
+
+## Layers 1–2 (Entity + Node) — CI-1 / CI-2
+
+```text
+Entity (L1)                          Node (L2)
+──────────                           ─────────
+entities table                     node_profiles table
+14 ontology types                  NodeProfile per active provider Entity
+entity_catalog.py bootstrap   →    _ensure_node_profiles() on repair
+stable infrastructure IDs          well-known + per-entity manifests
+intelligence/entity_ontology.py    services/node/schemas.py (frozen contract)
+services/entity/schemas.py (CI-1 IDs)   services/entity/base.py (catalog Protocol)
+                                        services/node/base.py (node + well-known Protocol)
+```
+
+| Handoff | Deliverable | Code / doc |
+|---------|-------------|------------|
+| CI-1 | Entity catalog complete | `services/entity_catalog.py`, `services/entity/schemas.py`, [ENTITY-LAYER-SPEC.md](./protocol/ENTITY-LAYER-SPEC.md) |
+| CI-2 | NodeProfile + well-known draft | `services/node/schemas.py`, `services/node/base.py`, [NODE-RUNTIME-SPEC.md](./protocol/NODE-RUNTIME-SPEC.md), [PUBLIC-NODE-PROTOCOL.md](./protocol/PUBLIC-NODE-PROTOCOL.md) |
+| Wire | Instance discovery | `GET /.well-known/pocp-node.json` in `backend/main.py` |
+| Wire | Entity facets | `GET /api/v1/entities/{id}/node-manifest` |
+
+Tests: `pytest backend/tests/test_entity_ontology.py backend/tests/test_entity_catalog.py -q` (from `backend/`).
 
 ---
 
@@ -53,8 +78,8 @@ Legend: **bold** = materially present in tree; plain = partial; “not yet” = 
 | Object | Table / service today | Gap |
 |--------|----------------------|-----|
 | Entity | `entities` | — |
-| NodeProfile | metadata + compute_profile | dedicated `node_profiles` table |
-| Capability | `entity_capabilities` | public `/.well-known/pocp-node.json` |
+| NodeProfile | `node_profiles` (+ `entity_catalog` bootstrap) | signed heartbeat events (Phase B) |
+| Capability | `entity_capabilities` | Phase B `/pocp/capabilities` wire parity |
 | Invocation | `invocation_traces`, `invocation_steps` | full state machine on public nodes |
 | Proof | contribution evidence + proof export | signed proof events |
 | Verification | `contribution_verifications`, disputes | standalone verifier node API |
@@ -108,19 +133,23 @@ Phase A maps many of these to `/api/v1/*` on the reference node; Phase B extract
 
 ---
 
+## CIP reference skeleton
+
+In-memory implementation under `backend/services/cip/` — **does not replace** the production Genesis loop (`services/invocation.py`, wallets, federation). Run the closed-loop demo:
+
+```bash
+python backend/scripts/minimum_living_network.py
+```
+
+See [MINIMUM-LIVING-NETWORK.md](./MINIMUM-LIVING-NETWORK.md) · [implementation/MINIMUM-LIVING-NETWORK-DEMO.md](./implementation/MINIMUM-LIVING-NETWORK-DEMO.md).
+
 ## Next specs to write (backlog)
 
-When splitting to `pocp-protocol-spec`:
+CIP 12-layer drafts landed in [protocol/README.md](./protocol/README.md). Remaining gaps before `pocp-protocol-spec` split:
 
 ```text
-NODE-RUNTIME-SPEC.md
-PUBLIC-NODE-PROTOCOL.md
-P2P-NETWORK-SPEC.md
-DID-SIGNATURE-SPEC.md
-VERIFICATION-NETWORK-SPEC.md
-REPUTATION-GRAPH-SPEC.md (extend 08)
-GOVERNANCE-SPEC.md (extend 08)
-PROTOCOL-ECONOMY-SPEC.md (extend 06)
+P2P-NETWORK-SPEC.md          ← libp2p / DHT (Phase B)
+PUBLIC-NODE-PROTOCOL.md      ← wire to standalone pocp-node binary
 ```
 
 Agent Studio mission: `capability_internet` — see [agent-studio/CAPABILITY-INTERNET-BACKLOG.md](./agent-studio/CAPABILITY-INTERNET-BACKLOG.md).

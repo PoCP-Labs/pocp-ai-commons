@@ -1,6 +1,30 @@
 spec_version: "0.1"
 schema: pocp.settlement_policies.v0.1
 
+# CI-12 — internal accounting only; Lex NO-TOKEN-FIRST guard (see NO-TOKEN-FIRST.md)
+no_public_token_guard:
+  enabled: true
+  spec: pocp.no_token_first_guard.v0.1
+  note: CP/AIC/CC/PT are internal units — not tradable protocol tokens
+
+accounting_units:
+  CP:
+    label: Contribution Points
+    visibility: internal
+    wallet_field: cp_balance
+  AIC:
+    label: AI Credits
+    visibility: internal
+    wallet_field: ai_credits
+  CC:
+    label: Compute Credits
+    visibility: internal
+    wallet_field: compute_credit_balance
+  PT:
+    label: PoCP Protocol Token internal account
+    visibility: internal_only
+    wallet_field: pocp_token_balance_internal
+
 policies:
   compute_settlement.v1:
     policy_id: compute_settlement.v1

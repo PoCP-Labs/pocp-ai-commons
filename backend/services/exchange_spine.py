@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from models.ledger import LedgerRecord
 from models.wallet import CreditTransaction
-from services.invocation_ledger import build_invocation_ref
+from services.invocation_ledger import build_invocation_ref, resolve_invocation_chain_digest
 from services.ledger_chain import append_ledger_record
 from services.settlement_policy import policy_tag
 
@@ -131,6 +131,8 @@ def emit_exchange_settled(
     if invocation_trace_id and not normalized_ref.get("trace_id"):
         normalized_ref["trace_id"] = invocation_trace_id
 
+    invocation_chain_digest = resolve_invocation_chain_digest(db, normalized_ref)
+
     policy_meta = settlement_policy_tag or policy_tag(settlement_policy)
 
     payload: dict[str, Any] = {
@@ -149,6 +151,7 @@ def emit_exchange_settled(
         "policy_hash": policy_meta.get("policy_hash"),
         "spec_version": SPEC_VERSION,
         "invocation_ref": normalized_ref,
+        "invocation_chain_digest": invocation_chain_digest,
     }
     if invocation_trace_id:
         payload["invocation_trace_id"] = invocation_trace_id

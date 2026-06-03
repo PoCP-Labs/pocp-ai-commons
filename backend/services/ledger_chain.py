@@ -94,6 +94,18 @@ def verify_ledger_records(records: list[dict]) -> dict:
 
 
 def _last_ledger_record(db: Session) -> LedgerRecord | None:
+    """Return the chain tip — the hashed row not referenced as anyone's prev_hash."""
+    records = (
+        db.query(LedgerRecord)
+        .filter(LedgerRecord.record_hash.isnot(None))
+        .all()
+    )
+    if not records:
+        return None
+    prev_targets = {r.prev_hash for r in records if r.prev_hash}
+    tips = [r for r in records if r.record_hash not in prev_targets]
+    if len(tips) == 1:
+        return tips[0]
     return (
         db.query(LedgerRecord)
         .filter(LedgerRecord.record_hash.isnot(None))
@@ -172,21 +184,48 @@ def _order_records_by_hash_chain(records: list[LedgerRecord]) -> list[LedgerReco
     """Order ledger rows by prev_hash linkage (not created_at) for verify."""
     if not records:
         return []
-    by_hash = {r.record_hash: r for r in records if r.record_hash}
-    genesis = [r for r in records if not r.prev_hash and r.record_hash]
-    if len(genesis) != 1:
-        return sorted(records, key=lambda r: (r.created_at, r.id))
-    ordered: list[LedgerRecord] = []
-    current = genesis[0]
-    seen: set[str] = set()
-    while current and current.record_hash not in seen:
-        seen.add(current.record_hash)
-        ordered.append(current)
-        next_row = next((by_hash[h] for h in by_hash if by_hash[h].prev_hash == current.record_hash), None)
-        current = next_row
-    if len(ordered) != len(records):
-        return sorted(records, key=lambda r: (r.created_at, r.id))
-    return ordered
+
+    hashed = [r for r in records if r.record_hash]
+    if not hashed:
+        return sorted(records, key=lambda r: (r.created_at, r.id or ""))
+
+    by_hash = {r.record_hash: r for r in hashed}
+    prev_targets = {r.prev_hash for r in hashed if r.prev_hash}
+    tips = [r for r in hashed if r.record_hash not in prev_targets]
+
+    def _walk_from_tip(tip: LedgerRecord) -> list[LedgerRecord] | None:
+        ordered_rev: list[LedgerRecord] = []
+        current: LedgerRecord | None = tip
+        seen: set[str] = set()
+        while current and current.record_hash and current.record_hash not in seen:
+            seen.add(current.record_hash)
+            ordered_rev.append(current)
+            current = by_hash.get(current.prev_hash) if current.prev_hash else None
+        ordered = list(reversed(ordered_rev))
+        return ordered if len(ordered) == len(hashed) else None
+
+    if len(tips) == 1:
+        ordered = _walk_from_tip(tips[0])
+        if ordered is not None:
+            return ordered
+
+    genesis = [r for r in hashed if not r.prev_hash]
+    if len(genesis) == 1:
+        ordered: list[LedgerRecord] = []
+        current: LedgerRecord | None = genesis[0]
+        seen: set[str] = set()
+        while current and current.record_hash not in seen:
+            seen.add(current.record_hash)
+            ordered.append(current)
+            next_row = next(
+                (by_hash[h] for h in by_hash if by_hash[h].prev_hash == current.record_hash),
+                None,
+            )
+            current = next_row
+        if len(ordered) == len(hashed):
+            return ordered
+
+    return sorted(hashed, key=lambda r: (r.created_at, r.id or ""))
 
 
 def verify_ledger_chain(db: Session) -> dict:

@@ -6,11 +6,7 @@ import urllib.error
 import urllib.request
 
 from schemas.federation import TrustedNode
-from services.trust_config import load_trusted_nodes, trusted_nodes_map
-
-
-def trusted_nodes_map() -> dict[str, TrustedNode]:
-    return {node.node_id: node for node in load_trusted_nodes()}
+from services.trust_config import load_trusted_nodes
 
 
 def _get_json(url: str, timeout: float = 20.0) -> dict | list:

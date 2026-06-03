@@ -28,6 +28,10 @@ def get_json(url: str, timeout: float = 15) -> dict:
         return json.loads(resp.read().decode())
 
 
+FEDERATION_PEER_MANIFEST_SCHEMA = "pocp.federation_peer_manifest.v0.1"
+PUBLIC_SKILL_NODE_TEMPLATE_SCHEMA = "pocp-skill-node-template.v0.1"
+
+
 def run_script(name: str, base: str, extra_args: list[str] | None = None) -> tuple[bool, str]:
     path = SCRIPTS / name
     cmd = [sys.executable, str(path), base, *(extra_args or [])]
@@ -137,6 +141,82 @@ def step_wallet_audit(base: str) -> tuple[bool, str]:
         return False, str(exc)
 
 
+def step_federation_peer_manifest(base: str, peer: str) -> tuple[bool, str]:
+    """CI-5 — local + peer federation discovery manifests and skill node template."""
+    try:
+        local = get_json(f"{base.rstrip('/')}/api/v1/federation/peers/manifest")
+        remote = get_json(f"{peer.rstrip('/')}/api/v1/federation/peers/manifest")
+        template = get_json(f"{base.rstrip('/')}/api/v1/federation/skill-node-template")
+        ok = (
+            local.get("schema") == FEDERATION_PEER_MANIFEST_SCHEMA
+            and remote.get("schema") == FEDERATION_PEER_MANIFEST_SCHEMA
+            and template.get("schema") == PUBLIC_SKILL_NODE_TEMPLATE_SCHEMA
+            and bool(local.get("handshake"))
+            and bool(remote.get("handshake"))
+            and local.get("node_id")
+            and remote.get("node_id")
+            and local.get("node_id") != remote.get("node_id")
+        )
+        return ok, json.dumps(
+            {
+                "local_node_id": local.get("node_id"),
+                "remote_node_id": remote.get("node_id"),
+                "template_schema": template.get("schema"),
+            }
+        )
+    except Exception as exc:
+        return False, str(exc)
+
+
+def step_federation_peer_handshake(base: str, peer: str) -> tuple[bool, str]:
+    """CI-5 / MLN step 3–4 — capability discover + trust handshake surface.
+
+    Runs from the acceptance runner (host URLs). Node-side POST /peers/handshake
+    requires peer_base_url reachable from the API container (use docker service
+    names in POCP_TRUSTED_NODES); host-side checks avoid Connection refused in
+    federation compose where localhost:8101 is not visible inside node-a.
+    """
+    try:
+        local = get_json(f"{base.rstrip('/')}/api/v1/federation/peers/manifest")
+        remote = get_json(f"{peer.rstrip('/')}/api/v1/federation/peers/manifest")
+        local_fp = local.get("trust_policy_bundle_fingerprint")
+        remote_fp = remote.get("trust_policy_bundle_fingerprint")
+        remote_handshake = remote.get("handshake") or {}
+        algorithms = remote_handshake.get("algorithms") or []
+        handshake_ok = bool(remote_handshake.get("handshake_version")) and bool(algorithms)
+
+        discover_url = (
+            (remote.get("discovery") or {}).get("capability_search")
+            or f"{peer.rstrip('/')}/api/v1/registry/capabilities"
+        )
+        cap_params = "?limit=10"
+        cap_path = discover_url if "?" in discover_url else f"{discover_url.rstrip('/')}{cap_params}"
+        registry = get_json(cap_path)
+        items = registry.get("capabilities") or registry.get("items") or []
+        if isinstance(registry, list):
+            items = registry
+
+        ok = (
+            handshake_ok
+            and local.get("node_id")
+            and remote.get("node_id")
+            and local.get("node_id") != remote.get("node_id")
+        )
+        return ok, json.dumps(
+            {
+                "local_node_id": local.get("node_id"),
+                "remote_node_id": remote.get("node_id"),
+                "trust_bundle_aligned": bool(local_fp and remote_fp and local_fp == remote_fp),
+                "discovery_count": len(items),
+                "handshake_version": remote_handshake.get("handshake_version"),
+            }
+        )
+    except urllib.error.HTTPError as exc:
+        return False, f"HTTP {exc.code}: {exc.read().decode()[:200]}"
+    except Exception as exc:
+        return False, str(exc)
+
+
 def step_invocation_ref_integrity(base: str) -> tuple[bool, str]:
     """Smoke: dev-login → chat → exchange integrity endpoint."""
     payload = json.dumps({"username": "inv-ref-check", "email": "inv-ref-check@example.com"}).encode()
@@ -224,6 +304,14 @@ def main() -> int:
             [
                 ("crypto_readiness", lambda: step_crypto_readiness(base)),
                 ("crypto_readiness_peer", lambda: step_crypto_readiness(node_b)),
+                (
+                    "federation_peer_manifest",
+                    lambda: step_federation_peer_manifest(base, node_b),
+                ),
+                (
+                    "federation_peer_handshake",
+                    lambda: step_federation_peer_handshake(base, node_b),
+                ),
                 ("federation_preflight", lambda: run_script("federation_pilot_preflight.py", base, [node_b])),
                 ("federation_strict_mode", lambda: run_script("federation_strict_mode_test.py", base, [node_b])),
                 ("federation_demo", lambda: run_script("federation_demo_test.py", base, [node_b])),
@@ -270,6 +358,8 @@ def main() -> int:
             "invocation_ref_integrity",
             "crypto_readiness",
             "crypto_readiness_peer",
+            "federation_peer_manifest",
+            "federation_peer_handshake",
             "smoke_test",
             "federation_preflight",
             "federation_strict_mode",

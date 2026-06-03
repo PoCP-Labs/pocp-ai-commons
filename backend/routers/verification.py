@@ -11,10 +11,16 @@ from services.clarion import build_clarion_review_packet
 from services.contribution_dispute import (
     appeal_dispute,
     challenge_contribution,
+    dispute_evidence_digest,
     list_disputes,
     resolve_open_disputes,
 )
+from services.contribution_verification_network import (
+    build_verification_network_manifest,
+    resolve_verifier_node,
+)
 from services.finalization import build_verdict_snapshot
+from services.verify_standalone import verify_proof_integrity
 
 router = APIRouter(prefix="/api/v1", tags=["verification"])
 
@@ -33,6 +39,56 @@ class ResolveDisputeIn(BaseModel):
     reviewer_id: str
     upheld: bool
     feedback: str | None = None
+
+
+class ProofVerifyIn(BaseModel):
+    proof: dict
+    trusted_public_key: str | None = None
+    require_signature: bool = False
+
+
+class DisputeEvidenceDigestIn(BaseModel):
+    evidence: dict
+
+
+@router.get("/verification/network")
+def verification_network_manifest(db: Session = Depends(get_db)):
+    """CI-8 sketch — verification network manifest for standalone verifier nodes."""
+    return build_verification_network_manifest(db)
+
+
+@router.get("/verification/verifier-node")
+def default_verifier_node_manifest(db: Session = Depends(get_db)):
+    """CI-8 sketch — default local verifier_node wiring."""
+    snapshot = resolve_verifier_node(db)
+    if snapshot is None:
+        raise HTTPException(status_code=404, detail="Default verifier_node not registered")
+    return snapshot
+
+
+@router.get("/verification/verifier-node/{entity_id}")
+def verifier_node_manifest(entity_id: str, db: Session = Depends(get_db)):
+    """CI-8 sketch — per-entity verifier_node manifest."""
+    snapshot = resolve_verifier_node(db, entity_id=entity_id)
+    if snapshot is None:
+        raise HTTPException(status_code=404, detail="Verifier node not found or inactive")
+    return snapshot
+
+
+@router.post("/verification/proof/verify")
+def verification_proof_verify(body: ProofVerifyIn):
+    """CI-8 sketch — offline proof verify (mirrors export; no DB trust)."""
+    return verify_proof_integrity(
+        body.proof,
+        trusted_public_key=body.trusted_public_key,
+        require_signature=body.require_signature,
+    )
+
+
+@router.post("/verification/disputes/evidence/digest")
+def verification_dispute_evidence_digest(body: DisputeEvidenceDigestIn):
+    """CI-8 sketch — stable digest for dispute evidence bundles."""
+    return {"digest": dispute_evidence_digest(body.evidence)}
 
 
 @router.post("/contributions/{contribution_id}/auto-verify")

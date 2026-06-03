@@ -90,6 +90,8 @@ These AI entities may advise, score, summarize, and draft proof. **Finalization 
 
 For multi-node interoperability (export, portable identity, federation skeleton), see [FEDERATION-v0.1.md](./FEDERATION-v0.1.md).
 
+For the twelve-layer Capability Internet stack (Entity L1 + Node L2 frozen contracts), see [POCP-NETWORK-ARCHITECTURE.md](./POCP-NETWORK-ARCHITECTURE.md).
+
 ---
 
 ## Reference Demo: R Language Study Materials

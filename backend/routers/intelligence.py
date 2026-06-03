@@ -29,14 +29,58 @@ from services.entity_dialogue import (
 )
 from models.user_account import UserAccount
 from routers.auth import require_current_user
+from services.invocation import (
+    INVOCATION_TRACE_SPEC,
+    INVOCATION_TRACE_TRANSITIONS,
+    add_invocation_step,
+    complete_invocation_trace,
+    fail_invocation_trace,
+    get_invocation_trace,
+    start_invocation_trace,
+    trace_to_v03_dict,
+)
+from services.neural import RuleBasedNeuralRouter, RoutingRequest, execution_plan_to_dict
 
 router = APIRouter(prefix="/api/v1/intelligence", tags=["intelligence"])
+
+_RULE_ROUTER = RuleBasedNeuralRouter()
 
 
 class MatchRequest(BaseModel):
     task_id: str | None = None
     contribution_type: str | None = None
     limit: int = Field(default=5, ge=1, le=20)
+
+
+class NeuralRouteRequest(BaseModel):
+    task_id: str = Field(min_length=1, max_length=128)
+    task_type: str = Field(min_length=1, max_length=64)
+    description: str = Field(default="", max_length=4000)
+    budget: dict[str, float] = Field(default_factory=dict)
+    constraints: dict[str, Any] = Field(default_factory=dict)
+    resolve_capabilities: bool = Field(
+        default=True,
+        description="When true, bind steps to GET /api/v1/registry/capabilities search results (CI-5).",
+    )
+    availability: str = Field(default="available")
+
+
+class InvocationTraceStartIn(BaseModel):
+    task_id: str | None = None
+    contribution_id: str | None = None
+    model_provider: str = "deepseek"
+
+
+class InvocationStepIn(BaseModel):
+    source_entity_id: str
+    target_entity_id: str
+    action: str
+    step_order: int | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class InvocationFailIn(BaseModel):
+    reason: str | None = None
 
 
 class DedupCheckRequest(BaseModel):
@@ -756,6 +800,134 @@ def match_capabilities(
         contribution_type=body.contribution_type,
         limit=body.limit,
     )
+
+
+@router.post("/route")
+def neural_route(
+    body: NeuralRouteRequest,
+    db: Session = Depends(get_db),
+    _user=Depends(require_current_user),
+):
+    """Rule-based execution plan; optionally resolve steps via public capability registry (CI-5)."""
+    request = RoutingRequest(
+        task_id=body.task_id,
+        task_type=body.task_type,
+        description=body.description,
+        budget=body.budget,
+        constraints=body.constraints,
+    )
+    if body.resolve_capabilities:
+        plan = _RULE_ROUTER.route_with_search(db, request, availability=body.availability)
+    else:
+        plan = _RULE_ROUTER.route(request)
+    return execution_plan_to_dict(plan)
+
+
+@router.get("/protocol/invocation")
+def protocol_invocation_schema():
+    """INVOCATION-SCHEMA-v0.3 trace envelope + lifecycle states."""
+    return {
+        "spec_version": INVOCATION_TRACE_SPEC,
+        "status_values": ["started", "completed", "failed"],
+        "transitions": {
+            current.value: sorted(target.value for target in allowed)
+            for current, allowed in INVOCATION_TRACE_TRANSITIONS.items()
+        },
+        "receipt_url_template": "/api/v1/integrations/invocations/{trace_id}/receipt",
+        "docs": "docs/protocol/INVOCATION-SCHEMA-v0.3.md",
+    }
+
+
+@router.post("/invocations", status_code=201)
+def start_invocation_trace_endpoint(
+    body: InvocationTraceStartIn,
+    db: Session = Depends(get_db),
+    current_user: UserAccount = Depends(require_current_user),
+):
+    """Start an INVOCATION-SCHEMA-v0.3 trace in ``started`` state (CI-6)."""
+    try:
+        trace = start_invocation_trace(
+            db,
+            initiator_id=current_user.entity_id,
+            model_provider=body.model_provider,
+            task_id=body.task_id,
+            contribution_id=body.contribution_id,
+        )
+        db.commit()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return trace_to_v03_dict(trace)
+
+
+@router.get("/invocations/{trace_id}")
+def get_invocation_trace_endpoint(trace_id: str, db: Session = Depends(get_db)):
+    """Export invocation trace envelope per INVOCATION-SCHEMA-v0.3."""
+    trace = get_invocation_trace(db, trace_id)
+    if trace is None:
+        raise HTTPException(status_code=404, detail="Invocation trace not found")
+    return trace_to_v03_dict(trace)
+
+
+@router.post("/invocations/{trace_id}/steps", status_code=201)
+def add_invocation_step_endpoint(
+    trace_id: str,
+    body: InvocationStepIn,
+    db: Session = Depends(get_db),
+    _user=Depends(require_current_user),
+):
+    try:
+        step = add_invocation_step(
+            db,
+            trace_id,
+            source_entity_id=body.source_entity_id,
+            target_entity_id=body.target_entity_id,
+            action=body.action,
+            step_order=body.step_order,
+            metadata=body.metadata,
+        )
+        db.commit()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    trace = get_invocation_trace(db, trace_id)
+    return {
+        "step": {
+            "step_order": step.step_order,
+            "source_entity_id": step.source_entity_id,
+            "target_entity_id": step.target_entity_id,
+            "action": step.action,
+            "metadata": dict(step.metadata_ or {}),
+        },
+        "trace": trace_to_v03_dict(trace) if trace else None,
+    }
+
+
+@router.post("/invocations/{trace_id}/complete")
+def complete_invocation_trace_endpoint(
+    trace_id: str,
+    db: Session = Depends(get_db),
+    _user=Depends(require_current_user),
+):
+    try:
+        trace = complete_invocation_trace(db, trace_id)
+        db.commit()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return trace_to_v03_dict(trace)
+
+
+@router.post("/invocations/{trace_id}/fail")
+def fail_invocation_trace_endpoint(
+    trace_id: str,
+    body: InvocationFailIn,
+    db: Session = Depends(get_db),
+    _user=Depends(require_current_user),
+):
+    try:
+        trace = fail_invocation_trace(db, trace_id, reason=body.reason)
+        db.commit()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return trace_to_v03_dict(trace)
 
 
 @router.get("/neural-sources")

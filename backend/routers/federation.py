@@ -19,6 +19,13 @@ from schemas.federation import (
 from services.federation_crypto import get_node_public_key_hex
 from services.crypto_suite import active_crypto_suite, get_node_pqc_public_key_hex
 from services.federation_import import import_federated_event, import_from_proof_packet
+from services.federation_discovery import (
+    discover_peer_capabilities,
+    federation_handshake_with_peer,
+    build_local_peer_manifest,
+    fetch_remote_peer_manifest,
+    public_skill_node_template,
+)
 from services.federation_peers import probe_peer
 from services.federation_reputation import get_federated_reputation
 from services.federation_sync import sync_all_trusted_peers
@@ -95,6 +102,10 @@ def get_node_info():
             f"{backend_url}/api/v1/crypto/suites",
             f"{backend_url}/api/v1/federation/imports",
             f"{backend_url}/api/v1/federation/reputation?portable_id={{portable_id}}",
+            f"{backend_url}/api/v1/federation/peers/manifest",
+            f"{backend_url}/api/v1/federation/peers/handshake",
+            f"{backend_url}/api/v1/federation/peers/discover-capabilities",
+            f"{backend_url}/api/v1/federation/skill-node-template",
             f"{backend_url}/api/v1/federation/peers/health",
             f"{backend_url}/api/v1/federation/sync",
             f"{backend_url}/api/v1/federation/trust-policy-bundle",
@@ -124,6 +135,83 @@ class SyncOut(BaseModel):
     errors: int
     peer_health: list[dict] = Field(default_factory=list)
     results: list[dict] = Field(default_factory=list)
+
+
+@router.get("/peers/manifest")
+def local_peer_manifest():
+    """CI-5 — local federation peer discovery manifest (trust bundle + handshake surface)."""
+    backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
+    return build_local_peer_manifest(base_url=backend_url)
+
+
+@router.get("/peers/{node_id}/manifest")
+def trusted_peer_manifest(node_id: str):
+    """CI-5 — fetch live manifest from a configured trusted peer."""
+    peers = {p.node_id: p for p in load_trusted_nodes()}
+    peer = peers.get(node_id)
+    if not peer:
+        raise HTTPException(status_code=404, detail=f"Trusted peer {node_id} not configured")
+    try:
+        return fetch_remote_peer_manifest(peer.base_url)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+class FederationHandshakeIn(BaseModel):
+    peer_base_url: str
+    capability_type: str | None = None
+    require_trust_bundle_match: bool = False
+
+
+@router.post("/peers/handshake")
+def federation_peer_handshake(body: FederationHandshakeIn):
+    """CI-5 / MLN step 4 — discover capabilities (optional) then verify trust handshake surface."""
+    try:
+        handshake = federation_handshake_with_peer(
+            body.peer_base_url,
+            require_trust_bundle_match=body.require_trust_bundle_match,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    discovery = None
+    if body.capability_type:
+        try:
+            discovery = discover_peer_capabilities(
+                body.peer_base_url,
+                capability_type=body.capability_type,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "schema": "pocp.federation_peer_handshake.v0.1",
+        "handshake": handshake,
+        "discovery": discovery,
+    }
+
+
+class DiscoverCapabilitiesIn(BaseModel):
+    peer_base_url: str
+    capability_type: str | None = None
+    limit: int = 50
+
+
+@router.post("/peers/discover-capabilities")
+def federation_discover_capabilities(body: DiscoverCapabilitiesIn):
+    """CI-5 / MLN step 3 — search a peer's public capability registry."""
+    try:
+        return discover_peer_capabilities(
+            body.peer_base_url,
+            capability_type=body.capability_type,
+            limit=body.limit,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/skill-node-template")
+def federation_skill_node_template():
+    """CI-5 — public skill node reference template for minimum living network."""
+    return public_skill_node_template()
 
 
 @router.get("/peers/health")

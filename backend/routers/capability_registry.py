@@ -76,6 +76,7 @@ def list_capabilities(
     capability_type: str | None = Query(default=None),
     entity_id: str | None = Query(default=None),
     availability: str | None = Query(default=None),
+    name: str | None = Query(default=None, description="Case-insensitive name substring"),
     limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
 ):
@@ -85,12 +86,19 @@ def list_capabilities(
             capability_type=capability_type,
             entity_id=entity_id,
             availability=availability,
+            name=name,
             limit=limit,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     items = [_to_out(row) for row in rows]
-    return {"count": len(items), "items": items, "spec_version": "0.3"}
+    return {
+        "count": len(items),
+        "items": items,
+        "spec_version": "0.3",
+        "execute_receipt_url_template": "/api/v1/integrations/invocations/{trace_id}/receipt",
+        "route_url": "/api/v1/intelligence/route",
+    }
 
 
 @router.post("", response_model=CapabilityOut, status_code=201)

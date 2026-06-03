@@ -1,3 +1,12 @@
-# VERIFICATION NETWORK SPEC
+# Verification Network Spec
 
-Verification determines whether Proof is valid. AI can advise. Accountable reviewers finalize high-value and high-risk decisions.
+Verification determines whether Proof is valid.
+
+In early versions:
+
+```text
+AI advisory verification
++ human / reviewer approval for high-impact settlement
+```
+
+AI can advise. Accountable review remains required for high-value or high-risk settlement.

@@ -1,3 +1,13 @@
-# REPUTATION GRAPH SPEC
+# Reputation Graph Spec
 
-ReputationGraph defines future trust. Reputation must be contextual and event-derived, with graph edges across Entity, Node, Capability, Invocation, Proof, Verification, Settlement and Reputation.
+Reputation should be contextual and event-derived.
+
+Examples:
+
+```text
+skill_001 / code_review
+compute_001 / gpu_inference
+reviewer_001 / education_review
+```
+
+Reputation should be updated from verified events, not manually edited as a static field.
