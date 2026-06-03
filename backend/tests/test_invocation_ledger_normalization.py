@@ -4,6 +4,7 @@ import unittest
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from database import Base
 from models.entity import Entity, EntityStatus, EntityType
@@ -25,7 +26,10 @@ from services.invocation_ledger import (
 
 class InvocationLedgerNormalizationTests(unittest.TestCase):
     def setUp(self):
-        self.engine = create_engine("sqlite:///:memory:")
+        self.engine = create_engine(
+            "sqlite:///:memory:",
+            connect_args={"check_same_thread": False},
+        )
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.db = self.Session()
@@ -204,6 +208,92 @@ class InvocationLedgerNormalizationTests(unittest.TestCase):
         self.assertTrue(exchange_id)
         integrity = verify_exchange_invocation_chain(self.db, exchange_id)
         self.assertTrue(integrity["valid"], integrity)
+
+
+class ExchangeIntegrityRouteTests(unittest.TestCase):
+    """GET /api/v1/exchanges/{exchange_id}/integrity — PA-2 route contract."""
+
+    def setUp(self):
+        self.engine = create_engine(
+            "sqlite://",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+        Base.metadata.create_all(self.engine)
+        self.Session = sessionmaker(bind=self.engine)
+        self.db = self.Session()
+        self.db.add_all(
+            [
+                Entity(
+                    id="human-1",
+                    entity_type=EntityType.human,
+                    name="Consumer",
+                    status=EntityStatus.active,
+                ),
+                Entity(
+                    id="llm-1",
+                    entity_type=EntityType.llm,
+                    name="Provider",
+                    status=EntityStatus.active,
+                ),
+            ]
+        )
+        self.db.add(Wallet(entity_id="human-1", ai_credits=100, cp_balance=0))
+        self.db.add(Wallet(entity_id="llm-1", ai_credits=0, cp_balance=0))
+        self.db.commit()
+
+        receipt = build_compute_receipt(
+            provider_entity_id="llm-1",
+            provider_node_id="node-a",
+            capability="llm_inference",
+            adapter="mock",
+            initiator_entity_id="human-1",
+            extra={
+                "usage": {
+                    "metering_mode": "token",
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                }
+            },
+        )
+        result = settle_bilateral(self.db, receipt, consumer_entity_id="human-1")
+        self.db.commit()
+        self.exchange_id = result["exchange_id"]
+
+        from database import get_db
+        from fastapi.testclient import TestClient
+        from main import app
+
+        request_session = sessionmaker(bind=self.engine)
+
+        def _override_get_db():
+            db = request_session()
+            try:
+                yield db
+            finally:
+                db.close()
+
+        app.dependency_overrides[get_db] = _override_get_db
+        self.client = TestClient(app)
+        self.app = app
+
+    def tearDown(self):
+        self.app.dependency_overrides.clear()
+        self.db.close()
+        self.engine.dispose()
+
+    def test_integrity_route_returns_valid(self):
+        resp = self.client.get(f"/api/v1/exchanges/{self.exchange_id}/integrity")
+        self.assertEqual(resp.status_code, 200, resp.text)
+        data = resp.json()
+        self.assertTrue(data.get("valid"), data)
+        self.assertEqual(data.get("exchange_id"), self.exchange_id)
+        self.assertTrue(data.get("invocation_chain_digest"))
+
+    def test_integrity_route_404_unknown_exchange(self):
+        resp = self.client.get("/api/v1/exchanges/ex_nonexistent000/integrity")
+        self.assertEqual(resp.status_code, 404)
 
 
 if __name__ == "__main__":
