@@ -17,6 +17,7 @@ import subprocess
 import sys
 import urllib.error
 import urllib.request
+from collections import Counter
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent
@@ -30,6 +31,16 @@ def get_json(url: str, timeout: float = 15) -> dict:
 
 FEDERATION_PEER_MANIFEST_SCHEMA = "pocp.federation_peer_manifest.v0.1"
 PUBLIC_SKILL_NODE_TEMPLATE_SCHEMA = "pocp-skill-node-template.v0.1"
+ONTOLOGY_TYPE_COUNT = 14
+REGISTRY_MIN_COUNT = 11
+INFRASTRUCTURE_ENTITY_IDS = (
+    "pocp-entity-local-compute",
+    "pocp-entity-local-verifier",
+    "pocp-entity-bob-reviewer",
+    "pocp-entity-rain-sponsor",
+    "pocp-entity-protocol-treasury",
+    "pocp-entity-study-workflow",
+)
 
 
 def run_script(
@@ -223,6 +234,49 @@ def step_federation_peer_handshake(base: str, peer: str) -> tuple[bool, str]:
         return False, str(exc)
 
 
+def step_entity_catalog_complete(base: str) -> tuple[bool, str]:
+    """PA-5 — ontology types represented and capability registry seeded (HTTP audit)."""
+    try:
+        ontology = get_json(f"{base.rstrip('/')}/api/v1/entities/ontology")
+        entity_types = ontology.get("entity_types") or []
+        if len(entity_types) != ONTOLOGY_TYPE_COUNT:
+            return False, (
+                f"ontology entity_types={len(entity_types)} expected={ONTOLOGY_TYPE_COUNT}"
+            )
+
+        entities = get_json(f"{base.rstrip('/')}/api/v1/entities")
+        if isinstance(entities, dict):
+            items = entities.get("items") or entities.get("entities") or []
+        else:
+            items = entities
+        by_type = Counter(e.get("entity_type") for e in items if e.get("entity_type"))
+        missing_types = [t for t in entity_types if by_type.get(t, 0) == 0]
+
+        registry = get_json(f"{base.rstrip('/')}/api/v1/registry/capabilities?limit=200")
+        cap_items = registry.get("items") or []
+        cap_count = registry.get("count", len(cap_items))
+
+        entity_ids = {e.get("id") for e in items if e.get("id")}
+        missing_infra = [eid for eid in INFRASTRUCTURE_ENTITY_IDS if eid not in entity_ids]
+
+        ok = (
+            not missing_types
+            and cap_count >= REGISTRY_MIN_COUNT
+            and not missing_infra
+        )
+        return ok, json.dumps(
+            {
+                "ontology_types": len(entity_types),
+                "entity_count": len(items),
+                "missing_types": missing_types,
+                "capability_count": cap_count,
+                "missing_infrastructure_ids": missing_infra,
+            }
+        )
+    except Exception as exc:
+        return False, str(exc)
+
+
 def step_invocation_ref_integrity(base: str) -> tuple[bool, str]:
     """Smoke: dev-login → chat → exchange integrity endpoint."""
     payload = json.dumps({"username": "inv-ref-check", "email": "inv-ref-check@example.com"}).encode()
@@ -287,6 +341,7 @@ def main() -> int:
 
     checks: list[tuple[str, callable]] = [
         ("health", lambda: step_health(base)),
+        ("entity_catalog_complete", lambda: step_entity_catalog_complete(base)),
         ("intelligence/status", lambda: step_intelligence_status(base)),
         ("wallet_audit", lambda: step_wallet_audit(base)),
         ("invocation_ref_integrity", lambda: step_invocation_ref_integrity(base)),
@@ -364,6 +419,7 @@ def main() -> int:
 
         if not ok and name in (
             "health",
+            "entity_catalog_complete",
             "intelligence/status",
             "dev_login_disabled",
             "github_oauth",

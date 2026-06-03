@@ -50,4 +50,7 @@ if $FEDERATION; then
   done
 fi
 
+echo "Running backend pytest…"
+(cd "$ROOT/backend" && python -m pytest -q)
+
 python "$ROOT/backend/scripts/run_phase_a_acceptance.py" "$BASE" $FED_ARG

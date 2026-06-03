@@ -34,6 +34,14 @@ jobs:
       - name: Install backend dependencies
         run: pip install -r backend/requirements.txt
 
+      - name: Run backend unit tests
+        working-directory: backend
+        env:
+          POCP_CRYPTO_SUITE: pocp-crypto-v0.2-hybrid
+          POCP_NODE_PQC_PRIVATE_KEY: 50f1aad1c21870d89b32c33b75ad7666c313aca0ae8b20486ca5240a563de7c8
+          POCP_NODE_PQC_PUBLIC_KEY: 26c3ea06eae3d672175add0f824e90f8ac3a5238f8ae44dced71130bfec21c21
+        run: python -m pytest -q --tb=line
+
       - name: Start federation stack
         run: |
           docker compose -f docker-compose.federation.yml up -d --build

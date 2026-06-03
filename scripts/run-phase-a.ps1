@@ -42,6 +42,12 @@ if ($Federation) {
     }
 }
 
+Write-Host "Running backend pytest…"
+Push-Location (Join-Path $Root "backend")
+& python -m pytest -q
+if ($LASTEXITCODE -ne 0) { Pop-Location; exit $LASTEXITCODE }
+Pop-Location
+
 $Acceptance = Join-Path $Root "backend\scripts\run_phase_a_acceptance.py"
 & python $Acceptance $Base @FedArgs
 exit $LASTEXITCODE
