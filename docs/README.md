@@ -138,7 +138,7 @@ PoCP AI Commons documentation is organized around the **Genesis Package** and th
 
 | Document | Purpose |
 |----------|---------|
-| [LOCAL-SETUP.md](./LOCAL-SETUP.md) | Local development setup |
+| [LOCAL-SETUP.md](./LOCAL-SETUP.md) | Local dev setup — Phase A scripts, **Entity Dialogue API** curl examples → [ENTITY-DIALOGUE-PROTOCOL.md](./protocol/ENTITY-DIALOGUE-PROTOCOL.md) |
 | [ROADMAP-THREE-PHASES.md](./ROADMAP-THREE-PHASES.md) | **Local optimization P0** — Exchange Spine + Wallet exit signals |
 | [protocol/README.md](./protocol/README.md) | Protocol v0.4 index (capability-first exchange spine) |
 | [DATABASE.md](./DATABASE.md) | PostgreSQL vs SQLite |

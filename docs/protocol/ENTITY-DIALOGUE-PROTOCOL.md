@@ -327,6 +327,8 @@ Aligned with [ENTITY-CONNECTION.md](./ENTITY-CONNECTION.md) three layers and [TR
 
 ## 8. API surface (v0.1 pilot)
 
+**Onboarding:** [LOCAL-SETUP.md](../LOCAL-SETUP.md) § Entity Dialogue API — manifest curl, dev-login ping, and `test_entity_dialogue.py`. Index: [protocol/README.md](./README.md) § Entity Dialogue API.
+
 | Endpoint | Purpose |
 |----------|---------|
 | `GET /api/v1/intelligence/protocol/entity-dialogue` | Schema, kinds, stack position |

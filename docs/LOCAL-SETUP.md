@@ -116,6 +116,26 @@ curl -s -X POST http://127.0.0.1:8000/api/v1/intelligence/dialogue \
   }' | jq .
 ```
 
+**Windows (PowerShell)** — same flow; use `:8008` when running Docker Compose:
+
+```powershell
+$base = "http://127.0.0.1:8008"   # or :8000 for bare uvicorn
+$login = Invoke-RestMethod -Method Post -Uri "$base/api/v1/auth/dev-login" `
+  -ContentType "application/json" -Body '{"username":"rain","email":"rain@example.com"}'
+$body = @{
+  schema = "pocp.entity_dialogue.v0.1"
+  dialogue_id = "dlg_ping_local_1"
+  kind = "ping"
+  from = @{ entity_id = "pocp-entity-rain"; node_id = "local" }
+  to = @{ entity_id = "pocp-entity-rain"; node_id = "local" }
+} | ConvertTo-Json -Depth 5
+Invoke-RestMethod -Method Post -Uri "$base/api/v1/intelligence/dialogue" `
+  -Headers @{ Authorization = "Bearer $($login.access_token)" } `
+  -ContentType "application/json" -Body $body
+```
+
+Also indexed from [protocol/README.md](./protocol/README.md) § Entity Dialogue API.
+
 **Protocol layer tests** (stack not required):
 
 ```bash

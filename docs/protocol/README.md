@@ -25,6 +25,48 @@ Entities publish supply; consumers invoke by the unit; the exchange chain + ledg
 
 ---
 
+## Entity Dialogue API (L2)
+
+Normative spec: [ENTITY-DIALOGUE-PROTOCOL.md](./ENTITY-DIALOGUE-PROTOCOL.md) · onboarding walkthrough: [LOCAL-SETUP.md](../LOCAL-SETUP.md) § Entity Dialogue API · mission: [protocol_layer_edp](../../agents/missions/protocol-layer-edp/MANIFEST.md) (Issue **PL-8**).
+
+Native envelope: **`pocp.entity_dialogue.v0.1`**. With the API running (`:8000` bare uvicorn or `:8008` Docker Compose host port):
+
+**Public manifest** (no auth):
+
+```bash
+curl -s http://127.0.0.1:8000/api/v1/intelligence/protocol/entity-dialogue | jq .
+# Docker Compose: http://127.0.0.1:8008/...
+```
+
+**Ping dialogue** (session required — dev-login first, then Bearer token):
+
+```bash
+TOKEN=$(curl -s -X POST http://127.0.0.1:8000/api/v1/auth/dev-login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"rain","email":"rain@example.com"}' | jq -r .access_token)
+
+curl -s -X POST http://127.0.0.1:8000/api/v1/intelligence/dialogue \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "schema": "pocp.entity_dialogue.v0.1",
+    "dialogue_id": "dlg_ping_protocol_readme_1",
+    "kind": "ping",
+    "from": { "entity_id": "pocp-entity-rain", "node_id": "local" },
+    "to": { "entity_id": "pocp-entity-rain", "node_id": "local" }
+  }' | jq .
+```
+
+**Protocol layer tests** (stack not required):
+
+```bash
+cd backend && python -m pytest -q tests/test_entity_dialogue.py
+```
+
+More kinds (`discover`, `invoke`, `quote`, `federation_*`) and response shapes: [ENTITY-DIALOGUE-PROTOCOL.md](./ENTITY-DIALOGUE-PROTOCOL.md) §8.
+
+---
+
 ## CIP 12-layer specs (Capability Internet)
 
 Normative layer specs for the [12-layer capability internet](../POCP-NETWORK-ARCHITECTURE.md). In-memory reference skeleton: `backend/services/cip/` · demo: `python backend/scripts/minimum_living_network.py`.
