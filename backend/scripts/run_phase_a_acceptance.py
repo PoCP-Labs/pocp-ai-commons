@@ -57,13 +57,23 @@ def run_script(
     return proc.returncode == 0, out.strip()
 
 
+def _health_connect_hint(base: str) -> str:
+    """Actionable hint when /health fails (Nexus super-loop often reports api: timed out)."""
+    if base.rstrip("/").endswith(":8000"):
+        return (
+            " Hint: docker-compose.yml exposes the API on host port 8008 "
+            "(try http://127.0.0.1:8008 or BACKEND_URL=http://localhost:8008)."
+        )
+    return ""
+
+
 def step_health(base: str) -> tuple[bool, str]:
     try:
         data = get_json(f"{base.rstrip('/')}/health")
         ok = data.get("status") == "ok"
         return ok, json.dumps(data)
     except Exception as exc:
-        return False, str(exc)
+        return False, str(exc) + _health_connect_hint(base)
 
 
 def step_crypto_readiness(base: str, *, require_hybrid: bool = False) -> tuple[bool, str]:

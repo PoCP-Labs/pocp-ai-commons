@@ -20,6 +20,9 @@ if ($Federation) {
     $FedArgs = @()
 }
 
+# Align Nexus super-loop / platform_health probe with compose host port (avoids api: timed out).
+$env:BACKEND_URL = $Base
+
 Write-Host "Waiting for API health at $Base (first boot may take up to 6 min)…"
 $ready = $false
 for ($i = 1; $i -le 180; $i++) {

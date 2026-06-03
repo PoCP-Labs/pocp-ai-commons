@@ -61,6 +61,7 @@ jobs:
       - name: Report outcomes to Agent Studio
         if: always()
         env:
+          BACKEND_URL: http://127.0.0.1:8765
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
           GITHUB_RUN_ID: ${{ github.run_id }}

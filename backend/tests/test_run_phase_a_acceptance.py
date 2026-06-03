@@ -5,6 +5,7 @@ import sys
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from urllib.error import URLError
 
 _SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "run_phase_a_acceptance.py"
 _spec = importlib.util.spec_from_file_location("run_phase_a_acceptance", _SCRIPT)
@@ -14,6 +15,7 @@ sys.modules["run_phase_a_acceptance"] = _mod
 _spec.loader.exec_module(_mod)
 
 step_entity_catalog_complete = _mod.step_entity_catalog_complete
+step_health = _mod.step_health
 DEFAULT_BASE = _mod.DEFAULT_BASE
 ONTOLOGY_TYPE_COUNT = _mod.ONTOLOGY_TYPE_COUNT
 
@@ -35,6 +37,16 @@ class PhaseAAcceptanceDefaultsTests(unittest.TestCase):
     def test_default_base_matches_docker_compose_host_port(self):
         """Phase A acceptance must target :8008 (compose maps host 8008 → container 8000)."""
         self.assertEqual(DEFAULT_BASE, "http://127.0.0.1:8008")
+
+    @patch.object(
+        _mod,
+        "get_json",
+        side_effect=URLError("timed out"),
+    )
+    def test_health_failure_hints_compose_port_on_8000(self, _mock_get):
+        ok, detail = step_health("http://127.0.0.1:8000")
+        self.assertFalse(ok)
+        self.assertIn("8008", detail)
 
 
 class EntityCatalogAcceptanceStepTests(unittest.TestCase):

@@ -27,6 +27,9 @@ else
   FED_ARG=""
 fi
 
+# Align Nexus super-loop / platform_health probe with compose host port (avoids api: timed out).
+export BACKEND_URL="$BASE"
+
 echo "Waiting for API health at $BASE (first boot may take up to 6 min)…"
 for i in $(seq 1 180); do
   if curl -sf "$BASE/health" >/dev/null 2>&1; then
