@@ -3,6 +3,14 @@
 **PoCP is a verifiable market for compute and AI capabilities on the existing Internet.**  
 Entities publish supply; consumers invoke by the unit; the exchange chain + ledger record every settlement.
 
+## Default loop (locked narrative)
+
+```text
+quote → invoke → receipt → wallet
+```
+
+Product narrative: [../CAPABILITY-FIRST-POSITIONING.md](../CAPABILITY-FIRST-POSITIONING.md). **Contribution** (witness, CP, public graph) is an **opt-in upgrade** — not required for metered invoke.
+
 | Document | Role |
 |----------|------|
 | [../CAPABILITY-FIRST-POSITIONING.md](../CAPABILITY-FIRST-POSITIONING.md) | **Product narrative** — 算力 + 能力 |

@@ -1,25 +1,31 @@
 # PoCP Neural Commons Network
 
-**PoCP AI Commons** is the **first reference application** of the **PoCP Capability Internet Protocol**.
+**PoCP AI Commons** is the **first reference application** of the **PoCP Capability Internet Protocol (CIP)**.
 
-PoCP aims to become a decentralized **contribution, invocation, settlement, and reputation** protocol for AI capability and compute networks.
+PoCP is a **verifiable market for compute and AI capabilities** — Entity-attributed supply, metered invoke, receipt, and wallet settlement on the existing Internet. Canonical narrative: [docs/CAPABILITY-FIRST-POSITIONING.md](./docs/CAPABILITY-FIRST-POSITIONING.md).
 
-**Earn AI access through verified contribution.**  
-**通过真实贡献，获得 AI 使用权。**
+## Default loop (capability exchange)
 
-**PoCP Neural Commons Network** is a protocol-based distributed intelligence and compute network powered by verified contribution, tokenized measurement, and entity reputation.
-
-It connects humans, agents, LLMs, skills, tools, datasets, workflows, compute nodes, and organizations into a verifiable contribution network.
-
-Through CP, AIC, CC, and PT (internal accounting units), PoCP measures contribution, coordinates capability invocation, settles value, and builds entity reputation.
-
-The larger network expands the Genesis Loop into:
+**首屏路径 — 算力 + 能力交换（默认）：**
 
 ```text
-Entity → Node → Capability → Invocation → Proof → Verification → Settlement → Reputation → Governance
+publish capability / attach compute → quote → invoke → receipt → wallet (BC / AI Credits audit)
 ```
 
-See [docs/CAPABILITY-INTERNET-PROTOCOL.md](./docs/CAPABILITY-INTERNET-PROTOCOL.md) · [docs/UPGRADE-ROADMAP-PR-PLAN.md](./docs/UPGRADE-ROADMAP-PR-PLAN.md)
+**Contribution upgrade (optional):** verified tasks, witnesses, CP, and public graph reputation — **not required** for marketplace invoke. See [Core Idea](#core-idea) and [NO-TOKEN-FIRST.md](./NO-TOKEN-FIRST.md).
+
+**按单位使用能力；通过可选贡献路径获得 CP 与声誉。**  
+**Use capabilities by the unit; earn CP and reputation through verified contribution (opt-in).**
+
+Entities (humans, agents, skills, tools, compute nodes, organizations) publish supply and invoke by the unit. CP, AIC, CC, and PT are internal accounting units for metering and settlement.
+
+The full protocol stack expands into:
+
+```text
+Entity → Node → Capability → quote → invoke → receipt → wallet → (optional) Proof → Verification → CP → Reputation → Governance
+```
+
+See [docs/CAPABILITY-INTERNET-PROTOCOL.md](./docs/CAPABILITY-INTERNET-PROTOCOL.md) · [docs/protocol/README.md](./docs/protocol/README.md) · [docs/UPGRADE-ROADMAP-PR-PLAN.md](./docs/UPGRADE-ROADMAP-PR-PLAN.md)
 
 ## Capability Internet Protocol Docs
 
@@ -49,15 +55,19 @@ Specs: [BITCOIN-INSPIRED-POCP-NETWORK.md](./BITCOIN-INSPIRED-POCP-NETWORK.md) ·
 
 ## PoCP AI Commons (first application)
 
-PoCP AI Commons is the first open-source application scenario of this protocol — the first practical loop of the **Proof of Contribution Protocol (PoCP)**.
+PoCP AI Commons is the first open-source application of CIP — proving the **exchange spine** end-to-end:
 
-It starts with the first living loop:
+```text
+quote → invoke → receipt → wallet
+```
+
+**Optional contribution upgrade** (Genesis / CP path):
 
 ```text
 Contribution → Verification → CP → AI Credits → AI Use → More Contribution
 ```
 
-The network target expands this into capability matching, neural routing, invocation, settlement, and reputation — see [Neural Commons Architecture](#neural-commons-architecture) below.
+Neural routing, federation, and reputation layers extend the default loop — see [Neural Commons Architecture](#neural-commons-architecture) below.
 
 **Execution path:** we ship in three phases — **`v0.3.0-alpha`** (Phase A docs + engineering, done) → **local optimization** (Exchange Spine + Wallet, in progress) → **public staging** → **Phase B** → **Phase C**. See [docs/ROADMAP-THREE-PHASES.md](./docs/ROADMAP-THREE-PHASES.md).
 
@@ -75,30 +85,26 @@ It is a contribution-based AI capability network where humans, agents, skills, m
 
 ## Core Idea
 
-In most AI platforms, the relationship is simple:
+In most AI platforms:
 
 ```text
-User pays → User uses AI
+User pays → User uses AI (opaque history, vendor-owned ledger)
 ```
 
-PoCP AI Commons proposes a different loop:
+**PoCP default (capability exchange):**
 
 ```text
-User contributes
-    ↓
-Contribution is verified
-    ↓
-User earns CP and AI Credits
-    ↓
-User uses AI
-    ↓
-AI helps user contribute more
+Entity publishes capability → consumer quote → invoke → receipt → wallet audit
 ```
 
-This is the first practical loop of PoCP:
+**PoCP optional upgrade (contribution path):**
 
 ```text
-Contribution → Verification → CP → AI Credits → AI Use → More Contribution
+User contributes → verified → earns CP and AI Credits → uses AI → contributes more
+```
+
+```text
+Contribution → Verification → CP → AI Credits → AI Use → More Contribution  (opt-in)
 ```
 
 ---

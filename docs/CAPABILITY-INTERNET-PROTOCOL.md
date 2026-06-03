@@ -8,7 +8,21 @@
 
 This document is the **canonical positioning** for PoCP-Labs. Implementation lives in [pocp-ai-commons](https://github.com/PoCP-Labs/pocp-ai-commons) as the first reference application; protocol specs live under `docs/protocol/` and `docs/architecture/`.
 
-See also: [POCP-NETWORK-ARCHITECTURE.md](./POCP-NETWORK-ARCHITECTURE.md) · [MINIMUM-LIVING-NETWORK.md](./MINIMUM-LIVING-NETWORK.md) · [VISION.md](./VISION.md)
+See also: [CAPABILITY-FIRST-POSITIONING.md](./CAPABILITY-FIRST-POSITIONING.md) · [protocol/README.md](./protocol/README.md) · [POCP-NETWORK-ARCHITECTURE.md](./POCP-NETWORK-ARCHITECTURE.md) · [MINIMUM-LIVING-NETWORK.md](./MINIMUM-LIVING-NETWORK.md) · [VISION.md](./VISION.md)
+
+---
+
+## Default loop (capability-first)
+
+**首屏路径** — metered exchange, not contribution-first UX:
+
+```text
+quote → invoke → receipt → wallet (BC / AI Credits; ledger-auditable)
+```
+
+Publish compute or AI capabilities → consumer quotes → invokes → receives receipt → wallet reflects settlement.
+
+**Contribution upgrade (optional):** witness review, CP, public graph, and governance participation — see [Minimum living network](#minimum-living-network) and [CAPABILITY-FIRST-POSITIONING.md](./CAPABILITY-FIRST-POSITIONING.md).
 
 ---
 
@@ -80,17 +94,24 @@ PoCP needs Entity Nodes, not a central AI platform.
 
 **Tokenized measurement ≠ immediate public token issuance.**
 
-Cycle: contribute → CP → AIC/CC → invoke → new contribution → reputation → discovery rank.
+**Default cycle:** quote → invoke → receipt → wallet → discovery rank.
+
+**Optional contribution cycle:** contribute → CP → AIC/CC → reputation graph (not required per invoke).
 
 ---
 
 ## Minimum living network
 
-Before scaling globally, one closed loop must work on real nodes:
+Before scaling globally, the **exchange spine** must work on real nodes:
 
 ```text
-Human/Agent Node → discovers Public Skill Node → signed invocation
-→ Proof → AI verify → Human review → Settlement → Reputation → Event log
+Provider Node → discover capability → quote → invoke → receipt → wallet settlement
+```
+
+**Optional contribution closure** (witness path):
+
+```text
+→ Proof → AI verify → Human review → CP → Reputation → Event log
 ```
 
 Details: [MINIMUM-LIVING-NETWORK.md](./MINIMUM-LIVING-NETWORK.md).
