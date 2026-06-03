@@ -21,6 +21,7 @@ from services.remote_mcp_invoke import run_remote_mcp_invoke
 from services.remote_witness import run_witness
 from services.a2a_agent_card import build_entity_agent_card, build_node_agent_card
 from services.a2a_task_bridge import handle_jsonrpc_call
+from services.capability.binding_to_dialogue import binding_map_manifest
 from services.entity_connections import entity_connection_matrix
 from services.entity_dialogue import (
     ENTITY_DIALOGUE_SCHEMA,
@@ -617,8 +618,12 @@ def entity_a2a_surface(entity_id: str, db: Session = Depends(get_db)):
             "contribution_bound": True,
             "auto_finalization_enabled": True,
             "send_message_maps_to": "ContributionEvent",
+            "send_message_dialogue_kind": "submit",
+            "send_message_binding_mode": "deferred",
+            "binding_map": binding_map_manifest()["doc"],
             "auto_verify": f"/api/v1/contributions/{{contribution_id}}/auto-verify",
         },
+        "binding_map": binding_map_manifest(),
     }
 
 
@@ -657,7 +662,11 @@ def node_a2a_surface(db: Session = Depends(get_db)):
             "contribution_bound": True,
             "auto_finalization_enabled": True,
             "send_message_maps_to": "ContributionEvent",
+            "send_message_dialogue_kind": "submit",
+            "send_message_binding_mode": "deferred",
+            "binding_map": binding_map_manifest()["doc"],
         },
+        "binding_map": binding_map_manifest(),
     }
 
 

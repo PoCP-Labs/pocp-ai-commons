@@ -14,6 +14,7 @@ from models.entity import Entity, EntityType
 from models.task import Task, TaskStatus
 from models.user_account import UserAccount
 from services.a2a_agent_card import A2A_PROTOCOL_VERSION, POCP_A2A_EXTENSION_URI, build_entity_agent_card
+from services.capability.a2a_deferred_submit import apply_a2a_deferred_submit_binding
 from services.contribution_submit import submit_contribution_event
 from services.evidence import POCP_META_KEY, enrich_evidence
 
@@ -287,7 +288,14 @@ def send_message_to_contribution(
     pocp_meta["a2a"] = a2a_record
     stored[POCP_META_KEY] = pocp_meta
     contribution.evidence = stored
-    db.flush()
+    apply_a2a_deferred_submit_binding(
+        db,
+        contribution,
+        human_entity_id=user.entity_id,
+        target_entity_id=target_entity_id or _meta_get(metadata, "targetEntityId", "target_entity_id"),
+        context_id=context_id,
+        message_id=message_id,
+    )
     return contribution
 
 

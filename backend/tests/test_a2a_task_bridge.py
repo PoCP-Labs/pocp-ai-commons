@@ -83,7 +83,11 @@ class A2ATaskBridgeTests(unittest.TestCase):
         self.assertEqual(contribution.primary_entity_id, self.human.id)
         self.assertEqual(contribution.task_id, self.task.id)
         self.assertEqual(contribution.status, ContributionStatus.submitted)
-        self.assertIn("a2a", (contribution.evidence or {}).get("_pocp", {}))
+        pocp = (contribution.evidence or {}).get("_pocp", {})
+        self.assertIn("a2a", pocp)
+        self.assertEqual(pocp.get("dialogue_kind"), "submit")
+        self.assertEqual(pocp.get("binding"), "a2a.SendMessage")
+        self.assertEqual(pocp.get("binding_mode"), "deferred")
         roles = {p.role.value for p in contribution.participants}
         self.assertIn("creator", roles)
         self.assertIn("executor", roles)
