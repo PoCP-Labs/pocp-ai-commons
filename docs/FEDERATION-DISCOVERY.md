@@ -2,7 +2,7 @@
 
 Mesh-0 scope: federation peer manifests, public skill node template, and minimum living network steps 3–4 (discover + handshake).
 
-Parent: [MINIMUM-LIVING-NETWORK.md](./MINIMUM-LIVING-NETWORK.md) · Acceptance: `run_phase_a_acceptance.py --federation`
+Parent: [MINIMUM-LIVING-NETWORK.md](./MINIMUM-LIVING-NETWORK.md) · Acceptance: `run_phase_a_acceptance.py --federation` · **Peer dialogue routing:** [FEDERATION-DIALOGUE-ROUTING.md](./FEDERATION-DIALOGUE-ROUTING.md)
 
 ---
 

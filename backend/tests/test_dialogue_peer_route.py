@@ -143,6 +143,39 @@ class DialoguePeerRouteTests(unittest.TestCase):
         url = mock_post.call_args[0][0]
         self.assertIn("peer-x.example.com", url)
 
+    @patch("services.network.dialogue_route._post_json")
+    def test_route_federation_accept_forwards_to_peer(self, mock_post):
+        mock_post.return_value = {
+            "schema": "pocp.entity_dialogue_response.v0.1",
+            "status": "accepted",
+            "result": {
+                "mode": "federation_relay",
+                "validation": {"blocking_valid": True, "checks": []},
+            },
+            "refs": {"protocol_event_id": "evt_1"},
+        }
+        envelope = {
+            "schema": ENTITY_DIALOGUE_SCHEMA,
+            "dialogue_id": "dlg_fed_peer_1",
+            "kind": "federation_accept",
+            "from": {"entity_id": self.human.id, "node_id": "node-a"},
+            "to": {"entity_id": self.human.id, "node_id": "node-b", "portable_id": "dev:alice"},
+            "payload": {
+                "route_peer": True,
+                "source_node_id": "node-b",
+                "contribution_id": "c1",
+                "auto_import": False,
+            },
+        }
+        import asyncio
+
+        response = asyncio.run(route_dialogue(self.db, envelope))
+        self.assertEqual(response["status"], "accepted")
+        self.assertTrue(response["result"].get("peer_route"))
+        url = mock_post.call_args[0][0]
+        self.assertIn("peer-b.example.com", url)
+        self.assertIn("/federation/dialogue", url)
+
 
 if __name__ == "__main__":
     unittest.main()

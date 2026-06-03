@@ -692,6 +692,7 @@ def _handle_federation_accept(db: Session, envelope: dict[str, Any]) -> dict[str
         },
         errors=[] if status == "accepted" else ["federation_accept failed validation or import"],
         bindings={
+            "validate_proof": "/api/v1/federation/validate-proof",
             "overlay_relay": "/api/v1/federation/overlay/relay",
             "import_proof": "/api/v1/federation/import-proof",
         },

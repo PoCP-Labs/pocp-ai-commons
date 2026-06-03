@@ -12,7 +12,17 @@ from services.trust_config import trusted_nodes_map
 
 logger = logging.getLogger(__name__)
 
-ROUTABLE_KINDS = frozenset({"ping", "discover", "quote", "invoke", "broadcast"})
+ROUTABLE_KINDS = frozenset(
+    {
+        "ping",
+        "discover",
+        "quote",
+        "invoke",
+        "broadcast",
+        "federation_offer",
+        "federation_accept",
+    }
+)
 FEDERATION_DIALOGUE_PATH = "/api/v1/federation/dialogue"
 
 

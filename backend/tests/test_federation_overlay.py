@@ -140,6 +140,49 @@ class FederationOverlayTests(unittest.TestCase):
         self.assertTrue(response["result"]["import"]["imported"])
         mock_import.assert_called_once()
 
+    @patch("services.network.federation_overlay.validate_proof_against_trust_policy")
+    def test_federation_accept_rejects_blocking_validation(self, mock_validate):
+        mock_validate.return_value = {
+            "blocking_valid": False,
+            "checks": [{"id": "min_witness_count", "ok": False}],
+        }
+        envelope = {
+            "schema": ENTITY_DIALOGUE_SCHEMA,
+            "dialogue_id": "dlg_fed_acc_reject",
+            "kind": "federation_accept",
+            "from": {"entity_id": self.human.id, "node_id": "peer-a"},
+            "to": {"entity_id": self.human.id, "node_id": "local"},
+            "payload": {
+                "source_node_id": "peer-a",
+                "proof": self.proof,
+                "auto_import": True,
+            },
+        }
+        response = asyncio.run(route_dialogue(self.db, envelope))
+        self.assertEqual(response["status"], "rejected")
+        self.assertFalse(response["result"]["validation"]["blocking_valid"])
+        self.assertIn("validate_proof", response["bindings"])
+
+    @patch("services.network.federation_overlay.validate_proof_against_trust_policy")
+    def test_federation_accept_inline_proof_runs_trust_validation(self, mock_validate):
+        mock_validate.return_value = {"blocking_valid": True, "checks": []}
+        envelope = {
+            "schema": ENTITY_DIALOGUE_SCHEMA,
+            "dialogue_id": "dlg_fed_acc_inline",
+            "kind": "federation_accept",
+            "from": {"entity_id": self.human.id, "node_id": "peer-a"},
+            "to": {"entity_id": self.human.id, "node_id": "local"},
+            "payload": {
+                "source_node_id": "peer-a",
+                "proof": self.proof,
+                "auto_import": False,
+            },
+        }
+        response = asyncio.run(route_dialogue(self.db, envelope))
+        mock_validate.assert_called_once()
+        self.assertEqual(response["status"], "accepted")
+        self.assertTrue(response["result"]["validation"]["blocking_valid"])
+
 
 if __name__ == "__main__":
     unittest.main()

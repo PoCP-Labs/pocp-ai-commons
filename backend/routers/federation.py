@@ -926,4 +926,9 @@ async def federation_dialogue(envelope: dict, db: Session = Depends(get_db)):
     """Entity Dialogue entrypoint on federation surface (same router as overlay relay)."""
     from services.entity_dialogue import route_dialogue
 
-    return await route_dialogue(db, envelope)
+    response = await route_dialogue(db, envelope)
+    if response.get("status") == "accepted":
+        result = response.get("result") or {}
+        if result.get("import", {}).get("imported"):
+            db.commit()
+    return response
