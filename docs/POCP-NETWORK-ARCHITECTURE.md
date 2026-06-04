@@ -145,7 +145,9 @@ See [MINIMUM-LIVING-NETWORK.md](./MINIMUM-LIVING-NETWORK.md) · [implementation/
 
 ### [CIP-P1.4] CIP skeleton ↔ production map
 
-Handoff `f6542098` · Atlas-0 schema review (**APPROVED**). Every file under `backend/services/cip/` must have a **production twin** or an explicit **`spec-only`** / **`partial`** label. No orphan modules.
+Handoff `dc57c48d` · Atlas-0 schema review (**APPROVED**). Every file under `backend/services/cip/` must have a **production twin** or an explicit **`spec-only`** / **`partial`** label. No orphan modules.
+
+Verification (doc review): `python backend/scripts/_cip_p14_doc_review.py` · demo: `python backend/scripts/minimum_living_network.py`.
 
 **Status legend**
 
@@ -210,7 +212,7 @@ Cross-cutting: **Federation exchange** (`federation_exchange_import.py`, `networ
 | B5 | `events/event_log.py` vs production `ProtocolEvent` append-only chain — indexer not wired | Pulse-0 |
 | B6 | Entity Layer 1 has **no `cip/entity/`** — intentional; catalog lives in production services only | — (documented) |
 
-Acceptance (PR-1.4): all `cip/*` modules classified; no orphans. Convergence work tracked in [CAPABILITY-INTERNET-GAP-PR-PLAN.md](./implementation/CAPABILITY-INTERNET-GAP-PR-PLAN.md) §PR-1.4.
+Acceptance (PR-1.4): all `cip/*` modules classified; no orphans (`_cip_p14_doc_review.py` enforces 17 runtime modules). Convergence work tracked in [CAPABILITY-INTERNET-GAP-PR-PLAN.md](./implementation/CAPABILITY-INTERNET-GAP-PR-PLAN.md) §PR-1.4.
 
 ## Next specs to write (backlog)
 
