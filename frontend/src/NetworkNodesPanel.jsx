@@ -55,6 +55,195 @@ function isExternalUrl(url) {
   return !/localhost|127\.0\.0\.1|host\.docker\.internal/i.test(url);
 }
 
+function peerAddrbook(node, addrbookEntry) {
+  return (
+    node?.last_probe ||
+    node?.peer_addrbook ||
+    addrbookEntry?.peer_addrbook ||
+    node?.metadata?.peer_addrbook ||
+    null
+  );
+}
+
+function formatRelativeTime(iso) {
+  if (!iso) return null;
+  const ms = Date.now() - new Date(iso).getTime();
+  if (Number.isNaN(ms)) return iso;
+  if (ms < 60_000) return "just now";
+  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m ago`;
+  if (ms < 86_400_000) return `${Math.floor(ms / 3_600_000)}h ago`;
+  return `${Math.floor(ms / 86_400_000)}d ago`;
+}
+
+function probeReachability(book) {
+  if (!book) return "unknown";
+  if (book.banned) return "banned";
+  const ok = book.last_success_at;
+  const fail = book.last_failure_at;
+  if (ok && (!fail || new Date(ok) >= new Date(fail))) return "ok";
+  if (fail) return "fail";
+  return "unknown";
+}
+
+function buildPeerHealth(node, addrbookEntry, sessionHealth) {
+  const book = peerAddrbook(node, addrbookEntry);
+  const session = sessionHealth || null;
+  const sessionProbe = session?.probe || null;
+  const reach = probeReachability(book);
+  const routable = addrbookEntry?.routable ?? (book && !book.banned);
+  const ledgerValid =
+    sessionProbe?.ledger_valid ?? book?.ledger_valid ?? (sessionProbe?.reachable ? null : undefined);
+
+  let probeLabel = "Not probed";
+  let probeTone = "dim";
+  if (reach === "ok") {
+    probeLabel = "Reachable";
+    probeTone = "ok";
+  } else if (reach === "fail") {
+    probeLabel = "Unreachable";
+    probeTone = "bad";
+  } else if (reach === "banned") {
+    probeLabel = "Banned";
+    probeTone = "bad";
+  } else if (sessionProbe?.reachable) {
+    probeLabel = "Reachable";
+    probeTone = "ok";
+  } else if (sessionProbe && !sessionProbe.reachable) {
+    probeLabel = "Unreachable";
+    probeTone = "bad";
+  }
+
+  let dialogueLabel = "Unknown";
+  let dialogueTone = "dim";
+  if (addrbookEntry != null) {
+    if (routable) {
+      dialogueLabel = "Routable";
+      dialogueTone = "ok";
+    } else {
+      dialogueLabel = "Blocked";
+      dialogueTone = "bad";
+    }
+  } else if (reach === "ok" || sessionProbe?.reachable) {
+    dialogueLabel = "Ready (probe)";
+    dialogueTone = "ok";
+  }
+
+  let exchangeLabel = "—";
+  let exchangeTone = "dim";
+  if (ledgerValid === true) {
+    exchangeLabel = "Ledger OK";
+    exchangeTone = "ok";
+  } else if (ledgerValid === false) {
+    exchangeLabel = "Ledger invalid";
+    exchangeTone = "bad";
+  } else if (sessionProbe?.reachable) {
+    exchangeLabel = "Surface up";
+    exchangeTone = "ok";
+  }
+
+  const lastAt = book?.last_success_at || book?.last_failure_at || null;
+  const latency = book?.last_latency_ms;
+
+  return {
+    book,
+    probeLabel,
+    probeTone,
+    dialogueLabel,
+    dialogueTone,
+    exchangeLabel,
+    exchangeTone,
+    lastAt,
+    latency,
+    lastError: book?.last_error || sessionProbe?.error || null,
+    ledgerCount: sessionProbe?.ledger_count,
+  };
+}
+
+function PeerHealthStrip({ health }) {
+  if (!health) return null;
+  const toneClass = (tone) => {
+    if (tone === "ok") return "inspiration-tag";
+    if (tone === "bad") return "remote-tag";
+    return "partner-kind-tag";
+  };
+  return (
+    <div style={{ marginTop: 10 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+        <span className={toneClass(health.probeTone)} title="Last federation probe">
+          Probe: {health.probeLabel}
+        </span>
+        <span className={toneClass(health.dialogueTone)} title="Cross-node dialogue route">
+          Dialogue: {health.dialogueLabel}
+        </span>
+        <span className={toneClass(health.exchangeTone)} title="Remote ledger / exchange surface">
+          Exchange: {health.exchangeLabel}
+        </span>
+        {health.latency != null && (
+          <span className="partner-kind-tag">{health.latency}ms</span>
+        )}
+      </div>
+      {(health.lastAt || health.lastError) && (
+        <div className="proof-layers__meta" style={{ marginTop: 6, fontSize: "0.72rem" }}>
+          {health.lastAt && (
+            <span>
+              Last probe {formatRelativeTime(health.lastAt)}
+              {health.ledgerCount != null ? ` · ledger ${health.ledgerCount} rows` : ""}
+            </span>
+          )}
+          {health.lastError && (
+            <span style={{ display: "block", color: "var(--btc)", marginTop: 2 }}>
+              {health.lastError}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ConnectHealthBanner({ result }) {
+  if (!result) return null;
+  const probe = result.probe || result;
+  const book = result.peer_addrbook;
+  const reachable = result.reachable ?? probe?.reachable;
+  if (!reachable && !result.error && !probe?.error) return null;
+
+  const ledgerOk = probe?.ledger_valid;
+  const health = book
+    ? buildPeerHealth({ metadata: { peer_addrbook: book } }, { peer_addrbook: book, routable: !book.banned }, {
+        probe,
+      })
+    : buildPeerHealth({}, null, { probe });
+
+  return (
+    <div className="alert alert--info" style={{ marginBottom: 12, fontSize: "0.82rem" }}>
+      <div>
+        {reachable ? (
+          <>
+            Connected to <strong>{result.node_id || probe?.node?.node_id}</strong>
+            {result.base_url && <> at {result.base_url}</>}
+          </>
+        ) : (
+          <>Peer unreachable{probe?.error ? `: ${probe.error}` : ""}</>
+        )}
+        {result.mirror?.mirrored_count != null && (
+          <> · mirrored {result.mirror.mirrored_count} entities</>
+        )}
+      </div>
+      {reachable && (
+        <div style={{ marginTop: 8 }}>
+          <PeerHealthStrip health={health} />
+        </div>
+      )}
+      {ledgerOk === false && (
+        <div style={{ marginTop: 6, color: "var(--btc)" }}>
+          Remote ledger verification failed — exchange import may be rejected until ledger is valid.
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function NetworkNodesPanel({ fetchJson, onSelectEntity, onRefreshGraph }) {
   const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -68,6 +257,8 @@ export default function NetworkNodesPanel({ fetchJson, onSelectEntity, onRefresh
   const [probingId, setProbingId] = useState(null);
   const [mirroringId, setMirroringId] = useState(null);
   const [promotingId, setPromotingId] = useState(null);
+  const [addrbookByNodeId, setAddrbookByNodeId] = useState({});
+  const [sessionHealthByNodeId, setSessionHealthByNodeId] = useState({});
 
   const request = useCallback(
     async (path, options) => {
@@ -77,11 +268,34 @@ export default function NetworkNodesPanel({ fetchJson, onSelectEntity, onRefresh
     [fetchJson]
   );
 
+  const rememberSessionHealth = useCallback((nodeId, payload) => {
+    if (!nodeId) return;
+    setSessionHealthByNodeId((prev) => ({
+      ...prev,
+      [nodeId]: {
+        probe: payload.probe || payload,
+        peer_addrbook: payload.peer_addrbook,
+        at: Date.now(),
+      },
+    }));
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      let data = await federationFetch("/api/v1/federation/network/overview").catch(() => null);
+      const [overviewRes, addrbookRes] = await Promise.all([
+        federationFetch("/api/v1/federation/network/overview").catch(() => null),
+        federationFetch("/api/v1/federation/peers/addrbook").catch(() => null),
+      ]);
+
+      const addrMap = {};
+      for (const entry of addrbookRes?.peers || []) {
+        if (entry?.node_id) addrMap[entry.node_id] = entry;
+      }
+      setAddrbookByNodeId(addrMap);
+
+      let data = overviewRes;
 
       if (!data || !Array.isArray(data.nodes)) {
         const legacy = await request("/api/v1/federation/peers/entities");
@@ -146,6 +360,7 @@ export default function NetworkNodesPanel({ fetchJson, onSelectEntity, onRefresh
         body: JSON.stringify({ base_url: url, mirror_entities: true }),
       });
       setConnectResult(result);
+      rememberSessionHealth(result.node_id, result);
       setConnectUrl("");
       await load();
     } catch (err) {
@@ -189,6 +404,7 @@ export default function NetworkNodesPanel({ fetchJson, onSelectEntity, onRefresh
         method: "POST",
       });
       setConnectResult(result);
+      rememberSessionHealth(nodeId, result);
       await load();
     } catch (err) {
       setError(String(err.message || err));
@@ -207,6 +423,7 @@ export default function NetworkNodesPanel({ fetchJson, onSelectEntity, onRefresh
         body: JSON.stringify({ base_url: baseUrl }),
       });
       setConnectResult(result);
+      rememberSessionHealth(result.node_id, result);
       await load();
     } catch (err) {
       setError(String(err.message || err));
@@ -279,8 +496,8 @@ export default function NetworkNodesPanel({ fetchJson, onSelectEntity, onRefresh
     <section className="panel panel--network">
       <h2 className="panel__title section-heading--ai">Federation Network</h2>
       <p className="panel__subtitle">
-        Connect PoCP nodes beyond this machine — LAN IP, public URL, or cloud instance. Discover → validate →
-        route dialogue without blind trust.
+        Connect PoCP nodes beyond this machine — LAN IP, public URL, or cloud instance. Discover → probe →
+        see dialogue route and exchange (ledger) health per peer — not mirrors alone.
       </p>
 
       <div className="partner-discover" style={{ marginTop: 8, marginBottom: 12 }}>
@@ -344,14 +561,7 @@ export default function NetworkNodesPanel({ fetchJson, onSelectEntity, onRefresh
         </div>
       )}
 
-      {connectResult?.reachable && (
-        <div className="alert alert--info" style={{ marginBottom: 12, fontSize: "0.82rem" }}>
-          Connected to <strong>{connectResult.node_id}</strong> at {connectResult.base_url}
-          {connectResult.mirror?.mirrored_count != null && (
-            <> · mirrored {connectResult.mirror.mirrored_count} entities</>
-          )}
-        </div>
-      )}
+      <ConnectHealthBanner result={connectResult} />
 
       {overview?.setup_hint && peerCount === 0 && (
         <div className="alert alert--info" style={{ marginBottom: 12, fontSize: "0.78rem" }}>
@@ -468,6 +678,15 @@ export default function NetworkNodesPanel({ fetchJson, onSelectEntity, onRefresh
               <div className="entity-row__mission" style={{ marginTop: 6 }}>
                 {n.mirror_count} mirrored entit{n.mirror_count === 1 ? "y" : "ies"}
               </div>
+            )}
+            {!n.is_local && (
+              <PeerHealthStrip
+                health={buildPeerHealth(
+                  n,
+                  addrbookByNodeId[n.node_id],
+                  sessionHealthByNodeId[n.node_id]
+                )}
+              />
             )}
             <div style={{ fontSize: "0.7rem", color: "var(--text-dim)", marginTop: 6 }}>
               id {truncateHash(n.id, 16)}
