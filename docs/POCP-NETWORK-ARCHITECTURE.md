@@ -135,13 +135,82 @@ Phase A maps many of these to `/api/v1/*` on the reference node; Phase B extract
 
 ## CIP reference skeleton
 
-In-memory implementation under `backend/services/cip/` — **does not replace** the production Genesis loop (`services/invocation.py`, wallets, federation). Run the closed-loop demo:
+In-memory implementation under `backend/services/cip/` — **does not replace** the production Genesis loop (`services/invocation_ledger.py`, `exchange_spine.py`, wallets, federation). Run the closed-loop demo:
 
 ```bash
 python backend/scripts/minimum_living_network.py
 ```
 
 See [MINIMUM-LIVING-NETWORK.md](./MINIMUM-LIVING-NETWORK.md) · [implementation/MINIMUM-LIVING-NETWORK-DEMO.md](./implementation/MINIMUM-LIVING-NETWORK-DEMO.md).
+
+### [CIP-P1.4] CIP skeleton ↔ production map
+
+Handoff `1f7fd3af` · Atlas-0 schema review. Every file under `backend/services/cip/` must have a **production twin** or an explicit **`spec-only`** label. No orphan modules.
+
+**Status legend**
+
+| Status | Meaning |
+|--------|---------|
+| **active** | Used in `minimum_living_network.py` demo **and** mapped to production service(s) |
+| **partial** | Production twin exists; CIP module not wired into the demo loop yet |
+| **spec-only** | CIP stub or Phase B placeholder; no production import path today |
+| **production-only** | Production layer with no `cip/*` module (documented for completeness) |
+
+#### Module map (`backend/services/cip/*`)
+
+| CIP module | Layer | Status | Production twin(s) | Router / wire |
+|------------|-------|--------|----------------------|---------------|
+| `types.py` | shared | **active** | `services/entity/schemas.py`, `services/node/schemas.py`, exchange models | schema contracts only |
+| `capability/registry.py` | 4 Capability | **active** | `services/capability/registry.py`, `services/capability/service.py` | `routers/capabilities.py`, `GET /pocp/capabilities` |
+| `discovery/discovery.py` | 5 Discovery | **active** | `services/federation_discovery.py`, `services/federation_peer_addrbook.py`, `services/neural/rule_based_router.py` | `routers/federation.py` |
+| `invocation/ledger.py` | 6 Invocation | **active** | `services/invocation_ledger.py`, `services/entity_dialogue.py` | `routers/intelligence.py`, dialogue routes |
+| `proof/proof.py` | 7 Proof | **active** | `services/proof.py`, `services/exchange_proof.py` | `routers/exchanges.py`, `POST /pocp/proofs` |
+| `verification/verifier.py` | 8 Verification | **active** | `services/verifiers/*`, contribution verification models | advisory + human review queues |
+| `settlement/settlement.py` | 9 Settlement | **active** | `services/exchange_spine.py`, `services/compute_settlement.py`, `services/federation_settlement.py` | `routers/exchanges.py`, `POST /pocp/settlements/ack` |
+| `reputation/reputation.py` | 10 Reputation | **active** | `services/graph.py`, entity reputation fields | graph / entity APIs |
+| `economy/accounting.py` | 12 Economy | **active** | `services/wallet_service.py`, `services/token_measurement/` | `routers/wallet.py` (internal metering — **no public token**) |
+| `events/event_log.py` | overlay | **partial** | ledger chain, `ProtocolEvent` target (see [INVOCATION-LEDGER-SPEC.md](./protocol/INVOCATION-LEDGER-SPEC.md)) | append-only event sourcing backlog |
+| `node/registry.py` | 2 Node | **active** | `services/node/profile.py`, `services/node/store.py`, `models/node_profile.py` | `GET /.well-known/pocp-node.json` |
+| `node/manifest.py` | 2 Node | **partial** | `services/node_manifest.py`, `services/node/base.py` | `GET /api/v1/entities/{id}/node-manifest`, `/pocp/*` shim |
+| `node/heartbeat.py` | 2 Node | **spec-only** | — (Phase B signed heartbeat on `node_profiles`) | — |
+| `identity/signature.py` | 3 Identity | **spec-only** | federation import signatures only; **DID/VC not yet** | `services/federation_import.py`, ledger sigs |
+| `reputation/graph.py` | 10 Reputation | **partial** | `services/graph.py` (scoped edges) | federation-wide indexer backlog |
+| `p2p/events.py` | overlay | **spec-only** | — (Phase B libp2p event transport; use `events/event_log.py` for demo) | — |
+| `examples/minimum_living_network.py` | demo | **active** | `backend/scripts/minimum_living_network.py` | import-only; Wave-1 gate script |
+
+**Package markers** (`__init__.py` under each subpackage): no runtime logic — inherit parent layer status.
+
+#### Layer rollup (production primary path)
+
+| # | Layer | Production (primary) | CIP skeleton | Router |
+|---|--------|----------------------|--------------|--------|
+| 1 | Entity | `models/entity.py`, `services/entity_catalog.py`, `intelligence/entity_ontology.py` | — (**production-only**) | `routers/api.py` |
+| 2 | Node | `services/node/`, `services/node_manifest.py` | `cip/node/` | `main.py` well-known · `routers/pocp_public.py` |
+| 3 | Identity | `services/federation_*.py`, ledger signatures | `cip/identity/` (**spec-only**) | federation import |
+| 4 | Capability | `services/capability/` | `cip/capability/` | `routers/capabilities.py` |
+| 5 | Discovery | `federation_discovery.py`, `federation_peer_addrbook.py` | `cip/discovery/` | `routers/federation.py` |
+| 6 | Invocation | `invocation_ledger.py`, `entity_dialogue.py` | `cip/invocation/` | `routers/intelligence.py` |
+| 7 | Proof | `exchange_proof.py`, `proof.py` | `cip/proof/` | `routers/exchanges.py` |
+| 8 | Verification | `services/verifiers/` | `cip/verification/` | review / witness APIs |
+| 9 | Settlement | `exchange_spine.py`, `compute_settlement.py` | `cip/settlement/` | `routers/exchanges.py` |
+| 10 | Reputation | `graph.py` | `cip/reputation/` | graph APIs |
+| 11 | Governance | org foundation, reviewer queue, policy bot | — (**production-only**; PIP draft) | internal admin |
+| 12 | Economy | `wallet_service.py`, `token_measurement/` | `cip/economy/` | `routers/wallet.py` |
+
+Cross-cutting: **Federation exchange** (`federation_exchange_import.py`, `network/dialogue_route.py`) has no dedicated `cip/*` package — production path only; maps to Layers 5–9 on the wire.
+
+#### Blockers → Nexus (Forge / Pulse follow-ups)
+
+| ID | Blocker | Owner hint |
+|----|---------|------------|
+| B1 | CIP demo and production REST remain **dual tracks** — no shared import from `exchange_spine` into `cip/settlement` | Forge-0 |
+| B2 | `cip/node/manifest.py` references `node.protocol_version`; `NodeProfileData` in `types.py` lacks that field (demo does not exercise manifest builder) | Forge-0 |
+| B3 | `cip/p2p/events.py` duplicates `events/event_log.py` API shape — consolidate or mark deprecated before Phase B libp2p | Atlas-0 → Forge-0 |
+| B4 | Layer 11 Governance has **no CIP module** — acceptable as production-only until governance spec freezes | Atlas-0 |
+| B5 | `events/event_log.py` vs production `ProtocolEvent` append-only chain — indexer not wired | Pulse-0 |
+| B6 | Entity Layer 1 has **no `cip/entity/`** — intentional; catalog lives in production services only | — (documented) |
+
+Acceptance (PR-1.4): all `cip/*` modules classified; no orphans. Convergence work tracked in [CAPABILITY-INTERNET-GAP-PR-PLAN.md](./implementation/CAPABILITY-INTERNET-GAP-PR-PLAN.md) §PR-1.4.
 
 ## Next specs to write (backlog)
 
