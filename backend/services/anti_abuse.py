@@ -110,8 +110,10 @@ REPUTATION_SOURCE_EVENT_TYPES = frozenset(
         "VerificationCompleted",
         "InvocationCompleted",
         "ProofSubmitted",
+        "ExchangeSettled",
     }
 )
+FEDERATION_REPUTATION_READ_SCHEMA = "federation-reputation-read-v0"
 COMMERCIAL_REPUTATION_KEYS = frozenset(
     {
         "ml_rank_weight",
@@ -384,6 +386,157 @@ class ReputationGraphIndexer:
 
     def get_snapshot(self, entity_id: str, scope: str) -> ReputationSnapshot | None:
         return self._snapshots.get((entity_id, scope))
+
+
+def reputation_scope_from_exchange_payload(payload: dict[str, Any]) -> str:
+    """Derive contextual reputation scope from exchange_settled payload."""
+    cap = payload.get("capability") or payload.get("capability_id")
+    if cap:
+        return str(cap)
+    kind = payload.get("exchange_kind")
+    if kind:
+        return str(kind)
+    return "exchange"
+
+
+def reputation_delta_from_exchange_payload(payload: dict[str, Any]) -> str:
+    """Map exchange_settled usage to reputation delta (stub; no ML optimizer)."""
+    usage = payload.get("usage") if isinstance(payload.get("usage"), dict) else {}
+    status = str(usage.get("status") or usage.get("outcome") or "").lower()
+    if status in {"failed", "failure", "error", "rejected"}:
+        return "failure"
+    if status in {"dispute", "disputed", "contested"}:
+        return "dispute"
+    return "success"
+
+
+def exchange_settled_reputation_fields(
+    payload: dict[str, Any],
+    *,
+    ledger_record_id: str | None = None,
+) -> dict[str, str] | None:
+    """Extract reputation indexer fields from one exchange_settled payload."""
+    if not isinstance(payload, dict):
+        return None
+    reject_commercial_reputation_keys(payload)
+
+    exchange_id = str(payload.get("exchange_id") or "").strip()
+    consumer_id = str(payload.get("consumer_entity_id") or "").strip()
+    providers = payload.get("provider_entity_ids")
+    provider_id = ""
+    if isinstance(providers, list) and providers:
+        provider_id = str(providers[0] or "").strip()
+    if not exchange_id or not consumer_id or not provider_id:
+        return None
+    if consumer_id == provider_id:
+        return None
+
+    return {
+        "event_type": "ExchangeSettled",
+        "subject_entity_id": provider_id,
+        "scope": reputation_scope_from_exchange_payload(payload),
+        "actor_entity_id": consumer_id,
+        "source_ref": exchange_id,
+        "delta": reputation_delta_from_exchange_payload(payload),
+        "ledger_record_id": ledger_record_id or exchange_id,
+    }
+
+
+class FederationReputationReadIndexer:
+    """CIP-P4.3 — read-only reputation projection from exchange_settled ledger rows."""
+
+    def __init__(self, indexer: ReputationGraphIndexer | None = None) -> None:
+        self.indexer = indexer or ReputationGraphIndexer()
+        self._indexed_exchange_ids: set[str] = set()
+        self._peer_route_count = 0
+        self._skipped_self_feedback = 0
+
+    def index_exchange_settled_payload(
+        self,
+        payload: dict[str, Any],
+        *,
+        ledger_record_id: str | None = None,
+    ) -> ReputationSnapshot | None:
+        fields = exchange_settled_reputation_fields(payload, ledger_record_id=ledger_record_id)
+        if fields is None:
+            consumer_id = str(payload.get("consumer_entity_id") or "").strip()
+            providers = payload.get("provider_entity_ids")
+            provider_id = ""
+            if isinstance(providers, list) and providers:
+                provider_id = str(providers[0] or "").strip()
+            if consumer_id and provider_id and consumer_id == provider_id:
+                self._skipped_self_feedback += 1
+            return None
+
+        exchange_id = fields["source_ref"]
+        if exchange_id in self._indexed_exchange_ids:
+            return self.indexer.get_snapshot(fields["subject_entity_id"], fields["scope"])
+
+        if payload.get("peer_route"):
+            self._peer_route_count += 1
+
+        snap = self.indexer.ingest(
+            event_type=fields["event_type"],
+            subject_entity_id=fields["subject_entity_id"],
+            scope=fields["scope"],
+            actor_entity_id=fields["actor_entity_id"],
+            source_ref=fields["source_ref"],
+            delta=fields["delta"],
+            event_id=f"rep_ex_{fields['ledger_record_id']}",
+        )
+        self._indexed_exchange_ids.add(exchange_id)
+        return snap
+
+    def index_ledger_record(self, record: Any) -> ReputationSnapshot | None:
+        event_type = getattr(record, "event_type", None)
+        if event_type != "exchange_settled":
+            return None
+        payload = getattr(record, "payload", None)
+        if not isinstance(payload, dict):
+            return None
+        return self.index_exchange_settled_payload(
+            payload,
+            ledger_record_id=getattr(record, "id", None),
+        )
+
+    def index_from_db(self, db: Session, *, limit: int = 500) -> "FederationReputationReadIndexer":
+        from models.ledger import LedgerRecord
+
+        rows = (
+            db.query(LedgerRecord)
+            .filter(LedgerRecord.event_type == "exchange_settled")
+            .order_by(LedgerRecord.created_at.asc())
+            .limit(max(1, int(limit)))
+            .all()
+        )
+        for row in rows:
+            self.index_ledger_record(row)
+        return self
+
+    def read_model(self) -> dict[str, Any]:
+        snapshots = [
+            {
+                "entity_id": snap.entity_id,
+                "scope": snap.scope,
+                "success_count": snap.success_count,
+                "failure_count": snap.failure_count,
+                "dispute_count": snap.dispute_count,
+                "score": round(snap.score, 4),
+            }
+            for snap in sorted(
+                self.indexer._snapshots.values(),
+                key=lambda item: (item.entity_id, item.scope),
+            )
+        ]
+        return {
+            "schema_version": FEDERATION_REPUTATION_READ_SCHEMA,
+            "indexed_exchange_count": len(self._indexed_exchange_ids),
+            "peer_route_exchange_count": self._peer_route_count,
+            "skipped_self_feedback": self._skipped_self_feedback,
+            "snapshot_count": len(snapshots),
+            "snapshots": snapshots,
+            "compat": "cip-p4.3-federation-reputation-read-stub",
+        }
 
 
 # --- CI-11: Governance PIP template + weighted vote scaffold ---
