@@ -165,6 +165,7 @@ OPERATOR_MANIFEST_REQUIRED_ENDPOINT_KEYS = frozenset(
         "ai_chat",
         "mcp_invoke",
         "intelligence_dialogue",
+        "entity_dialogue",
     }
     | POCOP_PUBLIC_ENDPOINT_KEYS
 )

@@ -41,7 +41,8 @@ Validated by `validate_federation_protocol_manifest()` in `backend/services/prot
 | `federation_exchange_import` | Cross-node exchange proof import |
 | `ai_chat` | Metered LLM chat binding |
 | `mcp_invoke` | Metered MCP tool binding |
-| `intelligence_dialogue` | Entity dialogue + `payload.execute` |
+| `intelligence_dialogue` | Intelligence dialogue + `payload.execute` |
+| `entity_dialogue` | Per-entity dialogue + `payload.execute` |
 
 ### Phase A `/pocp/*` public node aliases
 
@@ -56,7 +57,7 @@ Validated by `validate_federation_protocol_manifest()` in `backend/services/prot
 | `pocp_settlements_ack` | `POST /pocp/settlements/ack` | `finalize_notice` |
 | `pocp_sync` | `GET /pocp/sync` | `federation_offer` (bulk) |
 
-See [BINDING-TO-DIALOGUE.md](./BINDING-TO-DIALOGUE.md) for metered execute (`ai_chat`, `mcp_invoke`, `intelligence_dialogue`).
+See [BINDING-TO-DIALOGUE.md](./BINDING-TO-DIALOGUE.md) for metered execute (`ai_chat`, `mcp_invoke`, `intelligence_dialogue`, `entity_dialogue`).
 
 ### Required `exchange_import` keys
 
