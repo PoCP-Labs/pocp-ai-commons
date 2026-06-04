@@ -12,6 +12,7 @@ from sqlalchemy.orm import sessionmaker
 from database import Base
 from models.entity import Entity, EntityStatus, EntityType
 from models.invocation import InvocationTrace
+from models.wallet import Wallet
 from services.mcp_import import import_mcp_server
 from services.mcp_invoke import invoke_mcp_tool
 
@@ -26,6 +27,8 @@ class McpInvokeTests(unittest.TestCase):
         self.human = Entity(entity_type=EntityType.human, name="Alice", status=EntityStatus.active)
         self.agent = Entity(entity_type=EntityType.agent, name="Helper", status=EntityStatus.active)
         self.db.add_all([self.human, self.agent])
+        self.db.flush()
+        self.db.add(Wallet(entity_id=self.human.id, ai_credits=100, cp_balance=0))
         self.db.commit()
 
         imported = import_mcp_server(
@@ -71,6 +74,10 @@ class McpInvokeTests(unittest.TestCase):
         self.assertIn("capability_receipts", result)
         self.assertEqual(len(result["capability_receipts"]), 2)
         self.assertIn("request_hash", result["capability_receipts"][-1])
+        self.assertIn("exchange_id", result)
+        self.assertIn("billing", result)
+        self.assertGreater(result["billing"]["credits_spent"], 0)
+        self.assertEqual((result.get("security_audit") or {}).get("audit_kind"), "mcp_invoke")
 
     def test_invoke_requires_active_tool(self):
         tool = self.db.get(Entity, self.tool_entity_id)

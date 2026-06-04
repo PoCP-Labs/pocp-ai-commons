@@ -123,6 +123,125 @@ COMMERCIAL_REPUTATION_KEYS = frozenset(
 )
 DAILY_REPUTATION_EVENT_LIMIT = int(os.getenv("DAILY_REPUTATION_EVENT_LIMIT", "100"))
 
+# --- PA-6 / CIP-P3.2: MCP invoke security baseline (open core) ---
+HOURLY_MCP_INVOKE_LIMIT = int(os.getenv("HOURLY_MCP_INVOKE_LIMIT", "30"))
+DAILY_MCP_INVOKE_LIMIT = int(os.getenv("DAILY_MCP_INVOKE_LIMIT", "200"))
+MCP_INVOKE_CAPABILITY = "mcp_tool_call"
+MCP_PROVIDER_PREFIX = "mcp-"
+
+
+def _hour_start() -> datetime:
+    now = datetime.utcnow()
+    return datetime(now.year, now.month, now.day, now.hour)
+
+
+def _count_mcp_invocations(db: Session, entity_id: str, *, since: datetime) -> int:
+    from models.invocation import InvocationTrace
+
+    return (
+        db.query(func.count(InvocationTrace.id))
+        .filter(
+            InvocationTrace.initiator_id == entity_id,
+            InvocationTrace.created_at >= since,
+            InvocationTrace.model_provider.like(f"{MCP_PROVIDER_PREFIX}%"),
+        )
+        .scalar()
+        or 0
+    )
+
+
+def check_mcp_invoke_rate_limit(db: Session, entity_id: str) -> None:
+    """Per-initiator MCP invoke rate limits (InvocationTrace model_provider mcp-*)."""
+    hourly = _count_mcp_invocations(db, entity_id, since=_hour_start())
+    if hourly >= HOURLY_MCP_INVOKE_LIMIT:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Hourly MCP invoke limit reached: {HOURLY_MCP_INVOKE_LIMIT}",
+        )
+    daily = _count_mcp_invocations(db, entity_id, since=_day_start())
+    if daily >= DAILY_MCP_INVOKE_LIMIT:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Daily MCP invoke limit reached: {DAILY_MCP_INVOKE_LIMIT}",
+        )
+
+
+def enforce_mcp_invoke_auth_scope(
+    db: Session,
+    *,
+    authenticated_entity_id: str,
+    human_entity_id: str,
+    agent_entity_id: str | None,
+    tool_entity_id: str,
+) -> None:
+    """Auth scope: session entity must match human initiator; agent/tool chain validated."""
+    from models.entity import Entity, EntityType
+
+    if authenticated_entity_id != human_entity_id:
+        raise HTTPException(
+            status_code=403,
+            detail="MCP invoke auth scope: initiator must match authenticated entity",
+        )
+    human = db.get(Entity, human_entity_id)
+    if not human or human.entity_type != EntityType.human:
+        raise HTTPException(status_code=400, detail="Initiator must be a human entity")
+    if agent_entity_id:
+        agent = db.get(Entity, agent_entity_id)
+        if not agent or agent.entity_type != EntityType.agent:
+            raise HTTPException(status_code=404, detail="Agent entity not found")
+        allowed_agents = (human.metadata_ or {}).get("mcp_allowed_agent_ids")
+        if allowed_agents is not None and agent_entity_id not in allowed_agents:
+            raise HTTPException(
+                status_code=403,
+                detail="MCP invoke auth scope: agent not in human mcp_allowed_agent_ids",
+            )
+    tool = db.get(Entity, tool_entity_id)
+    if tool:
+        scopes = (tool.metadata_ or {}).get("auth_scopes")
+        if scopes is not None and MCP_INVOKE_CAPABILITY not in scopes:
+            raise HTTPException(
+                status_code=403,
+                detail=f"MCP tool missing required auth scope: {MCP_INVOKE_CAPABILITY}",
+            )
+
+
+def mcp_invoke_receipt_audit_fields(
+    *,
+    trace_id: str,
+    invoke_mode: str,
+    provider: str,
+    tool_entity_id: str,
+) -> dict[str, Any]:
+    """Receipt logging metadata for MCP invoke steps (PA-6 audit trail)."""
+    return {
+        "audit_kind": "mcp_invoke",
+        "trace_id": trace_id,
+        "invoke_mode": invoke_mode,
+        "provider": provider,
+        "tool_entity_id": tool_entity_id,
+        "capability": MCP_INVOKE_CAPABILITY,
+        "compat": "pa-6-mcp-security-v0",
+    }
+
+
+def enforce_mcp_invoke_baseline(
+    db: Session,
+    *,
+    authenticated_entity_id: str,
+    human_entity_id: str,
+    agent_entity_id: str | None,
+    tool_entity_id: str,
+) -> None:
+    """PA-6 MCP security baseline: auth scope + rate limits before invoke."""
+    enforce_mcp_invoke_auth_scope(
+        db,
+        authenticated_entity_id=authenticated_entity_id,
+        human_entity_id=human_entity_id,
+        agent_entity_id=agent_entity_id,
+        tool_entity_id=tool_entity_id,
+    )
+    check_mcp_invoke_rate_limit(db, human_entity_id)
+
 
 @dataclass(frozen=True)
 class ReputationEvent:

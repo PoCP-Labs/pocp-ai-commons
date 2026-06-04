@@ -73,6 +73,15 @@ def require_current_user(
     return current_user_from_header(authorization, db)
 
 
+def require_entity_scope(entity_id: str, user: UserAccount) -> None:
+    """PA-6 auth scope: bearer session entity must match the requested entity_id."""
+    if user.entity_id != entity_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Auth scope: entity_id does not match authenticated session",
+        )
+
+
 @router.get("/auth/github/login")
 def github_login():
     client_id = os.getenv("GITHUB_CLIENT_ID")

@@ -121,6 +121,44 @@ def require_pqc_signature() -> bool:
     return os.getenv("POCP_REQUIRE_PQC_SIGNATURE", "false").lower() == "true"
 
 
+def require_receipt_signature() -> bool:
+    """CIP-P3.1 — when true, compute settlement rejects unsigned provider receipts."""
+    return os.getenv("POCP_REQUIRE_RECEIPT_SIGNATURE", "false").lower() == "true"
+
+
+def sign_compute_receipts_enabled() -> bool:
+    return os.getenv("POCP_SIGN_COMPUTE_RECEIPTS", "false").lower() == "true"
+
+
+def staging_security_env_profile() -> dict[str, str]:
+    """Recommended public-staging env (copy into backend/.env from .env.staging.example)."""
+    return {
+        "APP_ENV": "staging",
+        "ENABLE_DEV_LOGIN": "false",
+        "POCP_REQUIRE_RECEIPT_SIGNATURE": "true",
+        "POCP_SIGN_COMPUTE_RECEIPTS": "true",
+    }
+
+
+def validate_staging_receipt_policy() -> dict[str, Any]:
+    """Operator check: staging should require signed receipts when signing is enabled."""
+    require_sig = require_receipt_signature()
+    sign_on = sign_compute_receipts_enabled()
+    ok = (not require_sig) or sign_on
+    return {
+        "require_receipt_signature": require_sig,
+        "sign_compute_receipts": sign_on,
+        "policy_ok": ok,
+        "compat": "cip-p3.1-staging-receipt-v0",
+        "note": (
+            "Set POCP_SIGN_COMPUTE_RECEIPTS=true when POCP_REQUIRE_RECEIPT_SIGNATURE=true "
+            "(see backend/.env.staging.example)"
+            if not ok
+            else None
+        ),
+    }
+
+
 def suite_spec(suite_id: str | None = None) -> dict[str, Any]:
     sid = suite_id or active_crypto_suite()
     spec = _SUITE_SPECS.get(sid)
@@ -301,6 +339,9 @@ def crypto_readiness_report() -> dict[str, Any]:
         "active_hash_algorithm": active_hash_algorithm(),
         "minimum_accepted_crypto_suite": minimum_accepted_crypto_suite(),
         "require_pqc_signature": require_pqc_signature(),
+        "require_receipt_signature": require_receipt_signature(),
+        "sign_compute_receipts": sign_compute_receipts_enabled(),
+        "staging_security_profile": staging_security_env_profile(),
         "hash_algorithm": spec["hash_algorithm"],
         "signature_algorithms": spec["signature_algorithms"],
         "hybrid_signing_enabled": bool(spec.get("hybrid") and classic_pub and pqc_pub),

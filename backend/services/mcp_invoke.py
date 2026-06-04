@@ -19,6 +19,9 @@ from services.peer_mcp import MCP_PEER_PROVIDER, PeerMcpError, peer_mcp_enabled,
 MCP_STUB_PROVIDER = "mcp-stub"
 MCP_LIVE_PROVIDER = "mcp-live"
 MCP_EXTERNAL_PROVIDER = "mcp-external"
+MCP_TOOL_INVOKE_COST = float(
+    os.getenv("MCP_TOOL_INVOKE_COST", os.getenv("SKILL_EXECUTE_COST", "5"))
+)
 
 
 def _live_invoke_enabled(meta: dict[str, Any], server_meta: dict[str, Any] | None) -> bool:
@@ -406,8 +409,18 @@ async def invoke_mcp_tool(
     contribution_id: str | None = None,
     external_result: dict[str, Any] | None = None,
     force_mode: str | None = None,
+    authenticated_entity_id: str | None = None,
 ) -> dict[str, Any]:
     """Record Human → [Agent] → MCP Tool → Server chain; stub, live, or external result."""
+    from services.anti_abuse import enforce_mcp_invoke_baseline
+
+    enforce_mcp_invoke_baseline(
+        db,
+        authenticated_entity_id=authenticated_entity_id or human_entity_id,
+        human_entity_id=human_entity_id,
+        agent_entity_id=agent_entity_id,
+        tool_entity_id=tool_entity_id,
+    )
     _require_human(db, human_entity_id)
     tool_entity, meta = _require_mcp_tool(db, tool_entity_id)
     server_entity = _resolve_server_entity(db, meta)
@@ -449,7 +462,29 @@ async def invoke_mcp_tool(
         step_metadata=step_meta,
     )
 
-    return _build_invoke_response(
+    response_text = _output_text(output)
+    arg_summary = _arguments_summary(args)
+    from services.exchange_spine import settle_flat_metered_invoke
+
+    tool_name = str(meta.get("mcp_tool_name") or tool_entity.name)
+    billing = settle_flat_metered_invoke(
+        db,
+        entity_id=human_entity_id,
+        prompt=arg_summary,
+        response=response_text or f"[mcp:{tool_name}]",
+        provider=provider,
+        model=tool_name,
+        cost=MCP_TOOL_INVOKE_COST,
+        reason=f"MCP tool invoke: {tool_entity.name}",
+        provider_entity_id=tool_entity.id,
+        capability="mcp_tool_call",
+        invocation_trace_id=trace.id,
+        settlement_policy="mcp_invoke.v1",
+    )
+
+    from services.anti_abuse import mcp_invoke_receipt_audit_fields
+
+    result = _build_invoke_response(
         tool_entity=tool_entity,
         meta=meta,
         server_entity=server_entity,
@@ -461,3 +496,12 @@ async def invoke_mcp_tool(
         db=db,
         peer_node_id=peer_node_id,
     )
+    result["security_audit"] = mcp_invoke_receipt_audit_fields(
+        trace_id=trace.id,
+        invoke_mode=invoke_mode,
+        provider=provider,
+        tool_entity_id=tool_entity.id,
+    )
+    result["billing"] = billing
+    result["exchange_id"] = billing.get("exchange_id")
+    return result
