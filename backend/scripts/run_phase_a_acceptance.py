@@ -6,6 +6,7 @@ Usage:
   python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8100 --federation http://127.0.0.1:8101
   python backend/scripts/run_phase_a_acceptance.py https://api.staging.example --staging --skip-optional
   python backend/scripts/run_phase_a_acceptance.py https://api-a.example --staging --federation-exchange https://api-b.example
+  python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8008 --conformance
 
 Exit 0 when all required steps pass; 1 on failure.
 """
@@ -32,6 +33,18 @@ if str(_BACKEND) not in sys.path:
 
 def get_json(url: str, timeout: float = 15) -> dict:
     with urllib.request.urlopen(url, timeout=timeout) as resp:
+        return json.loads(resp.read().decode())
+
+
+def post_json(url: str, payload: dict, *, timeout: float = 15) -> dict:
+    data = json.dumps(payload).encode()
+    request = urllib.request.Request(
+        url,
+        data=data,
+        method="POST",
+        headers={"Content-Type": "application/json"},
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as resp:
         return json.loads(resp.read().decode())
 
 
@@ -331,6 +344,90 @@ def step_staging_federation_exchange_policy(base: str, peer: str) -> tuple[bool,
         return False, str(exc)
 
 
+POCP_PUBLIC_ENDPOINT_KEYS = frozenset(
+    {"pocp_health", "pocp_capabilities", "pocp_invoke", "pocp_node"}
+)
+
+
+def step_conformance_well_known(base: str) -> tuple[bool, str]:
+    """CIP-P4.2 — instance well-known manifest + /pocp/node endpoint map."""
+    try:
+        from services.node.schemas import validate_well_known_instance
+
+        manifest = get_json(f"{base.rstrip('/')}/.well-known/pocp-node.json")
+        validate_well_known_instance(manifest)
+        pocp_node = get_json(f"{base.rstrip('/')}/pocp/node")
+        endpoints = pocp_node.get("endpoints") or {}
+        missing = sorted(POCP_PUBLIC_ENDPOINT_KEYS - set(endpoints))
+        ok = not missing
+        return ok, json.dumps(
+            {
+                "protocol": manifest.get("protocol"),
+                "instance_id": manifest.get("instance_id"),
+                "archive_entity_id": manifest.get("archive_entity_id"),
+                "missing_pocp_endpoints": missing,
+            }
+        )
+    except ValueError as exc:
+        return False, str(exc)
+    except urllib.error.HTTPError as exc:
+        return False, f"HTTP {exc.code}: {exc.read().decode()[:200]}"
+    except Exception as exc:
+        return False, str(exc)
+
+
+def step_conformance_pocp_capabilities(base: str) -> tuple[bool, str]:
+    """CIP-P4.2 — public capability directory via /pocp/capabilities."""
+    try:
+        data = get_json(f"{base.rstrip('/')}/pocp/capabilities?limit=5")
+        items = data.get("items")
+        if not isinstance(items, list):
+            return False, "response missing items array"
+        return True, json.dumps({"item_count": len(items), "count": data.get("count")})
+    except urllib.error.HTTPError as exc:
+        return False, f"HTTP {exc.code}: {exc.read().decode()[:200]}"
+    except Exception as exc:
+        return False, str(exc)
+
+
+def step_conformance_pocp_invoke_ping(base: str) -> tuple[bool, str]:
+    """CIP-P4.2 — entity dialogue ping via POST /pocp/invoke."""
+    try:
+        from services.entity_dialogue import ENTITY_DIALOGUE_SCHEMA
+
+        root = base.rstrip("/")
+        manifest = get_json(f"{root}/.well-known/pocp-node.json")
+        node = get_json(f"{root}/api/v1/federation/node")
+        entity_id = manifest.get("archive_entity_id")
+        node_id = node.get("node_id")
+        if not entity_id or not node_id:
+            return False, json.dumps(
+                {"archive_entity_id": entity_id, "node_id": node_id, "error": "missing refs"}
+            )
+        ref = {"entity_id": entity_id, "node_id": node_id}
+        envelope = {
+            "schema": ENTITY_DIALOGUE_SCHEMA,
+            "dialogue_id": "dlg_conformance_ping",
+            "kind": "ping",
+            "from": ref,
+            "to": ref,
+            "payload": {},
+        }
+        response = post_json(f"{root}/pocp/invoke", envelope, timeout=30)
+        ok = response.get("status") == "accepted"
+        return ok, json.dumps(
+            {
+                "status": response.get("status"),
+                "pong": (response.get("result") or {}).get("pong"),
+                "node_id": node_id,
+            }
+        )
+    except urllib.error.HTTPError as exc:
+        return False, f"HTTP {exc.code}: {exc.read().decode()[:200]}"
+    except Exception as exc:
+        return False, str(exc)
+
+
 def step_invocation_ref_integrity(base: str) -> tuple[bool, str]:
     """Smoke: dev-login → chat → exchange integrity endpoint."""
     payload = json.dumps({"username": "inv-ref-check", "email": "inv-ref-check@example.com"}).encode()
@@ -395,12 +492,20 @@ def main() -> int:
             "uses POCP_TRUSTED_NODES when omitted). Combine with --staging for public pairs."
         ),
     )
+    parser.add_argument(
+        "--conformance",
+        action="store_true",
+        help="CIP-P4.2 protocol conformance only (well-known, /pocp/capabilities, /pocp/invoke ping)",
+    )
     args = parser.parse_args()
 
     base = args.base.rstrip("/")
     sync_backend_url_env(base)
     federation = args.federation is not None
     federation_exchange = args.federation_exchange is not None
+    if args.conformance and (federation or federation_exchange):
+        print("FAIL: --conformance cannot combine with --federation or --federation-exchange", file=sys.stderr)
+        return 1
     if federation_exchange and federation:
         print("FAIL: use either --federation or --federation-exchange, not both", file=sys.stderr)
         return 1
@@ -432,8 +537,42 @@ def main() -> int:
         mode_bits.append(f"federation-exchange peer={node_b}")
     if args.staging:
         mode_bits.append("staging")
+    if args.conformance:
+        mode_bits.append("conformance")
     print(f"Phase A acceptance @ {base}" + (f" ({', '.join(mode_bits)})" if mode_bits else ""))
     failures: list[str] = []
+
+    if args.conformance:
+        checks = [
+            ("health", lambda: step_health(base)),
+            ("conformance_well_known", lambda: step_conformance_well_known(base)),
+            ("conformance_pocp_capabilities", lambda: step_conformance_pocp_capabilities(base)),
+            ("conformance_pocp_invoke_ping", lambda: step_conformance_pocp_invoke_ping(base)),
+        ]
+        required = {name for name, _ in checks}
+        for name, fn in checks:
+            try:
+                ok, detail = fn()
+            except subprocess.TimeoutExpired:
+                ok, detail = False, "timeout"
+            except urllib.error.URLError as exc:
+                ok, detail = False, str(exc.reason)
+
+            status = "OK" if ok else "FAIL"
+            print(f"  [{status}] {name}")
+            if detail and (not ok or len(detail) < 200):
+                for line in detail.splitlines()[:8]:
+                    print(f"         {line}")
+            elif detail and not ok:
+                print(f"         {detail[:400]}…")
+            if not ok and name in required:
+                failures.append(name)
+
+        if failures:
+            print(f"\nConformance FAILED — required steps: {', '.join(failures)}")
+            return 1
+        print("\nConformance PASS — CIP-P4.2 public node scenarios verified")
+        return 0
 
     checks: list[tuple[str, callable]] = [
         ("health", lambda: step_health(base)),
@@ -571,6 +710,9 @@ def main() -> int:
             "cross_node_exchange_acceptance",
             "peer_witness_verify",
             "peer_mcp_demo",
+            "conformance_well_known",
+            "conformance_pocp_capabilities",
+            "conformance_pocp_invoke_ping",
         ):
             failures.append(name)
 
