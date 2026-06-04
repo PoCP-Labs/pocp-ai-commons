@@ -145,9 +145,9 @@ See [MINIMUM-LIVING-NETWORK.md](./MINIMUM-LIVING-NETWORK.md) · [implementation/
 
 ### [CIP-P1.4] CIP skeleton ↔ production map
 
-Handoff `dc57c48d` · Atlas-0 schema review (**APPROVED**). Every file under `backend/services/cip/` must have a **production twin** or an explicit **`spec-only`** / **`partial`** label. No orphan modules.
+Handoff `c9edabcf` · Atlas-0 schema review (**APPROVED** 2026-06-05). Every file under `backend/services/cip/` must have a **production twin** or an explicit **`spec-only`** / **`partial`** label. No orphan modules.
 
-Verification (doc review): `python backend/scripts/_cip_p14_doc_review.py` · demo: `python backend/scripts/minimum_living_network.py`.
+Verification (doc review): `python backend/scripts/_cip_p14_doc_review.py` → 17 runtime modules · demo: `python backend/scripts/minimum_living_network.py` (CIP in-memory loop OK).
 
 **Status legend**
 
