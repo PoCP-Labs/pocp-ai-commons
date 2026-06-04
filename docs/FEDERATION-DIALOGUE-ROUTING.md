@@ -121,10 +121,32 @@ See also [FEDERATION-DISCOVERY.md](./FEDERATION-DISCOVERY.md) for discovery, han
 
 ---
 
+## Cross-node quote → invoke → receipt (CIP-P2.1)
+
+Node A (consumer) routes `quote` and `invoke` to Node B via peer dialogue. Execution receipts are returned from the peer; **exchange_settled** is recorded on the **originator** (Node A) with `payload.peer_route: true` and `refs.originator_exchange_id` on the dialogue response.
+
+| Step | `kind` | Origin | Settlement |
+|------|--------|--------|------------|
+| 1 | `quote` | A → B | `exchange_settled` audit on A (`peer_route.quote.v1`) |
+| 2 | `invoke` | A → B | trace stub on A + `exchange_settled` on A (`peer_route.invoke_trace.v1` or metered `peer_route.invoke.v1`) |
+| 3 | receipt | peer response | `refs.invocation_trace_id` / capability receipt metadata from B |
+
+Docker A/B acceptance:
+
+```bash
+docker compose -f docker-compose.federation.yml up -d --build
+python scripts/cross_node_exchange_acceptance.py http://127.0.0.1:8100 http://127.0.0.1:8101
+```
+
+Included in `run_phase_a_acceptance.py --federation` as step `cross_node_exchange_acceptance`.
+
+---
+
 ## Verification
 
 ```bash
 cd backend
+python -m pytest tests/test_dialogue_peer_route.py -q
 python -m pytest tests/ -k "test_federation or test_entity_dialogue or test_trust_policy_bundle" -q
 python scripts/run_phase_a_acceptance.py http://127.0.0.1:8100 --federation http://127.0.0.1:8101
 ```

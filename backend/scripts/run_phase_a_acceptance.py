@@ -402,6 +402,15 @@ def main() -> int:
                     ),
                 ),
                 ("federation_exchange_demo", lambda: run_script("federation_exchange_demo_test.py", base, [node_b])),
+                (
+                    "cross_node_exchange_acceptance",
+                    lambda: run_script(
+                        "../scripts/cross_node_exchange_acceptance.py",
+                        base,
+                        [node_b],
+                        timeout=240,
+                    ),
+                ),
                 ("peer_witness_verify", lambda: run_script("peer_witness_verify_test.py", base)),
                 ("peer_mcp_demo", lambda: run_script("peer_mcp_demo_test.py", base)),
             ]
@@ -452,6 +461,7 @@ def main() -> int:
             "federation_strict_mode",
             "federation_demo",
             "federation_exchange_demo",
+            "cross_node_exchange_acceptance",
             "peer_witness_verify",
             "peer_mcp_demo",
         ):

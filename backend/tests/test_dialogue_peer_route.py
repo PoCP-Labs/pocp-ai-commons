@@ -11,8 +11,10 @@ from database import Base
 from models.entity import Entity, EntityStatus, EntityType
 from services.entity_dialogue import ENTITY_DIALOGUE_SCHEMA, route_dialogue
 from services.entity_register import register_entity
+from models.ledger import LedgerRecord
 from services.network.dialogue_route import (
     forward_dialogue_to_peer,
+    record_peer_route_exchange_on_originator,
     should_route_to_peer,
     try_peer_route_dialogue,
     wrap_peer_route_response,
@@ -78,6 +80,20 @@ class DialoguePeerRouteTests(unittest.TestCase):
             owner_id=self.human.id,
             creator_id=self.human.id,
         )
+        discovered = Entity(
+            id=peer_entity_id("node-b"),
+            entity_type=EntityType.community,
+            name="Federation Peer · node-b",
+            status=EntityStatus.active,
+            metadata_={
+                "roles": ["federation_peer", "discovered_peer"],
+                "node_id": "node-b",
+                "base_url": "https://peer-b.example.com",
+                "probe_base_url": "https://peer-b.example.com",
+                "trust_weight": 0.9,
+            },
+        )
+        self.db.add(discovered)
         self.db.commit()
 
         mock_post.return_value = {
@@ -100,6 +116,8 @@ class DialoguePeerRouteTests(unittest.TestCase):
         response = asyncio.run(route_dialogue(self.db, envelope))
         self.assertEqual(response["status"], "accepted")
         self.assertTrue(response["result"].get("peer_route"))
+        self.assertIn("invocation_trace_id", response.get("refs") or {})
+        self.assertEqual(response["refs"]["peer_invocation_trace_id"], "trace-b")
         mock_post.assert_called_once()
         url = mock_post.call_args[0][0]
         self.assertIn("peer-b.example.com", url)
@@ -142,6 +160,48 @@ class DialoguePeerRouteTests(unittest.TestCase):
         self.assertEqual(out["status"], "accepted")
         url = mock_post.call_args[0][0]
         self.assertIn("peer-x.example.com", url)
+
+    @patch("services.network.dialogue_route._post_json")
+    def test_originator_exchange_settled_on_peer_quote(self, mock_post):
+        from models.wallet import Wallet
+
+        wallet = Wallet(entity_id=self.human.id, ai_credits=100.0, cp_balance=0.0)
+        self.db.add(wallet)
+        self.db.commit()
+
+        mock_post.return_value = {
+            "schema": "pocp.entity_dialogue_response.v0.1",
+            "status": "accepted",
+            "result": {
+                "mode": "exchange_quote",
+                "exchange_id": "ex_peer_quote_1",
+                "quote": {"cost": 1.0, "allowed": True},
+            },
+            "refs": {"exchange_id": "ex_peer_quote_1"},
+        }
+
+        envelope = {
+            "schema": ENTITY_DIALOGUE_SCHEMA,
+            "dialogue_id": "dlg_peer_quote_ex",
+            "kind": "quote",
+            "from": {"entity_id": self.human.id, "node_id": "node-a"},
+            "to": {"node_id": "node-b", "portable_id": "skill:remote"},
+            "payload": {"route_peer": True, "quote_action": "capability_invoke"},
+        }
+        import asyncio
+
+        response = asyncio.run(route_dialogue(self.db, envelope))
+        self.assertEqual(response["status"], "accepted")
+        originator_ex = (response.get("refs") or {}).get("originator_exchange_id")
+        self.assertTrue(originator_ex or response.get("result", {}).get("originator_exchange_settled"))
+
+        rows = (
+            self.db.query(LedgerRecord)
+            .filter(LedgerRecord.event_type == "exchange_settled")
+            .all()
+        )
+        peer_rows = [r for r in rows if (r.payload or {}).get("peer_route")]
+        self.assertTrue(peer_rows, "expected exchange_settled with peer_route on originator")
 
     @patch("services.network.dialogue_route._post_json")
     def test_route_federation_accept_forwards_to_peer(self, mock_post):

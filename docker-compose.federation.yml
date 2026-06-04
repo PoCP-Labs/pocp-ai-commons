@@ -38,6 +38,7 @@ services:
       POCP_NODE_PQC_PUBLIC_KEY: 26c3ea06eae3d672175add0f824e90f8ac3a5238f8ae44dced71130bfec21c21
       POCP_TRUSTED_NODES: >-
         [{"node_id":"node-b","base_url":"http://backend-b:8000","public_key":"736f142b13c5e4f6a9d77595559ff1531afeb41c21386bf93d7d0bc6006e93ba","pqc_public_key":"7d5ec6167d94cd375fecba2a3205b0794805ca4a98a4c7d0fbd5266387fdb220","trust_weight":0.8}]
+      POCP_DIALOGUE_PEER_ROUTE: "true"
       ENABLE_PEER_COMPUTE: "true"
       ENABLE_PEER_MCP: "true"
       POCP_ALLOW_PEER_WITNESS: "true"
