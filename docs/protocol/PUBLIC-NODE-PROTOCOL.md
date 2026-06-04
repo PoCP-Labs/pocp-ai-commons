@@ -42,12 +42,20 @@ Frozen contract + validation: `backend/services/node/schemas.py` (`WellKnownInst
   "display_name": "PoCP AI Commons",
   "facets": ["instance_host"],
   "archive_entity_id": "pocp-org-ai-commons",
-  "endpoints": {
+    "endpoints": {
     "well_known": "http://127.0.0.1:8000/.well-known/pocp-node.json",
     "health": "http://127.0.0.1:8000/health",
     "capabilities_directory": "http://127.0.0.1:8000/api/v1/capabilities/directory",
     "ledger_verify": "http://127.0.0.1:8000/api/v1/ledger/verify",
-    "federation_node": "http://127.0.0.1:8000/api/v1/federation/node"
+    "federation_node": "http://127.0.0.1:8000/api/v1/federation/node",
+    "pocp_node": "http://127.0.0.1:8000/pocp/node",
+    "pocp_health": "http://127.0.0.1:8000/pocp/health",
+    "pocp_capabilities": "http://127.0.0.1:8000/pocp/capabilities",
+    "pocp_invoke": "http://127.0.0.1:8000/pocp/invoke",
+    "pocp_handshake": "http://127.0.0.1:8000/pocp/handshake",
+    "pocp_proofs": "http://127.0.0.1:8000/pocp/proofs",
+    "pocp_settlements_ack": "http://127.0.0.1:8000/pocp/settlements/ack",
+    "pocp_sync": "http://127.0.0.1:8000/pocp/sync"
   },
   "updated_at": "2026-06-02T12:00:00+00:00"
 }
@@ -126,6 +134,8 @@ Entity manifests are seeded after platform catalog bootstrap — see [NODE-RUNTI
 ---
 
 ## 3. Public Node API (Phase B target)
+
+Phase A exposes `/pocp/*` aliases (see `backend/routers/pocp_public.py`). Canonical URL keys live in `build_instance_endpoints()` / `build_pocp_public_endpoints()` (`backend/services/node/schemas.py`). The unified operator manifest also lists these under `GET /api/v1/intelligence/protocol/federation` → `endpoints.pocp_*`.
 
 Phase A maps many routes to `/api/v1/*`. Phase B standalone binary exposes:
 

@@ -18,8 +18,25 @@ See [ENTITY-DIALOGUE-PROTOCOL.md](./ENTITY-DIALOGUE-PROTOCOL.md) · [PROTOCOL-EV
 | `POST /api/v1/capabilities/skills/{id}/execute` | `invoke` | `InvocationCreated` |
 | `POST /api/v1/capabilities/agents/{id}/execute` | `invoke` | `InvocationCreated` |
 | `POST /api/v1/invocations` | `invoke` | `InvocationCreated` |
+| `POST /api/v1/ai/chat` | `invoke` | `InvocationCreated` + `exchange_settled` (`exchange_kind: capability`, `legacy_event_type: ai_chat`) |
+| `POST /api/v1/capabilities/mcp/{tool_entity_id}/invoke` | `invoke` | `InvocationCreated` + `exchange_settled` (`exchange_kind: capability`, `settlement_policy: mcp_invoke.v1`) |
+| `POST /api/v1/intelligence/dialogue` + `payload.execute: true` | `invoke` | `InvocationCreated` + `exchange_settled` (via `capability.dialogue_invoke`) |
+| `POST /api/v1/intelligence/entities/{id}/dialogue` + `payload.execute: true` | `invoke` | same as dialogue execute |
 | `GET /api/v1/intelligence/entities/{id}/agent-card` | `discover` | — |
 | A2A `SendMessage` | `submit` (deferred) | `ProofSubmitted` |
+
+### Public node `/pocp/*` (Phase A shim)
+
+| Binding | Dialogue `kind` | Exchange / overlay |
+|---------|-----------------|-------------------|
+| `POST /pocp/invoke` | any (`pocp.entity_dialogue.v0.1` envelope) | per `kind`; metered paths use exchange spine when `payload.execute=true` |
+| `GET /pocp/capabilities` | `discover` (directory) | — |
+| `POST /pocp/handshake` | — (federation discover + handshake) | — |
+| `POST /pocp/proofs` | `attest` / proof verify | `VerificationCompleted` (when applicable) |
+| `POST /pocp/settlements/ack` | `finalize_notice` | `SettlementExecuted` |
+| `GET /pocp/sync` | `federation_offer` (bulk) | peer manifest |
+
+Operator manifest lists these URLs under `endpoints.pocp_*` — see `GET /api/v1/intelligence/protocol/federation`.
 
 ---
 
@@ -32,6 +49,7 @@ See [ENTITY-DIALOGUE-PROTOCOL.md](./ENTITY-DIALOGUE-PROTOCOL.md) · [PROTOCOL-EV
 | `POST /api/v1/federation/dialogue` | any dialogue `kind` | per kind |
 | `POST /api/v1/federation/validate-proof` | `federation_offer` | validation only |
 | `POST /api/v1/federation/import-proof` | `federation_accept` | import mirror |
+| `POST /api/v1/federation/import-exchange-proof` | `federation_accept` | L1 exchange proof import (no BC mint) |
 | `POST /api/v1/federation/sync` | `federation_offer` (bulk) | — |
 | `POST /api/v1/contributions/{id}/finalize` | `finalize_notice` (`apply_finalize`) | `SettlementExecuted` |
 | `GET /api/v1/contributions/{id}/verdict` | `finalize_notice` (inspect) | — |

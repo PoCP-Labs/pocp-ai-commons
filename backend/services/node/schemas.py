@@ -141,6 +141,20 @@ INSTANCE_WELL_KNOWN_ENDPOINT_KEYS = frozenset(
     }
 )
 
+# Phase A /pocp/* shim — merged into build_instance_endpoints; required on operator manifest.
+POCOP_PUBLIC_ENDPOINT_KEYS = frozenset(
+    {
+        "pocp_node",
+        "pocp_health",
+        "pocp_capabilities",
+        "pocp_invoke",
+        "pocp_handshake",
+        "pocp_proofs",
+        "pocp_settlements_ack",
+        "pocp_sync",
+    }
+)
+
 ENTITY_MANIFEST_ENDPOINT_KEYS = frozenset(
     {
         "manifest",
@@ -148,6 +162,21 @@ ENTITY_MANIFEST_ENDPOINT_KEYS = frozenset(
         "capabilities",
     }
 )
+
+
+def build_pocp_public_endpoints(*, backend_url: str) -> dict[str, str]:
+    """Phase A public node wire — ``/pocp/*`` alias routes (see PUBLIC-NODE-PROTOCOL.md §3)."""
+    root = backend_url.rstrip("/")
+    return {
+        "pocp_node": f"{root}/pocp/node",
+        "pocp_health": f"{root}/pocp/health",
+        "pocp_capabilities": f"{root}/pocp/capabilities",
+        "pocp_invoke": f"{root}/pocp/invoke",
+        "pocp_handshake": f"{root}/pocp/handshake",
+        "pocp_proofs": f"{root}/pocp/proofs",
+        "pocp_settlements_ack": f"{root}/pocp/settlements/ack",
+        "pocp_sync": f"{root}/pocp/sync",
+    }
 
 
 def build_instance_endpoints(*, backend_url: str) -> dict[str, str]:
@@ -159,6 +188,33 @@ def build_instance_endpoints(*, backend_url: str) -> dict[str, str]:
         "capabilities_directory": f"{root}/api/v1/capabilities/directory",
         "ledger_verify": f"{root}/api/v1/ledger/verify",
         "federation_node": f"{root}/api/v1/federation/node",
+        **build_pocp_public_endpoints(backend_url=root),
+    }
+
+
+FEDERATION_PROTOCOL_MANIFEST_SCHEMA = "pocp.federation_protocol_manifest.v0.1"
+
+
+def build_operator_protocol_endpoints(*, backend_url: str) -> dict[str, str]:
+    """Stable operator surface for Agent Studio + cross-node pilots (CIP-P0.2)."""
+    root = backend_url.rstrip("/")
+    return {
+        **build_instance_endpoints(backend_url=root),
+        "protocol_federation": f"{root}/api/v1/intelligence/protocol/federation",
+        "protocol_entity_dialogue": f"{root}/api/v1/intelligence/protocol/entity-dialogue",
+        "wallet_quote": f"{root}/api/v1/wallets/me/quote",
+        "intelligence_dialogue": f"{root}/api/v1/intelligence/dialogue",
+        "entity_dialogue": f"{root}/api/v1/intelligence/entities/{{entity_id}}/dialogue",
+        "ai_chat": f"{root}/api/v1/ai/chat",
+        "capability_skill_execute": f"{root}/api/v1/capabilities/skills/{{id}}/execute",
+        "capability_agent_execute": f"{root}/api/v1/capabilities/agents/{{id}}/execute",
+        "mcp_invoke": f"{root}/api/v1/capabilities/mcp/{{tool_entity_id}}/invoke",
+        "exchange_proof": f"{root}/api/v1/contributions/{{id}}/proof",
+        "federation_connect": f"{root}/api/v1/federation/peers/connect",
+        "federation_peer_manifest": f"{root}/api/v1/federation/peers/manifest",
+        "federation_dialogue": f"{root}/api/v1/federation/dialogue",
+        "federation_exchange_import": f"{root}/api/v1/federation/import-exchange-proof",
+        "federation_import_proof": f"{root}/api/v1/federation/import-proof",
     }
 
 

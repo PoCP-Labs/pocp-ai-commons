@@ -3,10 +3,14 @@ from __future__ import annotations
 from typing import Any, Protocol
 
 from services.node.schemas import (
+    FEDERATION_PROTOCOL_MANIFEST_SCHEMA,
     NodeProfileSchema,
+    POCOP_PUBLIC_ENDPOINT_KEYS,
     PublicNodeEndpointSchema,
     WellKnownInstanceManifestSchema,
     build_instance_endpoints,
+    build_operator_protocol_endpoints,
+    build_pocp_public_endpoints,
     validate_node_profile,
     validate_node_type,
     validate_well_known_entity,
@@ -42,9 +46,13 @@ class WellKnownManifestBuilder(Protocol):
 
 
 __all__ = [
+    "FEDERATION_PROTOCOL_MANIFEST_SCHEMA",
     "NodeProfileRegistry",
+    "POCOP_PUBLIC_ENDPOINT_KEYS",
     "WellKnownManifestBuilder",
     "build_instance_endpoints",
+    "build_operator_protocol_endpoints",
+    "build_pocp_public_endpoints",
     "validate_node_profile",
     "validate_node_type",
     "validate_well_known_entity",
