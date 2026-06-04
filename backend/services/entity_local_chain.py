@@ -37,14 +37,8 @@ def _elc_record_hash(prev_hash: str | None, kind: str, ref_id: str, grc_id: str)
     return hashlib.sha256(material.encode("utf-8")).hexdigest()
 
 
-def build_entity_local_chain(
-    db: Session,
-    entity_id: str,
-    *,
-    limit: int = 50,
-    cursor: int | None = None,
-) -> dict[str, Any]:
-    """Build ELC view from GRC exchange_settled rows (not a second source of truth)."""
+def _elc_records_for_entity(db: Session, entity_id: str) -> list[dict[str, Any]]:
+    """Materialize full ELC participation chain for one entity (pre-pagination)."""
     rows = (
         db.query(LedgerRecord)
         .filter(LedgerRecord.event_type == "exchange_settled")
@@ -84,6 +78,19 @@ def build_entity_local_chain(
         )
         prev_hash = record_hash
 
+    return elc_records
+
+
+def build_entity_local_chain(
+    db: Session,
+    entity_id: str,
+    *,
+    limit: int = 50,
+    cursor: int | None = None,
+) -> dict[str, Any]:
+    """Build ELC view from GRC exchange_settled rows (not a second source of truth)."""
+    elc_records = _elc_records_for_entity(db, entity_id)
+
     total = len(elc_records)
     start = max(0, (cursor or 1) - 1)
     if cursor is None and total > limit:
@@ -113,12 +120,9 @@ def find_elc_record_for_exchange(
     db: Session,
     entity_id: str,
     exchange_id: str,
-    *,
-    limit: int = 500,
 ) -> dict[str, Any] | None:
     """Return the ELC participation row whose ref_id matches exchange_id, if any."""
-    view = build_entity_local_chain(db, entity_id, limit=limit)
-    for record in view.get("records") or []:
+    for record in _elc_records_for_entity(db, entity_id):
         if record.get("ref_id") == exchange_id:
             return record
     return None
