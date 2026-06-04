@@ -4,7 +4,7 @@ from pathlib import Path
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -922,9 +922,17 @@ def federation_overlay_relay(body: FederationOverlayRelayIn, db: Session = Depen
 
 
 @router.post("/dialogue")
-async def federation_dialogue(envelope: dict, db: Session = Depends(get_db)):
+async def federation_dialogue(envelope: dict, request: Request, db: Session = Depends(get_db)):
     """Entity Dialogue entrypoint on federation surface (same router as overlay relay)."""
     from services.entity_dialogue import route_dialogue
+    from services.federation_peers import verify_incoming_dialogue_hmac
+
+    auth = verify_incoming_dialogue_hmac(envelope, dict(request.headers))
+    if not auth.ok:
+        raise HTTPException(
+            status_code=401,
+            detail={"error": "dialogue_hmac_denied", "reason": auth.reason, "node_id": auth.node_id},
+        )
 
     response = await route_dialogue(db, envelope)
     if response.get("status") == "accepted":

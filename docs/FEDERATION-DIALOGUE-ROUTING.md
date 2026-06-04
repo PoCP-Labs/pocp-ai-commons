@@ -114,10 +114,29 @@ Dry-run only (no import):
 | `POCP_DIALOGUE_PEER_ROUTE` | Enable cross-node dialogue forward (default `true`) |
 | `POCP_TRUSTED_NODES` | JSON list `{node_id, base_url, trust_weight}` for peer routing |
 | `POCP_PEER_DIALOGUE_TIMEOUT` | HTTP timeout seconds for peer forward (default 120) |
+| `POCP_PEER_DIALOGUE_HMAC` | Optional shared secret — HMAC-SHA256 over canonical dialogue body on `POST /federation/dialogue` (CIP-P3.3) |
+| `POCP_PEER_DIALOGUE_HMAC_REQUIRED` | When `true` and secret set, reject unsigned or invalid dialogue POSTs (default `false`) |
+| `POCP_PEER_DIALOGUE_HMAC_TRUSTED_ONLY` | When `true`, require signing `node_id` in `POCP_TRUSTED_NODES` |
+| `POCP_PEER_DIALOGUE_HMAC_SKEW_SECONDS` | Clock skew for dialogue HMAC timestamps (default 120) |
 | `POCP_NODE_ID` | Local node id in `from` / `to` refs |
 | `BACKEND_URL` | Advertised base URL in federation manifest |
 
 See also [FEDERATION-DISCOVERY.md](./FEDERATION-DISCOVERY.md) for discovery, handshake, and bootstrap env vars.
+
+### Optional peer dialogue HMAC (CIP-P3.3)
+
+When both peers set the same `POCP_PEER_DIALOGUE_HMAC`, outbound forwards from `dialogue_route` attach:
+
+| Header | Purpose |
+|--------|---------|
+| `X-POCP-Dialogue-Node-Id` | Signing node (`from.node_id` on originator) |
+| `X-POCP-Dialogue-Nonce` | Replay guard |
+| `X-POCP-Dialogue-Timestamp` | Unix seconds |
+| `X-POCP-Dialogue-Body-Digest` | SHA-256 of sorted JSON body |
+| `X-POCP-Dialogue-Signature-Alg` | `hmac-sha256` |
+| `X-POCP-Dialogue-Signature` | HMAC over `pocp-dialogue-v1\|{node_id}\|{nonce}\|{ts}\|{digest}` |
+
+Receiver verifies on `POST /api/v1/federation/dialogue` before `route_dialogue`. With secret unset, behavior is unchanged (no headers). Set `POCP_PEER_DIALOGUE_HMAC_REQUIRED=true` on hardened peers to reject unsigned traffic. Threat model: [THREAT-MODEL-v0.1.md](./protocol/THREAT-MODEL-v0.1.md).
 
 ---
 

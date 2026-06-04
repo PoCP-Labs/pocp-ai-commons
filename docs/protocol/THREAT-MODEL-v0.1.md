@@ -27,6 +27,7 @@
 | **Rogue witness** | Pass bad contributions | Low-quality or bought scores |
 | **Insider operator** | Mint unearned CP/BC | DB access, skip ledger |
 | **Federation impostor** | Import fake proofs | Spoofed instance, weak trust |
+| **Peer dialogue impostor** | Drive cross-node invoke/quote without trust | Unsigned POST to `/federation/dialogue` |
 | **Sybil farmer** | Harvest CP via fake Entities | Many low-cost identities |
 
 ---
@@ -42,6 +43,7 @@
 | Witness collusion | Multi-witness quorum + distinct Entities | Art. III.10, IV.14 | Partial |
 | Self-finalize abuse | Policy + audit flag | Art. III.12 | ✅ policy engine |
 | Rogue import | L0–L3 levels + crypto floor | Art. V | Partial |
+| Unauthenticated peer dialogue | Optional `POCP_PEER_DIALOGUE_HMAC` on federation dialogue POST; nonce + body digest + clock skew | Federation | Partial — opt-in (CIP-P3.3) |
 | Sybil | Rate limits, risk_level, community trust | — | Partial anti_abuse |
 | Operator mint | issuance_budget + constitution CI | Art. I.5 | Planned tests |
 
@@ -67,7 +69,7 @@
 └─────────────────────────────────────────┘
 ```
 
-**Never trust:** client-reported usage, unverified federation payloads, witness scores without `witness_entity_id`.
+**Never trust:** client-reported usage, unverified federation payloads, witness scores without `witness_entity_id`, unsigned `POST /api/v1/federation/dialogue` when `POCP_PEER_DIALOGUE_HMAC_REQUIRED=true`.
 
 **Verify first:** ledger chain, wallet replay, proof packet, manifest signature.
 
@@ -81,6 +83,7 @@
 | LLM witness nondeterminism | Hash rationale, freeze attest snapshot |
 | Heuristic ledger↔tx link | Replace with FK `ledger_record_id` |
 | No global Sybil resistance | Community-scoped trust, not one global ID |
+| Open federation dialogue surface | Shared `POCP_PEER_DIALOGUE_HMAC` + `POCP_PEER_DIALOGUE_HMAC_REQUIRED` on both peers; separate from `POCP_PEER_COMPUTE_SECRET` witness plane |
 
 ---
 

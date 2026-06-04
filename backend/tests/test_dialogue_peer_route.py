@@ -26,6 +26,8 @@ class DialoguePeerRouteTests(unittest.TestCase):
     def setUp(self):
         self._route_prev = os.environ.get("POCP_DIALOGUE_PEER_ROUTE")
         self._trusted_prev = os.environ.get("POCP_TRUSTED_NODES")
+        self._hmac_prev = os.environ.get("POCP_PEER_DIALOGUE_HMAC")
+        os.environ.pop("POCP_PEER_DIALOGUE_HMAC", None)
         os.environ["POCP_DIALOGUE_PEER_ROUTE"] = "true"
         os.environ["POCP_TRUSTED_NODES"] = (
             '[{"node_id": "node-b", "base_url": "https://peer-b.example.com", "trust_weight": 0.9}]'
@@ -58,6 +60,13 @@ class DialoguePeerRouteTests(unittest.TestCase):
             os.environ.pop("POCP_TRUSTED_NODES", None)
         else:
             os.environ["POCP_TRUSTED_NODES"] = self._trusted_prev
+        if self._hmac_prev is None:
+            os.environ.pop("POCP_PEER_DIALOGUE_HMAC", None)
+        else:
+            os.environ["POCP_PEER_DIALOGUE_HMAC"] = self._hmac_prev
+        from services.federation_peers import clear_dialogue_hmac_cache
+
+        clear_dialogue_hmac_cache()
 
     def test_should_route_when_target_not_local(self):
         envelope = {
@@ -202,6 +211,16 @@ class DialoguePeerRouteTests(unittest.TestCase):
         )
         peer_rows = [r for r in rows if (r.payload or {}).get("peer_route")]
         self.assertTrue(peer_rows, "expected exchange_settled with peer_route on originator")
+
+    @patch("services.network.dialogue_route._post_json")
+    def test_forward_uses_post_json_on_dialogue_path(self, mock_post):
+        os.environ["POCP_PEER_DIALOGUE_HMAC"] = "route-test-secret"
+        mock_post.return_value = {"status": "accepted", "result": {"pong": True}}
+        envelope = {"kind": "ping", "from": {"node_id": "node-a"}, "dialogue_id": "dlg_hmac"}
+        with patch("services.network.dialogue_route.local_node_id", return_value="node-a"):
+            forward_dialogue_to_peer("https://peer-b.example.com", envelope)
+        url = mock_post.call_args[0][0]
+        self.assertIn("/federation/dialogue", url)
 
     @patch("services.network.dialogue_route._post_json")
     def test_route_federation_accept_forwards_to_peer(self, mock_post):
