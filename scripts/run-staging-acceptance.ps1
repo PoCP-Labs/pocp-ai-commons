@@ -12,6 +12,11 @@ Write-Host "=== Staging env check ==="
 python backend/scripts/verify_staging_env.py
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+if (-not (Test-Path "docker-compose.staging.yml")) {
+    Write-Error "FAIL: missing docker-compose.staging.yml"
+    exit 1
+}
+
 Write-Host ""
 Write-Host "=== Phase A staging acceptance @ $ApiUrl ==="
 python backend/scripts/run_phase_a_acceptance.py $ApiUrl --staging --skip-optional

@@ -1,0 +1,78 @@
+name: Staging OAuth Smoke
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "backend/**"
+      - "docker-compose.staging.yml"
+      - ".github/workflows/staging-smoke.yml"
+      - "scripts/run-staging-ci-smoke.*"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "docker-compose.staging.yml"
+      - ".github/workflows/staging-smoke.yml"
+      - "scripts/run-staging-ci-smoke.*"
+
+jobs:
+  staging-oauth-smoke:
+    runs-on: ubuntu-latest
+    env:
+      BACKEND_URL: http://127.0.0.1:8765
+      FRONTEND_URL: http://127.0.0.1:3000
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Validate staging compose overlay
+        working-directory: ..
+        run: |
+          python -c "
+          import pathlib, sys
+          p = pathlib.Path('docker-compose.staging.yml')
+          assert p.is_file(), 'missing docker-compose.staging.yml'
+          text = p.read_text(encoding='utf-8')
+          for needle in ('ENABLE_DEV_LOGIN', '\"false\"', 'APP_ENV', 'staging'):
+              assert needle in text, f'missing {needle!r} in staging compose'
+          print('docker-compose.staging.yml profile OK')
+          "
+
+      - name: Verify staging env example template
+        working-directory: ..
+        run: python backend/scripts/verify_staging_env.py --check-example
+
+      - name: Start API (staging profile)
+        env:
+          DATABASE_URL: sqlite:///./data/pocp_staging_ci.db
+          POCP_WAIT_FOR_DB: "false"
+          POCP_FULL_SEED: "true"
+          APP_ENV: staging
+          ENABLE_DEV_LOGIN: "false"
+          JWT_SECRET: ci-staging-jwt-secret-not-for-production
+          GITHUB_CLIENT_ID: ci-staging-oauth-client
+          GITHUB_CLIENT_SECRET: ci-staging-oauth-secret
+          GITHUB_OAUTH_CALLBACK_URL: http://127.0.0.1:8765/api/v1/auth/github/callback
+          POCP_REQUIRE_RECEIPT_SIGNATURE: "true"
+          POCP_SIGN_COMPUTE_RECEIPTS: "true"
+        run: |
+          uvicorn main:app --host 127.0.0.1 --port 8765 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8765/health && break
+            sleep 1
+          done
+
+      - name: Phase A staging acceptance (OAuth path)
+        run: python scripts/run_phase_a_acceptance.py http://127.0.0.1:8765 --staging --skip-optional

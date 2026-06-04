@@ -1,0 +1,17 @@
+# Phase A public staging profile — use with base compose:
+#   docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d --build
+#
+# Copy backend/.env.staging.example → backend/.env and fill OAuth + secrets.
+# Verify:  python backend/scripts/verify_staging_env.py
+# Accept:  ./scripts/run-staging-acceptance.sh http://localhost:8008
+
+services:
+  backend:
+    environment:
+      APP_ENV: staging
+      ENABLE_DEV_LOGIN: "false"
+      ENABLE_MOCK_VERIFIER: "true"
+      POCP_REQUIRE_RECEIPT_SIGNATURE: "true"
+      POCP_SIGN_COMPUTE_RECEIPTS: "true"
+      POCP_NODE_MODE: full
+      POCP_FEDERATION_SYNC_ON_STARTUP: "false"

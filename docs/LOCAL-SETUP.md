@@ -238,6 +238,27 @@ curl -X POST http://127.0.0.1:8000/api/v1/auth/dev-login \
 
 Production public sites should set `ENABLE_DEV_LOGIN=false` and use GitHub OAuth only. See [LANGUAGE-POLICY.md](./LANGUAGE-POLICY.md).
 
+### Staging profile (OAuth, no dev-login)
+
+For a local stack that mirrors public staging auth policy:
+
+```bash
+cp backend/.env.staging.example backend/.env
+# Fill JWT_SECRET, DATABASE_URL, GITHUB_* (OAuth app for your staging host)
+python backend/scripts/verify_staging_env.py
+docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d --build
+./scripts/run-staging-acceptance.sh http://localhost:8008
+```
+
+CI runs the same OAuth acceptance path without real secrets:
+
+```bash
+./scripts/run-staging-ci-smoke.sh
+# or: python backend/scripts/verify_staging_env.py --check-example
+```
+
+Workflow: [.github/workflows/staging-smoke.yml](../.github/workflows/staging-smoke.yml).
+
 ## Common issues (Windows)
 
 **Port 8000 already in use:** Docker Compose publishes PoCP on **8008** by default (another app often binds 8000). Stop the conflicting container or change the host port in `docker-compose.yml`. For a bare `uvicorn` run, pick a free port:
