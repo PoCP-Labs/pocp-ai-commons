@@ -15,6 +15,7 @@ from models.entity import Entity, EntityType
 from models.invocation import InvocationStep, InvocationTrace
 from services.capability_execute import attach_receipt_to_result, execute_agent, execute_skill
 from services.capability_receipt import build_capability_receipt, build_step_capability_receipts
+from services.entity_local_chain import find_elc_record_for_exchange
 
 
 def _dialogue_user_input(payload: dict[str, Any]) -> str:
@@ -30,6 +31,32 @@ def _dialogue_user_input(payload: dict[str, Any]) -> str:
     if isinstance(payload.get("prompt"), str):
         return payload["prompt"].strip()
     return "Execute via PoCP entity dialogue"
+
+
+def _require_dialogue_exchange_id(
+    db: Session,
+    *,
+    consumer_entity_id: str,
+    execution: dict[str, Any],
+) -> str:
+    """CIP-P1.2: metered dialogue invoke must emit exchange_id visible on ELC."""
+    billing = execution.get("billing") if isinstance(execution.get("billing"), dict) else {}
+    exchange_id = billing.get("exchange_id")
+    if not exchange_id:
+        raise HTTPException(
+            status_code=500,
+            detail="Metered dialogue invoke must emit billing.exchange_id (exchange spine)",
+        )
+    if not find_elc_record_for_exchange(db, consumer_entity_id, str(exchange_id)):
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                f"exchange_id {exchange_id} not found in entity local chain "
+                f"for {consumer_entity_id}"
+            ),
+        )
+    execution["exchange_id"] = exchange_id
+    return str(exchange_id)
 
 
 def tag_trace_dialogue(
@@ -168,5 +195,12 @@ async def execute_metered_dialogue_invoke(
         )
         execution["capability_receipts"] = capability_receipts
         attach_receipt_to_result(db, execution)
+
+    if execution.get("trace_id"):
+        _require_dialogue_exchange_id(
+            db,
+            consumer_entity_id=source.id,
+            execution=execution,
+        )
 
     return execution

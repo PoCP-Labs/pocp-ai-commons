@@ -13,6 +13,7 @@ from models.invocation import InvocationStep
 from models.wallet import Wallet
 from services.capability.dialogue_invoke import execute_metered_dialogue_invoke
 from services.capability_import import import_skill_from_skill_md
+from services.entity_local_chain import build_entity_local_chain, find_elc_record_for_exchange
 from services.capability_receipt import CAPABILITY_RECEIPT_SCHEMA
 
 SAMPLE_SKILL = """---
@@ -76,6 +77,16 @@ class CapabilityDialogueInvokeTests(unittest.TestCase):
         self.assertEqual(result["capability_receipts"][0]["schema"], CAPABILITY_RECEIPT_SCHEMA)
         self.assertIn("receipt", result)
         self.assertIn("capability_receipts", result["receipt"])
+        self.assertIn("billing", result)
+        exchange_id = result["billing"]["exchange_id"]
+        self.assertTrue(exchange_id)
+        self.assertEqual(result.get("exchange_id"), exchange_id)
+        self.db.commit()
+        elc_row = find_elc_record_for_exchange(self.db, self.human.id, exchange_id)
+        self.assertIsNotNone(elc_row, "ELC must list dialogue invoke exchange_settled row")
+        elc = build_entity_local_chain(self.db, self.human.id, limit=10)
+        self.assertGreaterEqual(elc["total"], 1)
+        self.assertEqual(elc["records"][-1]["ref_id"], exchange_id)
 
         steps = (
             self.db.query(InvocationStep)

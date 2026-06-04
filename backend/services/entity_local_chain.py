@@ -109,6 +109,21 @@ def build_entity_local_chain(
     }
 
 
+def find_elc_record_for_exchange(
+    db: Session,
+    entity_id: str,
+    exchange_id: str,
+    *,
+    limit: int = 500,
+) -> dict[str, Any] | None:
+    """Return the ELC participation row whose ref_id matches exchange_id, if any."""
+    view = build_entity_local_chain(db, entity_id, limit=limit)
+    for record in view.get("records") or []:
+        if record.get("ref_id") == exchange_id:
+            return record
+    return None
+
+
 def find_exchange_ledger_record(db: Session, exchange_id: str) -> LedgerRecord | None:
     for record in (
         db.query(LedgerRecord)
