@@ -145,7 +145,7 @@ See [MINIMUM-LIVING-NETWORK.md](./MINIMUM-LIVING-NETWORK.md) · [implementation/
 
 ### [CIP-P1.4] CIP skeleton ↔ production map
 
-Handoff `1f7fd3af` · Atlas-0 schema review. Every file under `backend/services/cip/` must have a **production twin** or an explicit **`spec-only`** label. No orphan modules.
+Handoff `f6542098` · Atlas-0 schema review (**APPROVED**). Every file under `backend/services/cip/` must have a **production twin** or an explicit **`spec-only`** / **`partial`** label. No orphan modules.
 
 **Status legend**
 
