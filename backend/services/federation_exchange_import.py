@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from typing import Any
+from urllib.parse import urlparse
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -20,6 +21,72 @@ from services.trust_config import trusted_nodes_map as _trusted_nodes_map
 
 ACCEPTANCE_LEVELS = frozenset({"L0", "L1", "L2", "L3"})
 DEFAULT_ACCEPTANCE = "L1"
+_LOCALHOST_HOSTS = frozenset({"localhost", "127.0.0.1", "0.0.0.0", "::1"})
+
+
+def _url_host(base_url: str) -> str:
+    return (urlparse(base_url.strip()).hostname or "").lower()
+
+
+def is_public_federation_url(base_url: str) -> bool:
+    """True when base_url is not loopback (public staging / Internet pair)."""
+    host = _url_host(base_url)
+    return bool(host) and host not in _LOCALHOST_HOSTS
+
+
+def resolve_staging_exchange_import_peers(
+    *,
+    node_a_url: str | None = None,
+    node_b_url: str | None = None,
+) -> tuple[str, str, str, str]:
+    """Resolve (originator_url, importer_url, source_node_id, importer_node_id) for staging acceptance.
+
+    Precedence: explicit URLs → POCP_STAGING_FEDERATION_NODE_A/B → first two POCP_TRUSTED_NODES.
+    Raises ValueError when fewer than two distinct trusted peers are configured.
+    """
+    explicit_a = (node_a_url or os.getenv("POCP_STAGING_FEDERATION_NODE_A", "")).strip().rstrip("/")
+    explicit_b = (node_b_url or os.getenv("POCP_STAGING_FEDERATION_NODE_B", "")).strip().rstrip("/")
+    if explicit_a and explicit_b:
+        trusted = _trusted_nodes_map()
+        source_id = next(
+            (nid for nid, n in trusted.items() if n.base_url.rstrip("/") == explicit_a),
+            "staging-node-a",
+        )
+        importer_id = next(
+            (nid for nid, n in trusted.items() if n.base_url.rstrip("/") == explicit_b),
+            "staging-node-b",
+        )
+        return explicit_a, explicit_b, source_id, importer_id
+
+    trusted = _trusted_nodes_map()
+    if len(trusted) < 2:
+        raise ValueError(
+            "Staging federation exchange requires ≥2 trusted peers "
+            "(POCP_TRUSTED_NODES or POCP_STAGING_FEDERATION_NODE_A/B)"
+        )
+
+    ordered = sorted(trusted.values(), key=lambda n: n.node_id)
+    origin = ordered[0]
+    importer = ordered[1]
+    return (
+        origin.base_url.rstrip("/"),
+        importer.base_url.rstrip("/"),
+        origin.node_id,
+        importer.node_id,
+    )
+
+
+def staging_exchange_import_policy() -> dict[str, Any]:
+    """Env hints for public staging exchange import acceptance (CIP-P2.2)."""
+    trusted = _trusted_nodes_map()
+    urls = [n.base_url.rstrip("/") for n in trusted.values()]
+    return {
+        "trusted_peer_count": len(trusted),
+        "public_peer_urls": [u for u in urls if is_public_federation_url(u)],
+        "require_import_signature": os.getenv("POCP_REQUIRE_IMPORT_SIGNATURE", "false").lower() == "true",
+        "sign_compute_receipts": os.getenv("POCP_SIGN_COMPUTE_RECEIPTS", "false").lower() == "true",
+        "allow_untrusted_import": os.getenv("POCP_ALLOW_UNTRUSTED_IMPORT", "false").lower() == "true",
+    }
 
 
 def _verify_exchange_proof_signature(

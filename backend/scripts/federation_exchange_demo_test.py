@@ -7,17 +7,44 @@ Usage:
   docker compose -f docker-compose.federation.yml up -d --build
   python backend/scripts/federation_exchange_demo_test.py
   python backend/scripts/federation_exchange_demo_test.py http://127.0.0.1:8100 http://127.0.0.1:8101
+  POCP_STAGING_FEDERATION_EXCHANGE=1 python backend/scripts/federation_exchange_demo_test.py \\
+    https://api-a.example https://api-b.example
 """
 
 from __future__ import annotations
 
 import json
+import os
 import sys
 import urllib.error
 import urllib.request
+from pathlib import Path
 
-NODE_A = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8100"
-NODE_B = sys.argv[2] if len(sys.argv) > 2 else "http://127.0.0.1:8101"
+_BACKEND = Path(__file__).resolve().parents[1]
+if str(_BACKEND) not in sys.path:
+    sys.path.insert(0, str(_BACKEND))
+
+from services.federation_exchange_import import (
+    is_public_federation_url,
+    resolve_staging_exchange_import_peers,
+    staging_exchange_import_policy,
+)
+
+
+def _staging_mode() -> bool:
+    return os.getenv("POCP_STAGING_FEDERATION_EXCHANGE", "").lower() in ("1", "true", "yes", "on")
+
+
+def _resolve_nodes() -> tuple[str, str]:
+    if len(sys.argv) >= 3:
+        return sys.argv[1].rstrip("/"), sys.argv[2].rstrip("/")
+    if _staging_mode():
+        node_a, node_b, _, _ = resolve_staging_exchange_import_peers()
+        return node_a, node_b
+    return "http://127.0.0.1:8100", "http://127.0.0.1:8101"
+
+
+NODE_A, NODE_B = _resolve_nodes()
 
 
 def req(base: str, method: str, path: str, body: dict | None = None, token: str | None = None) -> dict | list:
@@ -35,7 +62,43 @@ def req(base: str, method: str, path: str, body: dict | None = None, token: str 
         return json.loads(response.read().decode())
 
 
+def _auth_token(node_a: str) -> tuple[str, str, int]:
+    """Return (token, entity_id, credits_before). Staging uses POCP_ACCEPTANCE_BEARER_TOKEN."""
+    staging_token = os.getenv("POCP_ACCEPTANCE_BEARER_TOKEN", "").strip()
+    if _staging_mode() or staging_token:
+        if not staging_token:
+            raise AssertionError(
+                "POCP_ACCEPTANCE_BEARER_TOKEN required for staging federation exchange demo"
+            )
+        me = req(node_a, "GET", "/api/v1/auth/me", token=staging_token)
+        entity_id = (me.get("entity") or {}).get("id") or me.get("entity_id")
+        wallet = me.get("wallet") or {}
+        credits = wallet.get("ai_credits", 0)
+        if not entity_id:
+            raise AssertionError(f"staging token /auth/me missing entity: {me}")
+        return staging_token, entity_id, int(credits)
+
+    login = req(
+        node_a,
+        "POST",
+        "/api/v1/auth/dev-login",
+        {"username": "rain", "email": "rain@example.com"},
+    )
+    return login["access_token"], login["entity"]["id"], login["wallet"]["ai_credits"]
+
+
 def main() -> None:
+    if _staging_mode():
+        policy = staging_exchange_import_policy()
+        if not policy["public_peer_urls"]:
+            print(
+                "WARN staging mode but peer URLs are not public; "
+                "set POCP_TRUSTED_NODES with HTTPS hosts",
+                file=sys.stderr,
+            )
+        elif not all(is_public_federation_url(u) for u in (NODE_A, NODE_B)):
+            print("WARN staging peers include loopback URLs", file=sys.stderr)
+
     health_a = req(NODE_A, "GET", "/health")
     health_b = req(NODE_B, "GET", "/health")
     assert health_a["status"] == "ok", health_a
@@ -44,19 +107,12 @@ def main() -> None:
 
     node_a = req(NODE_A, "GET", "/api/v1/federation/node")
     node_b = req(NODE_B, "GET", "/api/v1/federation/node")
-    assert node_a["node_id"] == "node-a", node_a
-    assert node_b["node_id"] == "node-b", node_b
+    if not _staging_mode():
+        assert node_a["node_id"] == "node-a", node_a
+        assert node_b["node_id"] == "node-b", node_b
     print(f"OK federation nodes {node_a['node_id']} → {node_b['node_id']}")
 
-    login = req(
-        NODE_A,
-        "POST",
-        "/api/v1/auth/dev-login",
-        {"username": "rain", "email": "rain@example.com"},
-    )
-    token = login["access_token"]
-    entity_id = login["entity"]["id"]
-    credits_before = login["wallet"]["ai_credits"]
+    token, entity_id, credits_before = _auth_token(NODE_A)
 
     chat = req(
         NODE_A,
@@ -94,7 +150,9 @@ def main() -> None:
             "acceptance_level": "L1",
         },
     )
-    assert imported.get("contribution_type") == "exchange" or imported.get("payload", {}).get("import_kind") == "exchange_proof", imported
+    assert imported.get("contribution_type") == "exchange" or imported.get("payload", {}).get(
+        "import_kind"
+    ) == "exchange_proof", imported
     print(f"OK Node B L1 import id={imported['id'][:12]}…")
 
     imports_after = req(NODE_B, "GET", "/api/v1/federation/imports")

@@ -5,6 +5,7 @@ Usage:
   python backend/scripts/run_phase_a_acceptance.py [base_url]
   python backend/scripts/run_phase_a_acceptance.py http://127.0.0.1:8100 --federation http://127.0.0.1:8101
   python backend/scripts/run_phase_a_acceptance.py https://api.staging.example --staging --skip-optional
+  python backend/scripts/run_phase_a_acceptance.py https://api-a.example --staging --federation-exchange https://api-b.example
 
 Exit 0 when all required steps pass; 1 on failure.
 """
@@ -22,7 +23,11 @@ from collections import Counter
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent
+_BACKEND = SCRIPTS.parent
 DEFAULT_BASE = "http://127.0.0.1:8008"
+
+if str(_BACKEND) not in sys.path:
+    sys.path.insert(0, str(_BACKEND))
 
 
 def get_json(url: str, timeout: float = 15) -> dict:
@@ -293,6 +298,39 @@ def step_entity_catalog_complete(base: str) -> tuple[bool, str]:
         return False, str(exc)
 
 
+def _configure_staging_federation_exchange_env() -> None:
+    """Align demo script with public staging pair (POCP_TRUSTED_NODES / explicit env)."""
+    os.environ["POCP_STAGING_FEDERATION_EXCHANGE"] = "true"
+    if os.getenv("POCP_SIGN_COMPUTE_RECEIPTS", "").lower() not in ("true", "1", "yes", "on"):
+        os.environ.setdefault("POCP_SIGN_COMPUTE_RECEIPTS", "true")
+
+
+def step_staging_federation_exchange_policy(base: str, peer: str) -> tuple[bool, str]:
+    """CIP-P2.2 — trusted peers + public URL hints before exchange import demo."""
+    try:
+        from services.federation_exchange_import import (
+            is_public_federation_url,
+            staging_exchange_import_policy,
+        )
+
+        policy = staging_exchange_import_policy()
+        ok = policy["trusted_peer_count"] >= 2 or (
+            is_public_federation_url(base) and is_public_federation_url(peer)
+        )
+        return ok, json.dumps(
+            {
+                "trusted_peer_count": policy["trusted_peer_count"],
+                "public_peer_urls": policy["public_peer_urls"],
+                "require_import_signature": policy["require_import_signature"],
+                "sign_compute_receipts": policy["sign_compute_receipts"],
+                "node_a_public": is_public_federation_url(base),
+                "node_b_public": is_public_federation_url(peer),
+            }
+        )
+    except Exception as exc:
+        return False, str(exc)
+
+
 def step_invocation_ref_integrity(base: str) -> tuple[bool, str]:
     """Smoke: dev-login → chat → exchange integrity endpoint."""
     payload = json.dumps({"username": "inv-ref-check", "email": "inv-ref-check@example.com"}).encode()
@@ -346,14 +384,55 @@ def main() -> int:
         action="store_true",
         help="Public staging mode: no dev-login smoke; require OAuth config and dev-login disabled",
     )
+    parser.add_argument(
+        "--federation-exchange",
+        nargs="?",
+        const="",
+        metavar="NODE_B_URL",
+        default=None,
+        help=(
+            "Run federation exchange proof import demo only (optional peer URL; "
+            "uses POCP_TRUSTED_NODES when omitted). Combine with --staging for public pairs."
+        ),
+    )
     args = parser.parse_args()
 
     base = args.base.rstrip("/")
     sync_backend_url_env(base)
     federation = args.federation is not None
-    node_b = (args.federation or "http://127.0.0.1:8101").rstrip("/")
+    federation_exchange = args.federation_exchange is not None
+    if federation_exchange and federation:
+        print("FAIL: use either --federation or --federation-exchange, not both", file=sys.stderr)
+        return 1
 
-    print(f"Phase A acceptance @ {base}" + (f" (federation, peer={node_b})" if federation else "") + (" [staging]" if args.staging else ""))
+    node_b = "http://127.0.0.1:8101"
+    if federation:
+        node_b = (args.federation or node_b).rstrip("/")
+    elif federation_exchange:
+        if args.federation_exchange:
+            node_b = args.federation_exchange.rstrip("/")
+        else:
+            try:
+                from services.federation_exchange_import import resolve_staging_exchange_import_peers
+
+                resolved_a, resolved_b, _, _ = resolve_staging_exchange_import_peers(node_a_url=base)
+                base = resolved_a
+                node_b = resolved_b
+                sync_backend_url_env(base)
+            except ValueError as exc:
+                print(f"FAIL: {exc}", file=sys.stderr)
+                return 1
+        if args.staging:
+            _configure_staging_federation_exchange_env()
+
+    mode_bits = []
+    if federation:
+        mode_bits.append(f"federation peer={node_b}")
+    if federation_exchange:
+        mode_bits.append(f"federation-exchange peer={node_b}")
+    if args.staging:
+        mode_bits.append("staging")
+    print(f"Phase A acceptance @ {base}" + (f" ({', '.join(mode_bits)})" if mode_bits else ""))
     failures: list[str] = []
 
     checks: list[tuple[str, callable]] = [
@@ -377,7 +456,34 @@ def main() -> int:
     else:
         checks.append(("smoke_test", lambda: run_script("smoke_test.py", base)))
 
-    if federation:
+    if federation_exchange:
+        checks = [
+            ("health", lambda: step_health(base)),
+            ("wallet_audit", lambda: step_wallet_audit(base)),
+        ]
+        if args.staging:
+            checks.extend(
+                [
+                    ("dev_login_disabled", lambda: step_dev_login_disabled(base)),
+                    ("github_oauth", lambda: step_github_oauth_ready(base)),
+                    ("ledger_verify", lambda: step_ledger_verify(base)),
+                ]
+            )
+        exchange_checks: list[tuple[str, callable]] = [
+            ("crypto_readiness", lambda: step_crypto_readiness(base)),
+            ("crypto_readiness_peer", lambda: step_crypto_readiness(node_b)),
+            ("federation_exchange_demo", lambda: run_script("federation_exchange_demo_test.py", base, [node_b])),
+        ]
+        if args.staging:
+            exchange_checks.insert(
+                2,
+                (
+                    "staging_federation_exchange_policy",
+                    lambda: step_staging_federation_exchange_policy(base, node_b),
+                ),
+            )
+        checks.extend(exchange_checks)
+    elif federation:
         checks.extend(
             [
                 ("crypto_readiness", lambda: step_crypto_readiness(base)),
@@ -461,6 +567,7 @@ def main() -> int:
             "federation_strict_mode",
             "federation_demo",
             "federation_exchange_demo",
+            "staging_federation_exchange_policy",
             "cross_node_exchange_acceptance",
             "peer_witness_verify",
             "peer_mcp_demo",

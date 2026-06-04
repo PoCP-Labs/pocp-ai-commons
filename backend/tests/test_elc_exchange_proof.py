@@ -1,5 +1,6 @@
 """ELC, exchange proof, and federation exchange import tests."""
 
+import json
 import os
 import unittest
 from unittest.mock import patch
@@ -15,7 +16,12 @@ from services.compute_receipt import build_compute_receipt
 from services.compute_settlement import settle_bilateral
 from services.entity_local_chain import build_entity_local_chain, find_exchange_ledger_record
 from services.exchange_proof import build_exchange_proof_packet, verify_exchange_proof_integrity
-from services.federation_exchange_import import import_federated_exchange_proof
+from services.federation_exchange_import import (
+    import_federated_exchange_proof,
+    is_public_federation_url,
+    resolve_staging_exchange_import_peers,
+    staging_exchange_import_policy,
+)
 from services.verify_standalone import verify_proof_integrity
 
 
@@ -124,6 +130,47 @@ class ElcExchangeProofTests(unittest.TestCase):
 
         count = self.db.query(FederatedImport).count()
         self.assertEqual(count, 1)
+
+    def test_staging_exchange_import_peer_resolution(self):
+        trusted_json = json.dumps(
+            [
+                {
+                    "node_id": "peer-a",
+                    "base_url": "https://api-a.staging.example",
+                    "trust_weight": 0.5,
+                },
+                {
+                    "node_id": "peer-b",
+                    "base_url": "https://api-b.staging.example",
+                    "trust_weight": 0.5,
+                },
+            ]
+        )
+        with patch.dict(
+            os.environ,
+            {
+                "POCP_TRUSTED_NODES": trusted_json,
+                "POCP_STAGING_FEDERATION_NODE_A": "",
+                "POCP_STAGING_FEDERATION_NODE_B": "",
+            },
+            clear=False,
+        ):
+            from services.trust_config import clear_trusted_nodes_cache
+
+            clear_trusted_nodes_cache()
+            node_a, node_b, source_id, importer_id = resolve_staging_exchange_import_peers()
+            self.assertEqual(node_a, "https://api-a.staging.example")
+            self.assertEqual(node_b, "https://api-b.staging.example")
+            self.assertEqual(source_id, "peer-a")
+            self.assertEqual(importer_id, "peer-b")
+            policy = staging_exchange_import_policy()
+            self.assertEqual(policy["trusted_peer_count"], 2)
+            self.assertEqual(len(policy["public_peer_urls"]), 2)
+            clear_trusted_nodes_cache()
+
+    def test_is_public_federation_url(self):
+        self.assertTrue(is_public_federation_url("https://api.staging.example"))
+        self.assertFalse(is_public_federation_url("http://127.0.0.1:8100"))
 
 
 if __name__ == "__main__":
