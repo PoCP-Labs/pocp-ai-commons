@@ -127,18 +127,23 @@ Entity manifests are seeded after platform catalog bootstrap — see [NODE-RUNTI
 
 ## 3. Public Node API (Phase B target)
 
-Phase A maps many routes to `/api/v1/*`. Phase B standalone binary exposes:
+Phase A maps many routes to `/api/v1/*`. **Phase A shim (implemented):** `backend/routers/pocp_public.py` exposes:
 
 ```http
 GET  /pocp/node
 GET  /pocp/health
 GET  /pocp/capabilities
+GET  /pocp/protocol
+GET  /pocp/sync
 POST /pocp/handshake
 POST /pocp/invoke
 POST /pocp/proofs
 POST /pocp/settlements/ack
-GET  /pocp/sync
 ```
+
+Phase B standalone binary extracts handlers to `pocp-node` without changing semantics.
+
+**Operator manifest:** `GET /api/v1/intelligence/protocol/federation` includes `public_node`, `exchange_import`, and `metered_bindings` (see [BINDING-TO-DIALOGUE.md](./BINDING-TO-DIALOGUE.md)). Frozen endpoint keys: `backend/services/node/schemas.py` · `backend/services/protocol/schemas.py`.
 
 ---
 
