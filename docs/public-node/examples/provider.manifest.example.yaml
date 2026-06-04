@@ -1,0 +1,35 @@
+# PoCP provider manifest — CIP-P2.3 example
+# Apply with: python scripts/provider_bootstrap.py docs/public-node/examples/provider.manifest.example.yaml
+
+schema: pocp.provider_manifest.v0.1
+spec_version: "0.1"
+description: Minimal skill provider for the 15-minute onboarding runbook
+
+provider:
+  entity_id: pocp-entity-demo-code-review
+  entity_type: skill
+  name: Demo Code Review Skill
+  description: Example public skill provider bootstrapped from YAML
+  owner_id: pocp-entity-rain
+  portable_id: demo-code-review
+  metadata:
+    demo: true
+    public_node: true
+
+capabilities:
+  - capability_id: pocp-cap-demo-code-review
+    capability_type: coding
+    name: Python code review
+    unit: skill_invocation
+    price_model: fixed
+    base_price: 5.0
+    accepted_units: [AIC]
+    verification_method: human_review
+    availability: available
+    metadata:
+      template: pocp-skill-node-template.v0.1
+
+quote_test:
+  from_entity_id: pocp-entity-rain
+  quote_action: capability_invoke
+  estimated_cost: 5.0
