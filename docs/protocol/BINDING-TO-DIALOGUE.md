@@ -40,6 +40,23 @@ Operator manifest lists these URLs under `endpoints.pocp_*` — see `GET /api/v1
 
 ---
 
+## Metered execute bindings (operator manifest)
+
+These bindings share **`kind: invoke`** and emit **`exchange_settled`** via the exchange spine. Operators discover stable URLs from `endpoints` on the federation manifest.
+
+| Manifest key | Binding | Execute trigger | Overlay / settlement |
+|--------------|---------|-----------------|----------------------|
+| `ai_chat` | `POST /api/v1/ai/chat` | request body (LLM target) | `InvocationCreated` + `exchange_settled` (`exchange_kind: capability`, `legacy_event_type: ai_chat`) |
+| `mcp_invoke` | `POST /api/v1/capabilities/mcp/{tool_entity_id}/invoke` | tool entity id in path | `InvocationCreated` + `exchange_settled` (`exchange_kind: capability`, `settlement_policy: mcp_invoke.v1`) |
+| `intelligence_dialogue` | `POST /api/v1/intelligence/dialogue` | `payload.execute: true` | `InvocationCreated` + `exchange_settled` (via `capability.dialogue_invoke`) |
+| `entity_dialogue` | `POST /api/v1/intelligence/entities/{entity_id}/dialogue` | `payload.execute: true` | same as `intelligence_dialogue` |
+
+Pre-flight quote for metered paths: `endpoints.wallet_quote` → `POST /api/v1/wallets/me/quote` with `kind: quote`.
+
+Cross-node L1 exchange proof import (no BC mint): `exchange_import.import_exchange_proof` on the federation manifest.
+
+---
+
 ## Entity ↔ Entity (cross-node)
 
 | Binding | Dialogue `kind` | Overlay |

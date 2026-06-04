@@ -29,16 +29,42 @@ Related: [CROSS-NODE-INTERNET.md](./CROSS-NODE-INTERNET.md) · [BINDING-TO-DIALO
 
 ## Required `endpoints` keys (acceptance)
 
+Validated by `validate_federation_protocol_manifest()` in `backend/services/protocol_federation_status/schemas.py`.
+
+### Core operator surface
+
 | Key | Purpose |
 |-----|---------|
 | `well_known` | Instance discovery |
-| `pocp_invoke` | Public node dialogue invoke |
+| `protocol_federation` | Self-describing manifest URL |
 | `wallet_quote` | Pre-flight quote (`kind: quote`) |
 | `federation_exchange_import` | Cross-node exchange proof import |
-| `protocol_federation` | Self-describing manifest URL |
 | `ai_chat` | Metered LLM chat binding |
 | `mcp_invoke` | Metered MCP tool binding |
 | `intelligence_dialogue` | Entity dialogue + `payload.execute` |
+
+### Phase A `/pocp/*` public node aliases
+
+| Key | Route | Dialogue binding |
+|-----|-------|------------------|
+| `pocp_node` | `GET /pocp/node` | instance manifest |
+| `pocp_health` | `GET /pocp/health` | liveness |
+| `pocp_capabilities` | `GET /pocp/capabilities` | `discover` |
+| `pocp_invoke` | `POST /pocp/invoke` | any `pocp.entity_dialogue.v0.1` kind |
+| `pocp_handshake` | `POST /pocp/handshake` | federation discover + handshake |
+| `pocp_proofs` | `POST /pocp/proofs` | `attest` / proof verify |
+| `pocp_settlements_ack` | `POST /pocp/settlements/ack` | `finalize_notice` |
+| `pocp_sync` | `GET /pocp/sync` | `federation_offer` (bulk) |
+
+See [BINDING-TO-DIALOGUE.md](./BINDING-TO-DIALOGUE.md) for metered execute (`ai_chat`, `mcp_invoke`, `intelligence_dialogue`).
+
+### Required `exchange_import` keys
+
+| Key | Purpose |
+|-----|---------|
+| `import_exchange_proof` | L1 federated exchange proof import (no BC mint) |
+| `import_proof` | Contribution proof mirror import |
+| `validate_proof` | Pre-import validation |
 
 ---
 

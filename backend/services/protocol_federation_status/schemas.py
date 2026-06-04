@@ -22,6 +22,8 @@ from services.federation_peer_addrbook import (
 )
 from services.node.schemas import (
     FEDERATION_PROTOCOL_MANIFEST_SCHEMA,
+    OPERATOR_MANIFEST_EXCHANGE_IMPORT_KEYS,
+    OPERATOR_MANIFEST_REQUIRED_ENDPOINT_KEYS,
     build_operator_protocol_endpoints,
 )
 from services.trust_config import load_trusted_nodes
@@ -108,13 +110,12 @@ def validate_federation_protocol_manifest(manifest: dict[str, Any]) -> None:
     if manifest.get("schema") != FEDERATION_PROTOCOL_MANIFEST_SCHEMA:
         raise ValueError(f"Unexpected schema: {manifest.get('schema')!r}")
     endpoints = manifest.get("endpoints") or {}
-    required = (
-        "well_known",
-        "pocp_invoke",
-        "wallet_quote",
-        "federation_exchange_import",
-        "protocol_federation",
-    )
-    missing = [key for key in required if key not in endpoints]
+    missing = sorted(key for key in OPERATOR_MANIFEST_REQUIRED_ENDPOINT_KEYS if key not in endpoints)
     if missing:
         raise ValueError(f"Operator endpoints missing keys: {missing}")
+    exchange_import = manifest.get("exchange_import") or {}
+    missing_import = sorted(
+        key for key in OPERATOR_MANIFEST_EXCHANGE_IMPORT_KEYS if key not in exchange_import
+    )
+    if missing_import:
+        raise ValueError(f"exchange_import missing keys: {missing_import}")

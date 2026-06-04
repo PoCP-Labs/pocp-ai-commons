@@ -155,6 +155,28 @@ POCOP_PUBLIC_ENDPOINT_KEYS = frozenset(
     }
 )
 
+# Frozen acceptance keys for GET /api/v1/intelligence/protocol/federation (CIP-P0.2/P0.3).
+OPERATOR_MANIFEST_REQUIRED_ENDPOINT_KEYS = frozenset(
+    {
+        "well_known",
+        "protocol_federation",
+        "wallet_quote",
+        "federation_exchange_import",
+        "ai_chat",
+        "mcp_invoke",
+        "intelligence_dialogue",
+    }
+    | POCOP_PUBLIC_ENDPOINT_KEYS
+)
+
+OPERATOR_MANIFEST_EXCHANGE_IMPORT_KEYS = frozenset(
+    {
+        "import_exchange_proof",
+        "import_proof",
+        "validate_proof",
+    }
+)
+
 ENTITY_MANIFEST_ENDPOINT_KEYS = frozenset(
     {
         "manifest",

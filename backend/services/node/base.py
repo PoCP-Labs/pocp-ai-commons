@@ -5,6 +5,8 @@ from typing import Any, Protocol
 from services.node.schemas import (
     FEDERATION_PROTOCOL_MANIFEST_SCHEMA,
     NodeProfileSchema,
+    OPERATOR_MANIFEST_EXCHANGE_IMPORT_KEYS,
+    OPERATOR_MANIFEST_REQUIRED_ENDPOINT_KEYS,
     POCOP_PUBLIC_ENDPOINT_KEYS,
     PublicNodeEndpointSchema,
     WellKnownInstanceManifestSchema,
@@ -48,6 +50,8 @@ class WellKnownManifestBuilder(Protocol):
 __all__ = [
     "FEDERATION_PROTOCOL_MANIFEST_SCHEMA",
     "NodeProfileRegistry",
+    "OPERATOR_MANIFEST_EXCHANGE_IMPORT_KEYS",
+    "OPERATOR_MANIFEST_REQUIRED_ENDPOINT_KEYS",
     "POCOP_PUBLIC_ENDPOINT_KEYS",
     "WellKnownManifestBuilder",
     "build_instance_endpoints",
