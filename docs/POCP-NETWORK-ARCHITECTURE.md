@@ -145,7 +145,9 @@ See [MINIMUM-LIVING-NETWORK.md](./MINIMUM-LIVING-NETWORK.md) · [implementation/
 
 ### [CIP-P1.4] CIP skeleton ↔ production map
 
-Handoff `1f7fd3af` · Atlas-0 schema review. Every file under `backend/services/cip/` must have a **production twin** or an explicit **`spec-only`** label. No orphan modules.
+Handoff `79762f2d` · Atlas-0 schema review (2026-06-04). Every file under `backend/services/cip/` must have a **production twin** or an explicit **`spec-only`** label. No orphan modules.
+
+**Verdict:** **APPROVED** (classification complete). Implementation blockers **B1–B5** remain for Forge-0 / Pulse-0; see below.
 
 **Status legend**
 
@@ -178,7 +180,31 @@ Handoff `1f7fd3af` · Atlas-0 schema review. Every file under `backend/services/
 | `p2p/events.py` | overlay | **spec-only** | — (Phase B libp2p event transport; use `events/event_log.py` for demo) | — |
 | `examples/minimum_living_network.py` | demo | **active** | `backend/scripts/minimum_living_network.py` | import-only; Wave-1 gate script |
 
-**Package markers** (`__init__.py` under each subpackage): no runtime logic — inherit parent layer status.
+**Package markers** (`__init__.py` under each subpackage, including `cip/__init__.py`): no runtime logic — inherit parent layer status.
+
+#### Demo coverage (`minimum_living_network.py`)
+
+Modules **imported** by the in-memory demo vs classified-only stubs:
+
+| CIP module | In demo loop |
+|------------|--------------|
+| `node/registry.py` | yes |
+| `capability/registry.py` | yes |
+| `discovery/discovery.py` | yes |
+| `invocation/ledger.py` | yes |
+| `proof/proof.py` | yes |
+| `verification/verifier.py` | yes |
+| `settlement/settlement.py` | yes |
+| `economy/accounting.py` | yes |
+| `reputation/reputation.py` | yes |
+| `events/event_log.py` | yes |
+| `node/manifest.py` | no (partial — not exercised) |
+| `node/heartbeat.py` | no (spec-only) |
+| `identity/signature.py` | no (spec-only) |
+| `reputation/graph.py` | no (partial) |
+| `p2p/events.py` | no (spec-only — deprecated duplicate API) |
+
+Gate script: `python backend/scripts/minimum_living_network.py` → `[OK] minimum_living_network passed.`
 
 #### Layer rollup (production primary path)
 
@@ -204,8 +230,8 @@ Cross-cutting: **Federation exchange** (`federation_exchange_import.py`, `networ
 | ID | Blocker | Owner hint |
 |----|---------|------------|
 | B1 | CIP demo and production REST remain **dual tracks** — no shared import from `exchange_spine` into `cip/settlement` | Forge-0 |
-| B2 | `cip/node/manifest.py` references `node.protocol_version`; `NodeProfileData` in `types.py` lacks that field (demo does not exercise manifest builder) | Forge-0 |
-| B3 | `cip/p2p/events.py` duplicates `events/event_log.py` API shape — consolidate or mark deprecated before Phase B libp2p | Atlas-0 → Forge-0 |
+| B2 | **Schema drift:** production `NodeProfileSchema` (`services/node/schemas.py`) defines `protocol_version`; CIP `NodeProfileData` (`cip/types.py`) omits it while `cip/node/manifest.py` reads `node.protocol_version` → `AttributeError` if `build_manifest` runs | Forge-0 |
+| B3 | `cip/p2p/events.py` reuses class name `CIPEventLog` and a subset API vs `events/event_log.py` — consolidate or delete before Phase B libp2p | Forge-0 |
 | B4 | Layer 11 Governance has **no CIP module** — acceptable as production-only until governance spec freezes | Atlas-0 |
 | B5 | `events/event_log.py` vs production `ProtocolEvent` append-only chain — indexer not wired | Pulse-0 |
 | B6 | Entity Layer 1 has **no `cip/entity/`** — intentional; catalog lives in production services only | — (documented) |
